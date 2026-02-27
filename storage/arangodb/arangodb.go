@@ -83,6 +83,21 @@ func NewArangoBackend(cfg Config) (*ArangoBackend, error) {
 	return &ArangoBackend{db: db, col: col}, nil
 }
 
+// NewArangoBackendFromDB constructs an [ArangoBackend] from an already-open
+// [driver.Database]. It ensures the tasks collection exists and returns a
+// ready-to-use backend. This constructor is intended for tests that manage
+// their own database lifecycle.
+func NewArangoBackendFromDB(db driver.Database) (*ArangoBackend, error) {
+	if db == nil {
+		return nil, fmt.Errorf("arangodb: NewArangoBackendFromDB: database must not be nil")
+	}
+	col, err := ensureCollection(context.Background(), db)
+	if err != nil {
+		return nil, fmt.Errorf("arangodb: ensure collection: %w", err)
+	}
+	return &ArangoBackend{db: db, col: col}, nil
+}
+
 func ensureDatabase(ctx context.Context, client driver.Client, name string) (driver.Database, error) {
 	exists, err := client.DatabaseExists(ctx, name)
 	if err != nil {
