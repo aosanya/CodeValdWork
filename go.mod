@@ -1,12 +1,14 @@
 module github.com/aosanya/CodeValdWork
 
-go 1.21
+go 1.25.3
 
 require (
 	github.com/arangodb/go-driver v1.6.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2
 )
+
+replace github.com/aosanya/CodeValdSharedLib => ../CodeValdSharedLib
 
 require (
 	github.com/arangodb/go-velocypack v0.0.0-20200318135517-5af53c29c67e // indirect
