@@ -42,19 +42,27 @@ var consumedTopics = []string{
 }
 
 // declaredRoutes are the HTTP endpoints that CodeValdWork asks CodeValdCross
-// to expose on its HTTP management server. Each route maps to a stable
-// capability identifier that Cross's dispatcher resolves to a handler.
-// Cross mounts these at registration time — zero Cross source files name these.
+// to expose on its HTTP management server. GrpcMethod tells Cross which
+// downstream gRPC method to invoke; PathBindings tell it how to map URL
+// path parameters into the gRPC request message fields.
 var declaredRoutes = []*crossv1.RouteDeclaration{
 	{
 		Method:     "POST",
 		Pattern:    "/{agencyId}/tasks",
 		Capability: "create_task",
+		GrpcMethod: "/codevaldwork.v1.TaskService/CreateTask",
+		PathBindings: []*crossv1.PathBinding{
+			{UrlParam: "agencyId", Field: "agency_id"},
+		},
 	},
 	{
 		Method:     "GET",
 		Pattern:    "/{agencyId}/tasks",
 		Capability: "list_tasks",
+		GrpcMethod: "/codevaldwork.v1.TaskService/ListTasks",
+		PathBindings: []*crossv1.PathBinding{
+			{UrlParam: "agencyId", Field: "agency_id"},
+		},
 	},
 }
 
