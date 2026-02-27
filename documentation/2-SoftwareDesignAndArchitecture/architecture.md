@@ -108,6 +108,25 @@ Heartbeats repeat at `CROSS_PING_INTERVAL` (default 10s). Failures are logged an
 
 ---
 
+## 7. CodeValdSharedLib Dependency
+
+CodeValdWork imports `github.com/aosanya/CodeValdSharedLib` for:
+
+| SharedLib package | Replaces |
+|---|---|
+| `registrar` | `internal/registrar/registrar.go` (identical struct; service-specific metadata passed as constructor args) |
+| `serverutil` | `envOrDefault`, `parseDuration` helpers and gRPC server setup block in `cmd/server/main.go` |
+| `arangoutil` | ArangoDB `http.NewConnection` / auth / database bootstrap in `storage/arangodb/arangodb.go` |
+| `gen/go/codevaldcross/v1` | Local copy of generated Cross stubs in `gen/go/codevaldcross/v1/` |
+
+> **Principle**: Any infrastructure code used by more than one service lives in
+> SharedLib. CodeValdWork retains only domain logic, domain errors, gRPC
+> handlers, and storage collection schemas.
+
+See task MVP-WORK-007 in [mvp.md](../3-SofwareDevelopment/mvp.md) for migration scope.
+
+---
+
 ## Integration with CodeValdCortex
 
 | CodeValdCortex Event | CodeValdWork Call |

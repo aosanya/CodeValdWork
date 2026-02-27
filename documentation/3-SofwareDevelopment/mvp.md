@@ -33,6 +33,25 @@ The MVP delivers:
 
 ---
 
+## P3: CodeValdSharedLib Migration
+
+| Task ID | Title | Status | Depends On |
+|---|---|---|---|
+| MVP-WORK-007 | Migrate shared infrastructure to CodeValdSharedLib | 📋 Not Started | SHAREDLIB-003, SHAREDLIB-004, SHAREDLIB-005, SHAREDLIB-006 |
+
+**MVP-WORK-007 scope**:
+- Replace `internal/registrar/` with `github.com/aosanya/CodeValdSharedLib/registrar` (caller passes `"codevaldwork"`, its topics, and its `declaredRoutes`).
+- Replace `envOrDefault` / `parseDuration` helpers in `cmd/server/main.go` with `serverutil.EnvOrDefault` / `serverutil.ParseDurationString`.
+- Replace the gRPC server setup block in `cmd/server/main.go` with `serverutil.NewGRPCServer()` + `serverutil.RunWithGracefulShutdown()`.
+- Replace the ArangoDB `http.NewConnection` / auth / database bootstrap in `storage/arangodb/arangodb.go` with `arangoutil.Connect(ctx, cfg)`.
+- Replace the local copy of `gen/go/codevaldcross/v1/` with the SharedLib copy; update `internal/registrar/` import paths.
+- Remove `internal/registrar/` package entirely.
+- Update `go.mod` with `require github.com/aosanya/CodeValdSharedLib` and a `replace ../CodeValdSharedLib` directive.
+
+See [CodeValdSharedLib mvp.md](../../../CodeValdSharedLib/documentation/3-SofwareDevelopment/mvp.md) for the full SharedLib task breakdown.
+
+---
+
 ## Success Criteria
 
 - ✅ `go build ./...` succeeds
