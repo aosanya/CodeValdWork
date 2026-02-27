@@ -3,7 +3,7 @@
 
 ## Project Overview
 
-**CodeValdWork** is a **Go library and gRPC microservice** that provides task management for [CodeValdCortex](../CodeValdCortex/README.md) — the enterprise multi-agent AI orchestration platform.
+**CodeValdWork** is a **Go library and gRPC microservice** that provides task management for [CodeValdWork](../CodeValdCortex/README.md) — the enterprise multi-agent AI orchestration platform.
 
 It is the authoritative service for creating, tracking, and transitioning AI agent **Tasks**. CodeValdCross routes task lifecycle events to and from CodeValdWork, and agents consume tasks assigned to them.
 

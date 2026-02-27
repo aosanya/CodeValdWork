@@ -40,6 +40,7 @@ import (
 
 func main() {
 	port := envOrDefault("CODEVALDWORK_PORT", "50054")
+	backendName := "arangodb"
 
 	backend, err := initBackend()
 	if err != nil {
@@ -84,7 +85,7 @@ func main() {
 
 		reg, err := registrar.New(crossAddr, listenAddr, agencyID, pingInterval, pingTimeout)
 		if err != nil {
-			log.Printf("codevaldwork: failed to create registrar: %v — continuing without registration", err)
+			log.Printf("registrar: failed to create: %v — continuing without registration", err)
 		} else {
 			defer reg.Close()
 			go reg.Run(ctx)
@@ -97,17 +98,29 @@ func main() {
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
-		log.Printf("codevaldwork: listening on :%s", port)
+		log.Printf("CodeValdWork gRPC server listening on :%s (backend: %s)", port, backendName)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("gRPC server error: %v", err)
 		}
 	}()
 
 	<-quit
-	log.Println("codevaldwork: shutdown signal received — draining in-flight requests")
-	cancel()
-	grpcServer.GracefulStop()
-	log.Println("codevaldwork: stopped")
+	cancel() // stop registrar goroutine before draining gRPC
+	log.Println("shutdown signal received — draining in-flight RPCs (up to 30 s)")
+
+	done := make(chan struct{})
+	go func() {
+		grpcServer.GracefulStop()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		log.Println("server stopped cleanly")
+	case <-time.After(30 * time.Second):
+		log.Println("drain timeout exceeded — forcing stop")
+		grpcServer.Stop()
+	}
 }
 
 func initBackend() (codevaldwork.Backend, error) {

@@ -103,6 +103,8 @@ func (r *Registrar) Close() {
 // Run sends an initial Register call immediately, then repeats at r.pingInterval
 // until ctx is cancelled. All errors are logged; the loop never panics.
 func (r *Registrar) Run(ctx context.Context) {
+	log.Printf("registrar: starting heartbeat to CodeValdCross at %s (interval=%s timeout=%s)",
+		r.crossAddr, r.pingInterval, r.pingTimeout)
 	r.ping(ctx)
 
 	if r.pingInterval <= 0 {
@@ -115,6 +117,7 @@ func (r *Registrar) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			log.Printf("registrar: stopping heartbeat to CodeValdCross")
 			return
 		case <-ticker.C:
 			r.ping(ctx)
@@ -136,9 +139,8 @@ func (r *Registrar) ping(ctx context.Context) {
 		Routes:      declaredRoutes,
 	})
 	if err != nil {
-		log.Printf("codevaldwork: ping CodeValdCross at %s: %v", r.crossAddr, err)
+		log.Printf("registrar: Register to CodeValdCross %s: %v", r.crossAddr, err)
 		return
 	}
-	log.Printf("codevaldwork: registered with CodeValdCross at %s (self=%s agencyID=%s)",
-		r.crossAddr, r.listenAddr, r.agencyID)
+	log.Printf("registrar: registered with CodeValdCross at %s", r.crossAddr)
 }
