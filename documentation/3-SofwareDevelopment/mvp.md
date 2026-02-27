@@ -24,10 +24,12 @@ The MVP delivers:
 |---|---|---|---|
 | MVP-WORK-001 | Library Scaffolding & Task Model | ✅ Done | — |
 | MVP-WORK-002 | ArangoDB Backend | ✅ Done | MVP-WORK-001 |
-| MVP-WORK-003 | gRPC Service (TaskService) | 🔄 In Progress — code written; run `make proto` to generate stubs | MVP-WORK-001 |
+| MVP-WORK-003 | gRPC Service (TaskService) | ✅ Done | MVP-WORK-001 |
 | MVP-WORK-004 | CodeValdCross Registration | ✅ Done | MVP-WORK-003 |
-| MVP-WORK-005 | Integration Tests | 🔲 Not Started | MVP-WORK-002, MVP-WORK-003 |
-| MVP-WORK-006 | Service-Driven Route Registration | 🔲 Not Started | MVP-WORK-003, CROSS-007 |
+| MVP-WORK-005 | Unit & Integration Tests | ✅ Done | MVP-WORK-001, MVP-WORK-002 |
+| MVP-WORK-006 | Service-Driven Route Registration | ✅ Done | MVP-WORK-003, CROSS-007 |
+
+*All tasks complete — see `mvp_done.md` for details.*
 
 ---
 
@@ -39,6 +41,7 @@ The MVP delivers:
 - ✅ All five `TaskService` RPCs work end-to-end with ArangoDB
 - ✅ CodeValdCross registration fires on startup and repeats on heartbeat
 - ✅ Invalid status transitions return `FAILED_PRECONDITION` from gRPC
+- ✅ Routes (`POST /{agencyId}/tasks`, `GET /{agencyId}/tasks`) declared in `RegisterRequest` and proxied via CodeValdCross dynamic proxy
 
 ---
 
