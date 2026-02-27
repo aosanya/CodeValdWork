@@ -27,6 +27,7 @@ The MVP delivers:
 | MVP-WORK-003 | gRPC Service (TaskService) | 🔄 In Progress — code written; run `make proto` to generate stubs | MVP-WORK-001 |
 | MVP-WORK-004 | CodeValdCross Registration | ✅ Done | MVP-WORK-003 |
 | MVP-WORK-005 | Integration Tests | 🔲 Not Started | MVP-WORK-002, MVP-WORK-003 |
+| MVP-WORK-006 | Service-Driven Route Registration | 🔲 Not Started | MVP-WORK-003, CROSS-007 |
 
 ---
 

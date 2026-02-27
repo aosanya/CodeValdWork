@@ -11,6 +11,7 @@ This directory contains per-topic implementation specifications for the CodeVald
 | File | Tasks | Description |
 |---|---|---|
 | [task-management.md](task-management.md) | MVP-WORK-001 to MVP-WORK-005 | Full task management implementation details |
+| [route-registrar.md](route-registrar.md) | MVP-WORK-006 | Service-driven route registration for CodeValdCross |
 
 ---
 
