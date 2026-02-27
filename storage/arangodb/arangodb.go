@@ -250,7 +250,7 @@ func (b *ArangoBackend) ListTasks(ctx context.Context, agencyID string, filter c
 func buildListQuery(agencyID string, filter codevaldwork.TaskFilter) (string, map[string]interface{}) {
 	bindVars := map[string]interface{}{
 		"agency": agencyID,
-		"col":    collectionName,
+		"@col":   collectionName,
 	}
 	query := "FOR t IN @@col FILTER t.agency_id == @agency"
 
