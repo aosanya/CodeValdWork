@@ -41,6 +41,23 @@ var consumedTopics = []string{
 	"cross.agency.created",
 }
 
+// declaredRoutes are the HTTP endpoints that CodeValdWork asks CodeValdCross
+// to expose on its HTTP management server. Each route maps to a stable
+// capability identifier that Cross's dispatcher resolves to a handler.
+// Cross mounts these at registration time — zero Cross source files name these.
+var declaredRoutes = []*crossv1.RouteDeclaration{
+	{
+		Method:     "POST",
+		Pattern:    "/{agencyId}/tasks",
+		Capability: "create_task",
+	},
+	{
+		Method:     "GET",
+		Pattern:    "/{agencyId}/tasks",
+		Capability: "list_tasks",
+	},
+}
+
 // Registrar holds a persistent gRPC connection to CodeValdCross and sends
 // periodic Register heartbeats. Create with New; start with Run in a goroutine.
 type Registrar struct {
@@ -116,6 +133,7 @@ func (r *Registrar) ping(ctx context.Context) {
 		AgencyId:    r.agencyID,
 		Produces:    producedTopics,
 		Consumes:    consumedTopics,
+		Routes:      declaredRoutes,
 	})
 	if err != nil {
 		log.Printf("codevaldwork: ping CodeValdCross at %s: %v", r.crossAddr, err)
