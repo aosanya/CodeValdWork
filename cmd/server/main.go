@@ -3,15 +3,16 @@
 // Configuration is via environment variables:
 //
 //	CODEVALDWORK_PORT          gRPC listener port (default 50054)
-//	CODEVALDWORK_BACKEND       storage backend: "arangodb" (default)
 //	CROSS_GRPC_ADDR            CodeValdCross gRPC address for service registration
 //	                            heartbeats (optional; omit to disable registration)
+//	CODEVALDWORK_AGENCY_ID     agency ID sent in every Register heartbeat
+//	WORK_GRPC_ADVERTISE_ADDR   address CodeValdCross dials back (default ":PORT")
 //	CROSS_PING_INTERVAL        heartbeat cadence sent to CodeValdCross (default 10s)
 //	CROSS_PING_TIMEOUT         per-RPC timeout for each Register call (default 5s)
 //
 // ArangoDB backend:
 //
-//	WORK_ARANGO_ENDPOINT   ArangoDB endpoint URL (required)
+//	WORK_ARANGO_ENDPOINT   ArangoDB endpoint URL (default http://localhost:8529)
 //	WORK_ARANGO_USER       ArangoDB username (default root)
 //	WORK_ARANGO_PASSWORD   ArangoDB password
 //	WORK_ARANGO_DATABASE   ArangoDB database name (default codevaldwork)
@@ -26,21 +27,17 @@ import (
 	"syscall"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/reflection"
-
 	codevaldwork "github.com/aosanya/CodeValdWork"
 	pb "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1"
 	"github.com/aosanya/CodeValdWork/internal/grpcserver"
-	"github.com/aosanya/CodeValdWork/internal/registrar"
 	"github.com/aosanya/CodeValdWork/storage/arangodb"
+	crossv1 "github.com/aosanya/CodeValdSharedLib/gen/go/codevaldcross/v1"
+	sharedregistrar "github.com/aosanya/CodeValdSharedLib/registrar"
+	"github.com/aosanya/CodeValdSharedLib/serverutil"
 )
 
 func main() {
-	port := envOrDefault("CODEVALDWORK_PORT", "50054")
-	backendName := "arangodb"
+	port := serverutil.EnvOrDefault("CODEVALDWORK_PORT", "50054")
 
 	backend, err := initBackend()
 	if err != nil {
@@ -57,33 +54,27 @@ func main() {
 		log.Fatalf("failed to listen on :%s: %v", port, err)
 	}
 
-	grpcServer := grpc.NewServer()
-
-	// Register TaskService.
+	grpcServer, _ := serverutil.NewGRPCServer()
 	pb.RegisterTaskServiceServer(grpcServer, grpcserver.New(mgr))
-
-	// Register gRPC health service.
-	healthSrv := health.NewServer()
-	grpc_health_v1.RegisterHealthServer(grpcServer, healthSrv)
-
-	// Enable server reflection for development tooling (e.g. grpcurl).
-	reflection.Register(grpcServer)
-
-	healthSrv.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
-
-	// Start CodeValdCross registration in background.
-	crossAddr := envOrDefault("CROSS_GRPC_ADDR", "")
-	listenAddr := envOrDefault("WORK_GRPC_ADVERTISE_ADDR", ":"+port)
-	agencyID := envOrDefault("CODEVALDWORK_AGENCY_ID", "")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	crossAddr := serverutil.EnvOrDefault("CROSS_GRPC_ADDR", "")
 	if crossAddr != "" {
-		pingInterval := parseDuration(envOrDefault("CROSS_PING_INTERVAL", "10s"))
-		pingTimeout := parseDuration(envOrDefault("CROSS_PING_TIMEOUT", "5s"))
+		agencyID := serverutil.EnvOrDefault("CODEVALDWORK_AGENCY_ID", "")
+		advertiseAddr := serverutil.EnvOrDefault("WORK_GRPC_ADVERTISE_ADDR", ":"+port)
+		pingInterval := serverutil.ParseDurationString("CROSS_PING_INTERVAL", 10*time.Second)
+		pingTimeout := serverutil.ParseDurationString("CROSS_PING_TIMEOUT", 5*time.Second)
 
-		reg, err := registrar.New(crossAddr, listenAddr, agencyID, pingInterval, pingTimeout)
+		reg, err := sharedregistrar.New(
+			crossAddr, advertiseAddr, agencyID,
+			"codevaldwork",
+			[]string{"work.task.created", "work.task.updated", "work.task.completed"},
+			[]string{"cross.task.requested", "cross.agency.created"},
+			workRoutes(),
+			pingInterval, pingTimeout,
+		)
 		if err != nil {
 			log.Printf("registrar: failed to create: %v — continuing without registration", err)
 		} else {
@@ -96,58 +87,47 @@ func main() {
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-
 	go func() {
-		log.Printf("CodeValdWork gRPC server listening on :%s (backend: %s)", port, backendName)
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("gRPC server error: %v", err)
-		}
+		<-quit
+		log.Println("codevaldwork: shutdown signal received")
+		cancel()
 	}()
 
-	<-quit
-	cancel() // stop registrar goroutine before draining gRPC
-	log.Println("shutdown signal received — draining in-flight RPCs (up to 30 s)")
-
-	done := make(chan struct{})
-	go func() {
-		grpcServer.GracefulStop()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		log.Println("server stopped cleanly")
-	case <-time.After(30 * time.Second):
-		log.Println("drain timeout exceeded — forcing stop")
-		grpcServer.Stop()
-	}
+	log.Printf("CodeValdWork gRPC server listening on :%s", port)
+	serverutil.RunWithGracefulShutdown(ctx, grpcServer, lis, 30*time.Second)
 }
 
+// initBackend constructs the ArangoDB storage backend from environment variables.
 func initBackend() (codevaldwork.Backend, error) {
-	endpoint := envOrDefault("WORK_ARANGO_ENDPOINT", "http://localhost:8529")
-	user := envOrDefault("WORK_ARANGO_USER", "root")
-	pass := envOrDefault("WORK_ARANGO_PASSWORD", "")
-	dbName := envOrDefault("WORK_ARANGO_DATABASE", "codevaldwork")
-
 	return arangodb.NewArangoBackend(arangodb.Config{
-		Endpoint: endpoint,
-		Username: user,
-		Password: pass,
-		Database: dbName,
+		Endpoint: serverutil.EnvOrDefault("WORK_ARANGO_ENDPOINT", "http://localhost:8529"),
+		Username: serverutil.EnvOrDefault("WORK_ARANGO_USER", "root"),
+		Password: os.Getenv("WORK_ARANGO_PASSWORD"),
+		Database: serverutil.EnvOrDefault("WORK_ARANGO_DATABASE", "codevaldwork"),
 	})
 }
 
-func envOrDefault(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+// workRoutes returns the HTTP routes that CodeValdWork declares to CodeValdCross.
+func workRoutes() []*crossv1.RouteDeclaration {
+	return []*crossv1.RouteDeclaration{
+		{
+			Method:     "POST",
+			Pattern:    "/{agencyId}/tasks",
+			Capability: "create_task",
+			GrpcMethod: "/codevaldwork.v1.TaskService/CreateTask",
+			PathBindings: []*crossv1.PathBinding{
+				{UrlParam: "agencyId", Field: "agency_id"},
+			},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/{agencyId}/tasks",
+			Capability: "list_tasks",
+			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasks",
+			PathBindings: []*crossv1.PathBinding{
+				{UrlParam: "agencyId", Field: "agency_id"},
+			},
+		},
 	}
-	return def
 }
 
-func parseDuration(s string) time.Duration {
-	d, err := time.ParseDuration(s)
-	if err != nil {
-		return 10 * time.Second
-	}
-	return d
-}

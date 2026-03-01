@@ -3,9 +3,10 @@ module github.com/aosanya/CodeValdWork
 go 1.25.3
 
 require (
+	github.com/aosanya/CodeValdSharedLib v0.0.0
 	github.com/arangodb/go-driver v1.6.0
-	google.golang.org/grpc v1.64.0
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/grpc v1.79.1
+	google.golang.org/protobuf v1.36.11
 )
 
 replace github.com/aosanya/CodeValdSharedLib => ../CodeValdSharedLib
@@ -13,8 +14,8 @@ replace github.com/aosanya/CodeValdSharedLib => ../CodeValdSharedLib
 require (
 	github.com/arangodb/go-velocypack v0.0.0-20200318135517-5af53c29c67e // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 )

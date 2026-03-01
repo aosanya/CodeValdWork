@@ -5,6 +5,8 @@ agent: agent
 
 # Start New Task
 
+> ⚠️ **Before starting a new task**, run `CodeValdWork/.github/prompts/finish-task.prompt.md` to ensure any in-progress task is properly completed and merged first.
+
 Follow the **mandatory task startup process** for CodeValdWork tasks:
 
 ## Task Startup Process (MANDATORY)

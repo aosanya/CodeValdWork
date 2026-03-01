@@ -1,2 +1,0 @@
-# This directory is populated by `buf generate` / `make proto`.
-# Do not manually edit files here — they are auto-generated from proto/*.proto.

@@ -12,9 +12,9 @@ import (
 	"time"
 
 	driver "github.com/arangodb/go-driver"
-	"github.com/arangodb/go-driver/http"
 
 	codevaldwork "github.com/aosanya/CodeValdWork"
+	"github.com/aosanya/CodeValdSharedLib/arangoutil"
 )
 
 const collectionName = "work_tasks"
@@ -53,26 +53,17 @@ func NewArangoBackend(cfg Config) (*ArangoBackend, error) {
 		cfg.Database = "codevaldwork"
 	}
 
-	conn, err := http.NewConnection(http.ConnectionConfig{
-		Endpoints: []string{cfg.Endpoint},
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	db, err := arangoutil.Connect(ctx, arangoutil.Config{
+		Endpoint: cfg.Endpoint,
+		Username: cfg.Username,
+		Password: cfg.Password,
+		Database: cfg.Database,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("arangodb: connection: %w", err)
-	}
-
-	client, err := driver.NewClient(driver.ClientConfig{
-		Connection:     conn,
-		Authentication: driver.BasicAuthentication(cfg.Username, cfg.Password),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("arangodb: client: %w", err)
-	}
-
-	ctx := context.Background()
-
-	db, err := ensureDatabase(ctx, client, cfg.Database)
-	if err != nil {
-		return nil, fmt.Errorf("arangodb: ensure database: %w", err)
+		return nil, fmt.Errorf("arangodb: %w", err)
 	}
 
 	col, err := ensureCollection(ctx, db)
@@ -96,17 +87,6 @@ func NewArangoBackendFromDB(db driver.Database) (*ArangoBackend, error) {
 		return nil, fmt.Errorf("arangodb: ensure collection: %w", err)
 	}
 	return &ArangoBackend{db: db, col: col}, nil
-}
-
-func ensureDatabase(ctx context.Context, client driver.Client, name string) (driver.Database, error) {
-	exists, err := client.DatabaseExists(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return client.Database(ctx, name)
-	}
-	return client.CreateDatabase(ctx, name, nil)
 }
 
 func ensureCollection(ctx context.Context, db driver.Database) (driver.Collection, error) {
