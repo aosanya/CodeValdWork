@@ -37,7 +37,7 @@ The MVP delivers:
 
 | Task ID | Title | Status | Depends On |
 |---|---|---|---|
-| MVP-WORK-007 | Migrate shared infrastructure to CodeValdSharedLib | 📋 Not Started | SHAREDLIB-003, SHAREDLIB-004, SHAREDLIB-005, SHAREDLIB-006 |
+| MVP-WORK-007 | Migrate shared infrastructure to CodeValdSharedLib | ✅ Done | SHAREDLIB-003, SHAREDLIB-004, SHAREDLIB-005, SHAREDLIB-006 |
 
 **MVP-WORK-007 scope**:
 - Replace `internal/registrar/` with `github.com/aosanya/CodeValdSharedLib/registrar` (caller passes `"codevaldwork"`, its topics, and its `declaredRoutes`).
