@@ -30,9 +30,8 @@ import (
 	codevaldwork "github.com/aosanya/CodeValdWork"
 	pb "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1"
 	"github.com/aosanya/CodeValdWork/internal/grpcserver"
+	"github.com/aosanya/CodeValdWork/internal/registrar"
 	"github.com/aosanya/CodeValdWork/storage/arangodb"
-	crossv1 "github.com/aosanya/CodeValdSharedLib/gen/go/codevaldcross/v1"
-	sharedregistrar "github.com/aosanya/CodeValdSharedLib/registrar"
 	"github.com/aosanya/CodeValdSharedLib/serverutil"
 )
 
@@ -66,15 +65,7 @@ func main() {
 		advertiseAddr := serverutil.EnvOrDefault("WORK_GRPC_ADVERTISE_ADDR", ":"+port)
 		pingInterval := serverutil.ParseDurationString("CROSS_PING_INTERVAL", 10*time.Second)
 		pingTimeout := serverutil.ParseDurationString("CROSS_PING_TIMEOUT", 5*time.Second)
-
-		reg, err := sharedregistrar.New(
-			crossAddr, advertiseAddr, agencyID,
-			"codevaldwork",
-			[]string{"work.task.created", "work.task.updated", "work.task.completed"},
-			[]string{"cross.task.requested", "cross.agency.created"},
-			workRoutes(),
-			pingInterval, pingTimeout,
-		)
+		reg, err := registrar.New(crossAddr, advertiseAddr, agencyID, pingInterval, pingTimeout)
 		if err != nil {
 			log.Printf("registrar: failed to create: %v — continuing without registration", err)
 		} else {
@@ -107,27 +98,4 @@ func initBackend() (codevaldwork.Backend, error) {
 	})
 }
 
-// workRoutes returns the HTTP routes that CodeValdWork declares to CodeValdCross.
-func workRoutes() []*crossv1.RouteDeclaration {
-	return []*crossv1.RouteDeclaration{
-		{
-			Method:     "POST",
-			Pattern:    "/{agencyId}/tasks",
-			Capability: "create_task",
-			GrpcMethod: "/codevaldwork.v1.TaskService/CreateTask",
-			PathBindings: []*crossv1.PathBinding{
-				{UrlParam: "agencyId", Field: "agency_id"},
-			},
-		},
-		{
-			Method:     "GET",
-			Pattern:    "/{agencyId}/tasks",
-			Capability: "list_tasks",
-			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasks",
-			PathBindings: []*crossv1.PathBinding{
-				{UrlParam: "agencyId", Field: "agency_id"},
-			},
-		},
-	}
-}
 
