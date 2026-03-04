@@ -98,7 +98,7 @@ On startup, `internal/registrar.Registrar` dials CodeValdCross and sends:
 ```json
 {
   "service_name": "codevaldwork",
-  "addr":         ":50054",
+  "addr":         ":50053",
   "produces":     ["work.task.created", "work.task.updated", "work.task.completed"],
   "consumes":     ["cross.task.requested", "cross.agency.created"]
 }

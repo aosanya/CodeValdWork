@@ -16,7 +16,6 @@ run-server: build-server
 	@if [ -f .env ]; then \
 		set -a && . ./.env && set +a; \
 	fi; \
-	CODEVALDWORK_PORT=$(or $(CODEVALDWORK_PORT),50054) \
 	./bin/codevaldwork-server
 
 ## Stop any running instance, rebuild, and run.

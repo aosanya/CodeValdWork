@@ -2,7 +2,7 @@
 //
 // Configuration is via environment variables:
 //
-//	CODEVALDWORK_PORT          gRPC listener port (default 50054)
+//	CODEVALDWORK_PORT          gRPC listener port (required, set in .env)
 //	CROSS_GRPC_ADDR            CodeValdCross gRPC address for service registration
 //	                            heartbeats (optional; omit to disable registration)
 //	CODEVALDWORK_AGENCY_ID     agency ID sent in every Register heartbeat
@@ -36,7 +36,10 @@ import (
 )
 
 func main() {
-	port := serverutil.EnvOrDefault("CODEVALDWORK_PORT", "50054")
+	port := os.Getenv("CODEVALDWORK_PORT")
+	if port == "" {
+		log.Fatal("CODEVALDWORK_PORT must be set")
+	}
 
 	backend, err := initBackend()
 	if err != nil {

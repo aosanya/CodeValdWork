@@ -19,6 +19,6 @@ FROM gcr.io/distroless/static-debian12
 COPY --from=build /codevaldwork-server /codevaldwork-server
 
 # gRPC port
-EXPOSE 50054
+EXPOSE 50053
 
 ENTRYPOINT ["/codevaldwork-server"]
