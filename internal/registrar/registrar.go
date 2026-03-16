@@ -63,11 +63,13 @@ func (r *Registrar) Close() {
 }
 
 // workRoutes returns the HTTP routes that CodeValdWork exposes via Cross.
+// All routes are prefixed with /work/{agencyId} to disambiguate work endpoints
+// from other services.
 func workRoutes() []*crossv1.RouteDeclaration {
 	return []*crossv1.RouteDeclaration{
 		{
 			Method:     "POST",
-			Pattern:    "/{agencyId}/tasks",
+			Pattern:    "/work/{agencyId}/tasks",
 			Capability: "create_task",
 			GrpcMethod: "/codevaldwork.v1.TaskService/CreateTask",
 			PathBindings: []*crossv1.PathBinding{
@@ -76,7 +78,7 @@ func workRoutes() []*crossv1.RouteDeclaration {
 		},
 		{
 			Method:     "GET",
-			Pattern:    "/{agencyId}/tasks",
+			Pattern:    "/work/{agencyId}/tasks",
 			Capability: "list_tasks",
 			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasks",
 			PathBindings: []*crossv1.PathBinding{
