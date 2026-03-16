@@ -32,6 +32,8 @@ import (
 	"github.com/aosanya/CodeValdWork/internal/grpcserver"
 	"github.com/aosanya/CodeValdWork/internal/registrar"
 	"github.com/aosanya/CodeValdWork/storage/arangodb"
+	"github.com/aosanya/CodeValdSharedLib/health"
+	healthpb "github.com/aosanya/CodeValdSharedLib/gen/go/codevaldhealth/v1"
 	"github.com/aosanya/CodeValdSharedLib/serverutil"
 )
 
@@ -58,6 +60,7 @@ func main() {
 
 	grpcServer, _ := serverutil.NewGRPCServer()
 	pb.RegisterTaskServiceServer(grpcServer, grpcserver.New(mgr))
+	healthpb.RegisterHealthServiceServer(grpcServer, health.New("codevaldwork"))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
