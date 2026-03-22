@@ -10,8 +10,8 @@ import (
 	"context"
 	"time"
 
-	crossv1 "github.com/aosanya/CodeValdSharedLib/gen/go/codevaldcross/v1"
 	sharedregistrar "github.com/aosanya/CodeValdSharedLib/registrar"
+	"github.com/aosanya/CodeValdSharedLib/types"
 )
 
 // Registrar sends periodic heartbeat registrations to CodeValdCross via the
@@ -65,15 +65,15 @@ func (r *Registrar) Close() {
 // workRoutes returns the HTTP routes that CodeValdWork exposes via Cross.
 // All routes are prefixed with /work/{agencyId} to disambiguate work endpoints
 // from other services.
-func workRoutes() []*crossv1.RouteDeclaration {
-	return []*crossv1.RouteDeclaration{
+func workRoutes() []types.RouteInfo {
+	return []types.RouteInfo{
 		{
 			Method:     "POST",
 			Pattern:    "/work/{agencyId}/tasks",
 			Capability: "create_task",
 			GrpcMethod: "/codevaldwork.v1.TaskService/CreateTask",
-			PathBindings: []*crossv1.PathBinding{
-				{UrlParam: "agencyId", Field: "agency_id"},
+			PathBindings: []types.PathBinding{
+				{URLParam: "agencyId", Field: "agency_id"},
 			},
 		},
 		{
@@ -81,8 +81,8 @@ func workRoutes() []*crossv1.RouteDeclaration {
 			Pattern:    "/work/{agencyId}/tasks",
 			Capability: "list_tasks",
 			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasks",
-			PathBindings: []*crossv1.PathBinding{
-				{UrlParam: "agencyId", Field: "agency_id"},
+			PathBindings: []types.PathBinding{
+				{URLParam: "agencyId", Field: "agency_id"},
 			},
 		},
 	}
