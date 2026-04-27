@@ -1,154 +1,47 @@
-# Task Management — Implementation Details
+# Task Management — Phase 1 (Complete)
 
-## MVP-WORK-001 — Library Scaffolding & Task Model
-
-**Status**: 🔲 Not Started  
-**Branch**: `feature/WORK-001_library_scaffolding`
-
-### Goal
-
-Scaffold the Go module with the `TaskManager` interface, `Task` domain type, status lifecycle, and exported errors.
-
-### Files to Create/Modify
-
-| File | Purpose |
-|---|---|
-| `go.mod` | Module declaration (`github.com/aosanya/CodeValdWork`) |
-| `task.go` | `TaskManager` interface, `Backend` interface, `taskManager` implementation |
-| `types.go` | `Task`, `TaskStatus`, `TaskPriority`, `TaskFilter`, `CanTransitionTo` |
-| `errors.go` | `ErrTaskNotFound`, `ErrTaskAlreadyExists`, `ErrInvalidStatusTransition`, `ErrInvalidTask` |
-
-### Acceptance Tests
-
-- `CreateTask` with empty `Title` returns `ErrInvalidTask`
-- `UpdateTask` with `pending → completed` returns `ErrInvalidStatusTransition`
-- `UpdateTask` with `pending → in_progress` succeeds
-- `UpdateTask` with `in_progress → completed` succeeds
-- `UpdateTask` with `completed → pending` returns `ErrInvalidStatusTransition`
-- `NewTaskManager(nil)` returns an error
+Topics: Task lifecycle · Status state machine · ArangoDB persistence
 
 ---
 
-## MVP-WORK-002 — ArangoDB Backend
+## Status
 
-**Status**: 🔲 Not Started  
-**Branch**: `feature/WORK-002_arangodb_backend`
+Phase 1 (MVP-WORK-001 through MVP-WORK-005) shipped on 2026-02-27. All five
+tasks are recorded in [`mvp_done.md`](../mvp_done.md).
 
-### Goal
-
-Implement `codevaldwork.Backend` backed by ArangoDB. Tasks are stored in the `tasks` collection, keyed by task ID, scoped by `agency_id`.
-
-### Files to Create/Modify
-
-| File | Purpose |
-|---|---|
-| `storage/arangodb/arangodb.go` | `ArangoBackend` implementing `codevaldwork.Backend` |
-| `storage/arangodb/arangodb_test.go` | Integration tests (skip when `WORK_ARANGO_ENDPOINT` not set) |
-
-### Key Behaviours
-
-- `CreateDocument` with `_key = task.ID` — returns `ErrTaskAlreadyExists` on conflict
-- `ReadDocument` + agency ownership check — returns `ErrTaskNotFound` if key missing or wrong agency
-- `UpdateDocument` — full document replace with refreshed `updated_at`
-- `RemoveDocument` after ownership check
-- AQL query with optional `status`, `priority`, `assigned_to` filters
-
-### Acceptance Tests
-
-- Create a task and read it back — all fields match
-- Create two tasks for same agency and list both
-- Create tasks for two agencies — `ListTasks` for agency A does not return agency B tasks
-- Delete a task — subsequent `GetTask` returns `ErrTaskNotFound`
-- Get a non-existent task — returns `ErrTaskNotFound`
+The Phase 1 deliverable is a Task lifecycle backed by `entitygraph.DataManager`
+in a single `work_tasks` collection: CRUD, status state machine, agency
+ownership checks, and gRPC `TaskService` (five RPCs).
 
 ---
 
-## MVP-WORK-003 — gRPC Service (TaskService)
+## What Phase 1 Delivered
 
-**Status**: 🔲 Not Started  
-**Branch**: `feature/WORK-003_grpc_service`
-
-### Goal
-
-Generate proto stubs and implement the `TaskService` gRPC handler in `internal/grpcserver/`.
-
-### Files to Create/Modify
-
-| File | Purpose |
+| Concern | Location |
 |---|---|
-| `proto/codevaldwork/v1/service.proto` | RPC definitions |
-| `proto/codevaldwork/v1/codevaldwork.proto` | `Task`, `TaskFilter` message types |
-| `proto/codevaldwork/v1/errors.proto` | `InvalidStatusTransitionInfo` detail |
-| `internal/grpcserver/server.go` | Handler implementations |
-| `internal/grpcserver/errors.go` | Domain error → gRPC status code mapping |
-| `cmd/server/main.go` | Binary wiring |
-
-### Error Mapping
-
-| Domain Error | gRPC Code |
-|---|---|
-| `ErrTaskNotFound` | `NOT_FOUND` |
-| `ErrTaskAlreadyExists` | `ALREADY_EXISTS` |
-| `ErrInvalidStatusTransition` | `FAILED_PRECONDITION` |
-| `ErrInvalidTask` | `INVALID_ARGUMENT` |
-
-### Acceptance Tests
-
-- `CreateTask` RPC returns `ALREADY_EXISTS` when task ID is duplicate
-- `UpdateTask` RPC returns `FAILED_PRECONDITION` on invalid transition
-- `DeleteTask` RPC returns `NOT_FOUND` for unknown task
-- `ListTasks` RPC with status filter only returns matching tasks
+| `TaskManager` interface + `taskManager` impl | [`task.go`](../../../task.go) |
+| `Task`, `TaskStatus`, `TaskPriority`, `TaskFilter`, `CanTransitionTo` | [`types.go`](../../../types.go) |
+| Domain errors (`ErrTaskNotFound`, `ErrTaskAlreadyExists`, `ErrInvalidStatusTransition`, `ErrInvalidTask`) | [`errors.go`](../../../errors.go) |
+| Pre-delivered schema (`Task` TypeDefinition only) | [`schema.go`](../../../schema.go) |
+| ArangoDB `entitygraph.DataManager` adapter | [`storage/arangodb/arangodb.go`](../../../storage/arangodb/arangodb.go) |
+| gRPC `TaskService` (Create/Get/Update/Delete/List) | [`internal/server/server.go`](../../../internal/server/server.go) |
+| Domain → gRPC error mapping | [`internal/server/errors.go`](../../../internal/server/errors.go) |
+| Cross registration + minimal `CrossPublisher` (logs only) | [`internal/registrar/registrar.go`](../../../internal/registrar/registrar.go) |
+| Unit tests (with `fakeDataManager`) | [`task_test.go`](../../../task_test.go) |
+| ArangoDB integration tests | [`storage/arangodb/arangodb_test.go`](../../../storage/arangodb/arangodb_test.go) |
 
 ---
 
-## MVP-WORK-004 — CodeValdCross Registration
+## Phase 1 Limitations (Closed by Phase 2)
 
-**Status**: 🔲 Not Started  
-**Branch**: `feature/WORK-004_cross_registration`
-
-### Goal
-
-Implement `internal/registrar` to send startup registration and periodic heartbeats to CodeValdCross.
-
-### Files to Create/Modify
-
-| File | Purpose |
+| Limitation | Phase 2 task |
 |---|---|
-| `internal/registrar/registrar.go` | `Registrar` struct, `New`, `Run`, `Close`, `ping` |
-| `proto/codevaldcross/v1/registration.proto` | `OrchestratorService.Register` RPC |
+| `Task` has only flat string properties — no `dueAt` (datetime), `tags` (array), `estimatedHours` (number), `context`, `completedAt` | [MVP-WORK-008](schema.md) |
+| No `TaskGroup` or `Agent` entity types | [MVP-WORK-008](schema.md), [MVP-WORK-010](agent-assignment.md), [MVP-WORK-012](task-group.md) |
+| No graph edges — `assigned_to` is a string field, not a Task → Agent edge | [MVP-WORK-009](relationships.md), [MVP-WORK-010](agent-assignment.md) |
+| Status state machine has no blocker gate — `pending → in_progress` always allowed | [MVP-WORK-011](relationships.md) |
+| `CrossPublisher.Publish(ctx, topic, agencyID)` carries no payload, logs only, fires for 3 of 6 architecture-listed topics | [MVP-WORK-014](pubsub.md) |
+| HTTP convenience layer is two routes only (`POST/GET /work/{agencyId}/tasks`) | [MVP-WORK-015](grpc-surface.md) |
 
-### Topics Declared
-
-| Direction | Topic |
-|---|---|
-| Produces | `work.task.created` |
-| Produces | `work.task.updated` |
-| Produces | `work.task.completed` |
-| Consumes | `cross.task.requested` |
-| Consumes | `cross.agency.created` |
-
-### Acceptance Tests
-
-- When `CROSS_GRPC_ADDR` is unset, server starts without error and skips registration
-- When `CROSS_GRPC_ADDR` is set but unreachable, server continues running (non-fatal)
-- Registrar sends heartbeat at configured interval
-
----
-
-## MVP-WORK-005 — Integration Tests
-
-**Status**: 🔲 Not Started  
-**Branch**: `feature/WORK-005_integration_tests`
-
-### Goal
-
-End-to-end tests covering the full gRPC + ArangoDB stack using a real ArangoDB instance. Tests skip when `WORK_ARANGO_ENDPOINT` is not set.
-
-### Test Matrix
-
-- Create → Get round-trip
-- Create → Update (valid transitions)
-- Create → Update (invalid transition → `FAILED_PRECONDITION`)
-- Create → Delete → Get (`NOT_FOUND`)
-- Create multiple → List with filter
-- Create with duplicate ID → `ALREADY_EXISTS`
+For the Phase 2 task list, see [`mvp.md`](../mvp.md). For per-topic specs, see
+the other files in this directory.

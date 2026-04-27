@@ -18,7 +18,7 @@ The MVP delivers:
 
 ---
 
-## Task List
+## Phase 1 — Task Lifecycle (Complete)
 
 | Task ID | Title | Status | Depends On |
 |---|---|---|---|
@@ -29,7 +29,42 @@ The MVP delivers:
 | MVP-WORK-005 | Unit & Integration Tests | ✅ Done | MVP-WORK-001, MVP-WORK-002 |
 | MVP-WORK-006 | Service-Driven Route Registration | ✅ Done | MVP-WORK-003, CROSS-007 |
 
-*All tasks complete — see `mvp_done.md` for details.*
+*All Phase 1 tasks complete — see `mvp_done.md` for details.*
+
+---
+
+## Phase 2 — Entity-Graph Completion
+
+Phase 1 delivered Task CRUD on top of `entitygraph.DataManager`. The
+`architecture-domain.md` design adds two more entity types (`TaskGroup`,
+`Agent`), five graph edges, hard blocker enforcement, richer Task properties,
+and a complete pub/sub publishing pipeline. Phase 2 closes that gap.
+
+> **Greenfield assumption** — CodeValdWork has not been deployed. Phase 2 is
+> free to make breaking schema changes (e.g. converting `assigned_to` from a
+> string property into a graph edge) without a migration path.
+
+| Task ID | Title | Status | Depends On |
+|---|---|---|---|
+| MVP-WORK-008 | Schema extension — `TaskGroup` + `Agent` TypeDefinitions; richer Task properties (`dueAt`, `tags`, `estimatedHours`, `context`, `completedAt`); `option` typing for `status`/`priority` | 🟒 Not Started | — |
+| MVP-WORK-009 | Graph relationship API — `work_relationships` edge collection, `work_graph` named graph, edge-label whitelist (`blocks`, `subtask_of`, `depends_on`, `member_of`, `assigned_to`), `CreateRelationship` / `DeleteRelationship` / `TraverseRelationships` on `TaskManager` | 🟒 Not Started | MVP-WORK-008 |
+| MVP-WORK-010 | Agent vertex + `assigned_to` edge — drop `assigned_to` string property, add `UpsertAgent` and `AssignTask(agencyID, taskID, agentID)` creating the edge | 🟒 Not Started | MVP-WORK-008, MVP-WORK-009 |
+| MVP-WORK-011 | Hard blocker enforcement — `pending → in_progress` traverses inbound `blocks`; new `ErrBlocked` (`FAILED_PRECONDITION`) with `BlockedByInfo` proto detail | 🟒 Not Started | MVP-WORK-009 |
+| MVP-WORK-012 | TaskGroup CRUD + `member_of` edge enforcement (target-type whitelist) | 🟒 Not Started | MVP-WORK-008, MVP-WORK-009 |
+| MVP-WORK-013 | gRPC surface expansion — new RPCs (`AssignTask`, `CreateRelationship`, `DeleteRelationship`, traversal RPCs, `TaskGroup` CRUD, `UpsertAgent`); new proto messages; error mapping for `ErrBlocked` | 🟒 Not Started | MVP-WORK-010, MVP-WORK-011, MVP-WORK-012 |
+| MVP-WORK-014 | Pub/sub publishing pipeline — extend `CrossPublisher` to carry typed payloads; publish hooks for all six topics (`work.task.created`, `work.task.updated`, `work.task.status.changed`, `work.task.completed`, `work.task.assigned`, `work.relationship.created`); update registrar `produces` list | 🟒 Not Started | MVP-WORK-008…012 |
+| MVP-WORK-015 | HTTP convenience routes — mirror CodeValdComm pattern; routes for Task, TaskGroup, Agent, relationships declared in registrar `RegisterRequest` for Cross dynamic proxy | 🟒 Not Started | MVP-WORK-013 |
+| MVP-WORK-016 | Unit & integration tests — `fakeDataManager` updated for graph edges; ArangoDB end-to-end scenarios covering subtasks, blockers (gate), assignment via edge, TaskGroup membership, and verification of all six events published | 🟒 Not Started | MVP-WORK-008…015 |
+
+See per-topic specs:
+
+- [mvp-details/schema.md](mvp-details/schema.md) — WORK-008
+- [mvp-details/relationships.md](mvp-details/relationships.md) — WORK-009, WORK-011
+- [mvp-details/agent-assignment.md](mvp-details/agent-assignment.md) — WORK-010
+- [mvp-details/task-group.md](mvp-details/task-group.md) — WORK-012
+- [mvp-details/grpc-surface.md](mvp-details/grpc-surface.md) — WORK-013, WORK-015
+- [mvp-details/pubsub.md](mvp-details/pubsub.md) — WORK-014
+- [mvp-details/integration-tests.md](mvp-details/integration-tests.md) — WORK-016
 
 ---
 
@@ -66,10 +101,26 @@ See [CodeValdSharedLib mvp.md](../../../CodeValdSharedLib/documentation/3-Sofwar
 
 ## Branch Naming
 
+Phase 1:
+
 ```
 feature/WORK-001_library_scaffolding
 feature/WORK-002_arangodb_backend
 feature/WORK-003_grpc_service
 feature/WORK-004_cross_registration
 feature/WORK-005_integration_tests
+```
+
+Phase 2:
+
+```
+feature/WORK-008_schema_extension
+feature/WORK-009_graph_relationships
+feature/WORK-010_agent_assignment
+feature/WORK-011_blocker_enforcement
+feature/WORK-012_task_group
+feature/WORK-013_grpc_surface
+feature/WORK-014_pubsub_pipeline
+feature/WORK-015_http_routes
+feature/WORK-016_phase2_tests
 ```
