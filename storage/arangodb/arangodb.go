@@ -1,274 +1,90 @@
-// Package arangodb implements the codevaldwork.Backend interface backed by
-// ArangoDB. Task documents are stored in a single collection per database.
+// Package arangodb implements the ArangoDB backend for CodeValdWork.
+// All implementation logic lives in
+// [github.com/aosanya/CodeValdSharedLib/entitygraph/arangodb]; this package
+// is a thin service-scoped adapter that fixes the collection and graph names
+// to their CodeValdWork-specific values.
 //
-// Use [NewArangoBackend] to construct; pass the result to
-// codevaldwork.NewTaskManager.
+// Entity collections:
+//   - work_entities — fallback document collection for any TypeID without a
+//     StorageCollection override
+//   - work_tasks    — Task entities (mutable)
+//
+// Infrastructure collections:
+//   - work_relationships    — ArangoDB edge collection for all directed graph edges
+//   - work_schemas_draft    — one mutable draft schema document per agency
+//   - work_schemas_published — immutable append-only published schema snapshots
+//
+// Named graph: work_graph
+//
+// Use [New] to obtain a (DataManager, SchemaManager) pair from an open database.
+// Use [NewBackend] to connect and construct in a single call.
+// Use [NewBackendFromDB] in tests that manage their own database lifecycle.
 package arangodb
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	driver "github.com/arangodb/go-driver"
 
-	codevaldwork "github.com/aosanya/CodeValdWork"
-	"github.com/aosanya/CodeValdSharedLib/arangoutil"
+	"github.com/aosanya/CodeValdSharedLib/entitygraph"
+	sharedadb "github.com/aosanya/CodeValdSharedLib/entitygraph/arangodb"
+	"github.com/aosanya/CodeValdSharedLib/types"
 )
 
-const collectionName = "work_tasks"
+// Backend is a type alias for the shared ArangoDB Backend.
+// Callers holding *Backend references continue to compile unchanged.
+type Backend = sharedadb.Backend
 
-// Config holds the connection parameters for the ArangoDB backend.
-type Config struct {
-	// Endpoint is the ArangoDB HTTP endpoint (e.g. "http://localhost:8529").
-	Endpoint string
+// Config is the connection parameters for the CodeValdWork ArangoDB backend.
+// It is an alias of [sharedadb.ConnConfig]; see that type for field docs.
+// NewBackend requires Database to be set (e.g. "codevaldwork").
+type Config = sharedadb.ConnConfig
 
-	// Username is the ArangoDB username (default "root").
-	Username string
-
-	// Password is the ArangoDB password.
-	Password string
-
-	// Database is the ArangoDB database name (default "codevaldwork").
-	Database string
+// toSharedConfig expands a CodeValdWork Config into a full SharedLib Config,
+// filling in the fixed CodeValdWork-specific collection and graph names.
+func toSharedConfig(cfg Config) sharedadb.Config {
+	return sharedadb.Config{
+		Endpoint:            cfg.Endpoint,
+		Username:            cfg.Username,
+		Password:            cfg.Password,
+		Database:            cfg.Database,
+		Schema:              cfg.Schema,
+		EntityCollection:    "work_entities",
+		RelCollection:       "work_relationships",
+		SchemasDraftCol:     "work_schemas_draft",
+		SchemasPublishedCol: "work_schemas_published",
+		GraphName:           "work_graph",
+	}
 }
 
-// ArangoBackend is the ArangoDB implementation of [codevaldwork.Backend].
-type ArangoBackend struct {
-	db  driver.Database
-	col driver.Collection
-}
-
-// NewArangoBackend connects to ArangoDB, ensures the tasks collection exists,
-// and returns a ready-to-use [ArangoBackend].
-func NewArangoBackend(cfg Config) (*ArangoBackend, error) {
-	if cfg.Endpoint == "" {
-		cfg.Endpoint = "http://localhost:8529"
-	}
-	if cfg.Username == "" {
-		cfg.Username = "root"
-	}
-	if cfg.Database == "" {
-		cfg.Database = "codevaldwork"
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	db, err := arangoutil.Connect(ctx, arangoutil.Config{
-		Endpoint: cfg.Endpoint,
-		Username: cfg.Username,
-		Password: cfg.Password,
-		Database: cfg.Database,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("arangodb: %w", err)
-	}
-
-	col, err := ensureCollection(ctx, db)
-	if err != nil {
-		return nil, fmt.Errorf("arangodb: ensure collection: %w", err)
-	}
-
-	return &ArangoBackend{db: db, col: col}, nil
-}
-
-// NewArangoBackendFromDB constructs an [ArangoBackend] from an already-open
-// [driver.Database]. It ensures the tasks collection exists and returns a
-// ready-to-use backend. This constructor is intended for tests that manage
-// their own database lifecycle.
-func NewArangoBackendFromDB(db driver.Database) (*ArangoBackend, error) {
+// New constructs a Backend from an already-open driver.Database using the
+// provided schema, ensures all collections and the named graph exist, and
+// returns the Backend as both a DataManager and a SchemaManager.
+func New(db driver.Database, schema types.Schema) (entitygraph.DataManager, entitygraph.SchemaManager, error) {
 	if db == nil {
-		return nil, fmt.Errorf("arangodb: NewArangoBackendFromDB: database must not be nil")
+		return nil, nil, fmt.Errorf("arangodb: New: database must not be nil")
 	}
-	col, err := ensureCollection(context.Background(), db)
-	if err != nil {
-		return nil, fmt.Errorf("arangodb: ensure collection: %w", err)
-	}
-	return &ArangoBackend{db: db, col: col}, nil
+	scfg := toSharedConfig(Config{Schema: schema})
+	return sharedadb.New(db, scfg)
 }
 
-func ensureCollection(ctx context.Context, db driver.Database) (driver.Collection, error) {
-	exists, err := db.CollectionExists(ctx, collectionName)
-	if err != nil {
-		return nil, err
+// NewBackend connects to ArangoDB using cfg, ensures all collections exist,
+// and returns a ready-to-use Backend. cfg.Database is required.
+func NewBackend(cfg Config) (*Backend, error) {
+	if cfg.Database == "" {
+		return nil, fmt.Errorf("arangodb: NewBackend: Database must be set (e.g. \"codevaldwork\")")
 	}
-	if exists {
-		return db.Collection(ctx, collectionName)
-	}
-	return db.CreateCollection(ctx, collectionName, nil)
+	scfg := toSharedConfig(cfg)
+	return sharedadb.NewBackend(scfg)
 }
 
-// ── taskDocument is the ArangoDB document representation ─────────────────────
-
-type taskDocument struct {
-	Key         string     `json:"_key,omitempty"`
-	AgencyID    string     `json:"agency_id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Status      string     `json:"status"`
-	Priority    string     `json:"priority"`
-	AssignedTo  string     `json:"assigned_to"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
-	CompletedAt *time.Time `json:"completed_at,omitempty"`
-}
-
-func toDocument(agencyID string, t codevaldwork.Task) taskDocument {
-	return taskDocument{
-		Key:         t.ID,
-		AgencyID:    agencyID,
-		Title:       t.Title,
-		Description: t.Description,
-		Status:      string(t.Status),
-		Priority:    string(t.Priority),
-		AssignedTo:  t.AssignedTo,
-		CreatedAt:   t.CreatedAt,
-		UpdatedAt:   t.UpdatedAt,
-		CompletedAt: t.CompletedAt,
+// NewBackendFromDB constructs a Backend from an already-open driver.Database
+// using the provided schema. Intended for tests that manage their own database
+// lifecycle.
+func NewBackendFromDB(db driver.Database, schema types.Schema) (*Backend, error) {
+	if db == nil {
+		return nil, fmt.Errorf("arangodb: NewBackendFromDB: database must not be nil")
 	}
-}
-
-func fromDocument(key string, doc taskDocument) codevaldwork.Task {
-	return codevaldwork.Task{
-		ID:          key,
-		AgencyID:    doc.AgencyID,
-		Title:       doc.Title,
-		Description: doc.Description,
-		Status:      codevaldwork.TaskStatus(doc.Status),
-		Priority:    codevaldwork.TaskPriority(doc.Priority),
-		AssignedTo:  doc.AssignedTo,
-		CreatedAt:   doc.CreatedAt,
-		UpdatedAt:   doc.UpdatedAt,
-		CompletedAt: doc.CompletedAt,
-	}
-}
-
-// ── Backend interface implementation ─────────────────────────────────────────
-
-// CreateTask implements [codevaldwork.Backend].
-func (b *ArangoBackend) CreateTask(ctx context.Context, agencyID string, task codevaldwork.Task) (codevaldwork.Task, error) {
-	now := time.Now().UTC()
-	task.AgencyID = agencyID
-	task.Status = codevaldwork.TaskStatusPending
-	task.CreatedAt = now
-	task.UpdatedAt = now
-	if task.Priority == "" {
-		task.Priority = codevaldwork.TaskPriorityMedium
-	}
-
-	doc := toDocument(agencyID, task)
-	meta, err := b.col.CreateDocument(ctx, doc)
-	if err != nil {
-		if driver.IsConflict(err) {
-			return codevaldwork.Task{}, codevaldwork.ErrTaskAlreadyExists
-		}
-		return codevaldwork.Task{}, fmt.Errorf("CreateTask: %w", err)
-	}
-
-	task.ID = meta.Key
-	return task, nil
-}
-
-// GetTask implements [codevaldwork.Backend].
-func (b *ArangoBackend) GetTask(ctx context.Context, agencyID, taskID string) (codevaldwork.Task, error) {
-	var doc taskDocument
-	_, err := b.col.ReadDocument(ctx, taskID, &doc)
-	if err != nil {
-		if driver.IsNotFound(err) {
-			return codevaldwork.Task{}, codevaldwork.ErrTaskNotFound
-		}
-		return codevaldwork.Task{}, fmt.Errorf("GetTask: %w", err)
-	}
-	if doc.AgencyID != agencyID {
-		return codevaldwork.Task{}, codevaldwork.ErrTaskNotFound
-	}
-	return fromDocument(taskID, doc), nil
-}
-
-// UpdateTask implements [codevaldwork.Backend].
-func (b *ArangoBackend) UpdateTask(ctx context.Context, agencyID string, task codevaldwork.Task) (codevaldwork.Task, error) {
-	task.UpdatedAt = time.Now().UTC()
-	doc := toDocument(agencyID, task)
-	_, err := b.col.UpdateDocument(ctx, task.ID, doc)
-	if err != nil {
-		if driver.IsNotFound(err) {
-			return codevaldwork.Task{}, codevaldwork.ErrTaskNotFound
-		}
-		return codevaldwork.Task{}, fmt.Errorf("UpdateTask: %w", err)
-	}
-	return task, nil
-}
-
-// DeleteTask implements [codevaldwork.Backend].
-func (b *ArangoBackend) DeleteTask(ctx context.Context, agencyID, taskID string) error {
-	// Verify ownership before delete.
-	if _, err := b.GetTask(ctx, agencyID, taskID); err != nil {
-		return err
-	}
-	_, err := b.col.RemoveDocument(ctx, taskID)
-	if err != nil {
-		if driver.IsNotFound(err) {
-			return codevaldwork.ErrTaskNotFound
-		}
-		return fmt.Errorf("DeleteTask: %w", err)
-	}
-	return nil
-}
-
-// ListTasks implements [codevaldwork.Backend].
-func (b *ArangoBackend) ListTasks(ctx context.Context, agencyID string, filter codevaldwork.TaskFilter) ([]codevaldwork.Task, error) {
-	query, bindVars := buildListQuery(agencyID, filter)
-
-	cursor, err := b.db.Query(ctx, query, bindVars)
-	if err != nil {
-		return nil, fmt.Errorf("ListTasks: %w", err)
-	}
-	defer cursor.Close()
-
-	var tasks []codevaldwork.Task
-	for cursor.HasMore() {
-		var doc taskDocument
-		meta, err := cursor.ReadDocument(ctx, &doc)
-		if err != nil {
-			return nil, fmt.Errorf("ListTasks: read: %w", err)
-		}
-		tasks = append(tasks, fromDocument(meta.Key, doc))
-	}
-	if tasks == nil {
-		tasks = []codevaldwork.Task{}
-	}
-	return tasks, nil
-}
-
-func buildListQuery(agencyID string, filter codevaldwork.TaskFilter) (string, map[string]interface{}) {
-	bindVars := map[string]interface{}{
-		"agency": agencyID,
-		"@col":   collectionName,
-	}
-	query := "FOR t IN @@col FILTER t.agency_id == @agency"
-
-	if filter.Status != "" {
-		query += " FILTER t.status == @status"
-		bindVars["status"] = string(filter.Status)
-	}
-	if filter.Priority != "" {
-		query += " FILTER t.priority == @priority"
-		bindVars["priority"] = string(filter.Priority)
-	}
-	if filter.AssignedTo != "" {
-		query += " FILTER t.assigned_to == @assigned_to"
-		bindVars["assigned_to"] = filter.AssignedTo
-	}
-	query += " RETURN t"
-
-	return query, bindVars
-}
-
-// isNotFound checks if an ArangoDB error is a 404 not-found response.
-// Uses errors.As to handle driver-specific error types.
-func isNotFound(err error) bool {
-	var ae driver.ArangoError
-	return errors.As(err, &ae) && ae.Code == 404
+	scfg := toSharedConfig(Config{Schema: schema})
+	return sharedadb.NewBackendFromDB(db, scfg)
 }

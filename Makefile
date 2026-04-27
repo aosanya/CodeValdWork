@@ -1,4 +1,4 @@
-.PHONY: build build-server run-server restart kill proto test cover vet lint clean
+.PHONY: build build-server build-dev server dev dev-restart kill proto test cover test-arango test-all vet lint clean
 
 export PATH := /usr/local/go/bin:$(PATH)
 
@@ -8,30 +8,34 @@ export PATH := /usr/local/go/bin:$(PATH)
 build:
 	go build ./...
 
-## Build the service binary to bin/codevaldwork-server.
+## Build the production server binary to bin/codevaldwork-server.
 build-server:
 	go build -o bin/codevaldwork-server ./cmd/server
 
-## Build and run the service.
-## Override config with env vars or a .env file.
-run-server: build-server
+## Build the dev binary to bin/codevaldwork-dev.
+build-dev:
+	go build -o bin/codevaldwork-dev ./cmd/dev
+
+## Run the production server locally. Expects env vars to be set by the caller
+## (or the shell) — does not source .env, to mirror container behaviour.
+server: build-server
+	./bin/codevaldwork-server
+
+## Run the dev binary with local-dev defaults. Sources .env if present so
+## WORK_ARANGO_PASSWORD etc. stay out of the source tree.
+dev: build-dev
 	@if [ -f .env ]; then \
 		set -a && . ./.env && set +a; \
 	fi; \
-	./bin/codevaldwork-server
+	./bin/codevaldwork-dev
 
-## Stop any running instance, rebuild, and run.
-restart: kill build-server
-	@echo "Running codevaldwork-server..."
-	@if [ -f .env ]; then \
-		set -a && . ./.env && set +a; \
-	fi; \
-	./bin/codevaldwork-server
+## Stop any running dev instance, rebuild, and run.
+dev-restart: kill dev
 
-## Stop any running instances of codevaldwork.
+## Stop any running instances of the codevaldwork binaries.
 kill:
 	@echo "Stopping any running instances..."
-	-@pkill -9 -f "bin/codevaldwork" 2>/dev/null || true
+	-@pkill -9 -f "bin/codevaldwork-" 2>/dev/null || true
 	@sleep 1
 
 # ── Proto Codegen ─────────────────────────────────────────────────────────────
@@ -46,9 +50,14 @@ proto:
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
-## Run all unit tests with race detector.
+## Run all unit tests with race detector (skips integration tests that need ArangoDB).
 test:
 	go test -v -race -count=1 ./...
+
+## Run tests and produce an HTML coverage report (coverage.html).
+cover:
+	go test -v -race -count=1 -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
 
 ## Run ArangoDB integration tests.
 ## Loads .env if it exists, otherwise falls back to environment variables.
@@ -58,10 +67,8 @@ test-arango:
 	fi; \
 	go test -v -race -count=1 ./storage/arangodb/
 
-## Run tests and produce an HTML coverage report (coverage.html).
-cover:
-	go test -v -race -count=1 -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
+## Run unit + ArangoDB integration tests.
+test-all: test test-arango
 
 # ── Quality ───────────────────────────────────────────────────────────────────
 

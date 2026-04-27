@@ -2,26 +2,31 @@
 // agencies. It exposes [TaskManager] — the single interface for creating,
 // reading, updating, deleting, and listing tasks assigned to AI agents.
 //
-// Usage:
-//
-//	b, err := arangodb.NewArangoBackend(arangodb.Config{...})
-//	mgr, err := codevaldwork.NewTaskManager(b)
-//	task, err := mgr.CreateTask(ctx, "agency-1", codevaldwork.Task{Title: "Research"})
+// Storage is delegated to a [github.com/aosanya/CodeValdSharedLib/entitygraph.DataManager],
+// so Tasks live in the agency-scoped graph alongside every other CodeVald entity
+// type. Use storage/arangodb.NewBackend to construct a DataManager and pass it
+// to [NewTaskManager].
 package codevaldwork
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
+
+	"github.com/aosanya/CodeValdSharedLib/entitygraph"
 )
 
+// taskTypeID is the TypeDefinition.Name used for Task entities in the schema.
+const taskTypeID = "Task"
+
 // TaskManager is the primary interface for task lifecycle management.
-// All operations are scoped to an agency via agencyID.
+// All operations are scoped to the manager's agencyID, fixed at construction.
 //
 // Implementations must be safe for concurrent use.
 type TaskManager interface {
-	// CreateTask creates a new task for the given agency.
+	// CreateTask creates a new task for the agency.
 	// The task is assigned a server-generated ID and starts in [TaskStatusPending].
-	// Returns [ErrTaskAlreadyExists] if a task with the same ID already exists.
 	// Returns [ErrInvalidTask] if required fields (Title) are missing.
 	CreateTask(ctx context.Context, agencyID string, task Task) (Task, error)
 
@@ -35,87 +40,263 @@ type TaskManager interface {
 	// Returns [ErrTaskNotFound] if the task does not exist.
 	UpdateTask(ctx context.Context, agencyID string, task Task) (Task, error)
 
-	// DeleteTask permanently removes a task from the agency.
+	// DeleteTask soft-deletes a task from the agency graph.
 	// Returns [ErrTaskNotFound] if the task does not exist.
 	DeleteTask(ctx context.Context, agencyID, taskID string) error
 
-	// ListTasks returns all tasks for the given agency that match the filter.
-	// Returns an empty slice (not an error) when no tasks match.
+	// ListTasks returns all non-deleted tasks for the given agency that match
+	// the filter. Returns an empty slice (not an error) when no tasks match.
 	ListTasks(ctx context.Context, agencyID string, filter TaskFilter) ([]Task, error)
 }
 
-// Backend is the storage abstraction injected into [TaskManager].
-// Callers construct a Backend from storage/arangodb and pass it to
-// [NewTaskManager]. The root package never imports any storage driver.
-type Backend interface {
-	// CreateTask persists a new task document and returns it with any
-	// server-assigned fields (ID, CreatedAt) populated.
-	CreateTask(ctx context.Context, agencyID string, task Task) (Task, error)
+// WorkSchemaManager is a type alias for [entitygraph.SchemaManager].
+// Used by internal/app to seed [DefaultWorkSchema] on startup.
+type WorkSchemaManager = entitygraph.SchemaManager
 
-	// GetTask retrieves a task by agencyID and taskID.
-	// Returns [ErrTaskNotFound] if no matching document exists.
-	GetTask(ctx context.Context, agencyID, taskID string) (Task, error)
-
-	// UpdateTask replaces the stored task document and returns the updated task.
-	// Returns [ErrTaskNotFound] if the task does not exist.
-	UpdateTask(ctx context.Context, agencyID string, task Task) (Task, error)
-
-	// DeleteTask removes the task document.
-	// Returns [ErrTaskNotFound] if the task does not exist.
-	DeleteTask(ctx context.Context, agencyID, taskID string) error
-
-	// ListTasks returns tasks for the agency matching the filter.
-	ListTasks(ctx context.Context, agencyID string, filter TaskFilter) ([]Task, error)
+// CrossPublisher publishes Work lifecycle events to CodeValdCross.
+// Implementations must be safe for concurrent use. A nil CrossPublisher is
+// valid — publish calls are silently skipped.
+type CrossPublisher interface {
+	// Publish delivers an event for the given topic and agencyID to
+	// CodeValdCross. Errors are non-fatal: implementations should log and
+	// return nil for best-effort delivery.
+	Publish(ctx context.Context, topic string, agencyID string) error
 }
 
 // taskManager is the concrete implementation of [TaskManager].
-// It delegates all storage operations to the injected [Backend].
+// It wraps an [entitygraph.DataManager] to persist Task entities in the
+// agency graph and emits work.task.* events via the optional CrossPublisher.
 type taskManager struct {
-	backend Backend
+	dm        entitygraph.DataManager
+	publisher CrossPublisher // optional; nil = skip event publishing
 }
 
-// NewTaskManager constructs a [TaskManager] backed by the given [Backend].
-// Use storage/arangodb.NewArangoBackend to construct a Backend, then pass
-// it here.
-// Returns an error if b is nil.
-func NewTaskManager(b Backend) (TaskManager, error) {
-	if b == nil {
-		return nil, fmt.Errorf("NewTaskManager: backend must not be nil")
+// NewTaskManager constructs a [TaskManager] backed by the given
+// [entitygraph.DataManager].
+// pub may be nil — cross-service events are skipped when no publisher is set.
+// Returns an error if dm is nil.
+func NewTaskManager(dm entitygraph.DataManager, pub CrossPublisher) (TaskManager, error) {
+	if dm == nil {
+		return nil, fmt.Errorf("NewTaskManager: data manager must not be nil")
 	}
-	return &taskManager{backend: b}, nil
+	return &taskManager{dm: dm, publisher: pub}, nil
 }
 
-// CreateTask validates the task and delegates to [Backend.CreateTask].
+// CreateTask creates a Task entity in the agency graph.
+// The entity ID is assigned by the underlying DataManager; any ID supplied on
+// the request is ignored.
 func (m *taskManager) CreateTask(ctx context.Context, agencyID string, task Task) (Task, error) {
 	if task.Title == "" {
 		return Task{}, ErrInvalidTask
 	}
-	return m.backend.CreateTask(ctx, agencyID, task)
+	now := time.Now().UTC()
+	task.AgencyID = agencyID
+	task.Status = TaskStatusPending
+	task.CreatedAt = now
+	task.UpdatedAt = now
+	if task.Priority == "" {
+		task.Priority = TaskPriorityMedium
+	}
+	task.CompletedAt = nil
+
+	created, err := m.dm.CreateEntity(ctx, entitygraph.CreateEntityRequest{
+		AgencyID:   agencyID,
+		TypeID:     taskTypeID,
+		Properties: taskToProperties(task),
+	})
+	if err != nil {
+		if errors.Is(err, entitygraph.ErrEntityAlreadyExists) {
+			return Task{}, ErrTaskAlreadyExists
+		}
+		return Task{}, fmt.Errorf("CreateTask: %w", err)
+	}
+
+	out := taskFromEntity(created)
+	m.publish(ctx, "work.task.created", agencyID)
+	return out, nil
 }
 
-// GetTask delegates to [Backend.GetTask].
+// GetTask reads a single Task entity from the agency graph.
 func (m *taskManager) GetTask(ctx context.Context, agencyID, taskID string) (Task, error) {
-	return m.backend.GetTask(ctx, agencyID, taskID)
+	e, err := m.dm.GetEntity(ctx, agencyID, taskID)
+	if err != nil {
+		if errors.Is(err, entitygraph.ErrEntityNotFound) {
+			return Task{}, ErrTaskNotFound
+		}
+		return Task{}, fmt.Errorf("GetTask: %w", err)
+	}
+	if e.AgencyID != agencyID || e.TypeID != taskTypeID {
+		return Task{}, ErrTaskNotFound
+	}
+	return taskFromEntity(e), nil
 }
 
-// UpdateTask validates the status transition and delegates to [Backend.UpdateTask].
+// UpdateTask validates the requested status transition then patches the
+// stored entity properties.
 func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task) (Task, error) {
-	current, err := m.backend.GetTask(ctx, agencyID, task.ID)
+	current, err := m.GetTask(ctx, agencyID, task.ID)
 	if err != nil {
 		return Task{}, err
 	}
 	if !current.Status.CanTransitionTo(task.Status) {
 		return Task{}, ErrInvalidStatusTransition
 	}
-	return m.backend.UpdateTask(ctx, agencyID, task)
+
+	now := time.Now().UTC()
+	task.AgencyID = agencyID
+	task.UpdatedAt = now
+	task.CreatedAt = current.CreatedAt
+	if isTerminalStatus(task.Status) && task.CompletedAt == nil {
+		ts := now
+		task.CompletedAt = &ts
+	}
+
+	updated, err := m.dm.UpdateEntity(ctx, agencyID, task.ID, entitygraph.UpdateEntityRequest{
+		Properties: taskToProperties(task),
+	})
+	if err != nil {
+		if errors.Is(err, entitygraph.ErrEntityNotFound) {
+			return Task{}, ErrTaskNotFound
+		}
+		return Task{}, fmt.Errorf("UpdateTask: %w", err)
+	}
+
+	out := taskFromEntity(updated)
+	switch task.Status {
+	case TaskStatusCompleted, TaskStatusFailed, TaskStatusCancelled:
+		m.publish(ctx, "work.task.completed", agencyID)
+	default:
+		m.publish(ctx, "work.task.updated", agencyID)
+	}
+	return out, nil
 }
 
-// DeleteTask delegates to [Backend.DeleteTask].
+// DeleteTask soft-deletes the Task entity (entitygraph never hard-deletes).
 func (m *taskManager) DeleteTask(ctx context.Context, agencyID, taskID string) error {
-	return m.backend.DeleteTask(ctx, agencyID, taskID)
+	if _, err := m.GetTask(ctx, agencyID, taskID); err != nil {
+		return err
+	}
+	if err := m.dm.DeleteEntity(ctx, agencyID, taskID); err != nil {
+		if errors.Is(err, entitygraph.ErrEntityNotFound) {
+			return ErrTaskNotFound
+		}
+		return fmt.Errorf("DeleteTask: %w", err)
+	}
+	return nil
 }
 
-// ListTasks delegates to [Backend.ListTasks].
+// ListTasks returns all non-deleted Task entities for the agency that match
+// the filter. Filtering on Status / Priority / AssignedTo is pushed down to
+// the DataManager's property filter.
 func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter TaskFilter) ([]Task, error) {
-	return m.backend.ListTasks(ctx, agencyID, filter)
+	props := map[string]any{}
+	if filter.Status != "" {
+		props["status"] = string(filter.Status)
+	}
+	if filter.Priority != "" {
+		props["priority"] = string(filter.Priority)
+	}
+	if filter.AssignedTo != "" {
+		props["assigned_to"] = filter.AssignedTo
+	}
+
+	entities, err := m.dm.ListEntities(ctx, entitygraph.EntityFilter{
+		AgencyID:   agencyID,
+		TypeID:     taskTypeID,
+		Properties: props,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("ListTasks: %w", err)
+	}
+
+	tasks := make([]Task, 0, len(entities))
+	for _, e := range entities {
+		tasks = append(tasks, taskFromEntity(e))
+	}
+	return tasks, nil
+}
+
+// publish emits an event via the optional CrossPublisher.
+// Errors are swallowed — events are best-effort and must not fail the
+// originating operation.
+func (m *taskManager) publish(ctx context.Context, topic, agencyID string) {
+	if m.publisher == nil {
+		return
+	}
+	_ = m.publisher.Publish(ctx, topic, agencyID)
+}
+
+// isTerminalStatus reports whether the status is one of the terminal lifecycle
+// states (completed, failed, cancelled).
+func isTerminalStatus(s TaskStatus) bool {
+	switch s {
+	case TaskStatusCompleted, TaskStatusFailed, TaskStatusCancelled:
+		return true
+	default:
+		return false
+	}
+}
+
+// taskToProperties serialises a Task into the property map stored on its
+// entitygraph Entity. Time fields are encoded as RFC 3339 strings to match
+// the schema's PropertyTypeString declarations.
+func taskToProperties(t Task) map[string]any {
+	props := map[string]any{
+		"title":       t.Title,
+		"description": t.Description,
+		"status":      string(t.Status),
+		"priority":    string(t.Priority),
+		"assigned_to": t.AssignedTo,
+	}
+	if !t.CreatedAt.IsZero() {
+		props["created_at"] = t.CreatedAt.UTC().Format(time.RFC3339Nano)
+	}
+	if !t.UpdatedAt.IsZero() {
+		props["updated_at"] = t.UpdatedAt.UTC().Format(time.RFC3339Nano)
+	}
+	if t.CompletedAt != nil && !t.CompletedAt.IsZero() {
+		props["completed_at"] = t.CompletedAt.UTC().Format(time.RFC3339Nano)
+	}
+	return props
+}
+
+// taskFromEntity reconstructs a Task from an entitygraph Entity.
+func taskFromEntity(e entitygraph.Entity) Task {
+	t := Task{
+		ID:        e.ID,
+		AgencyID:  e.AgencyID,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
+	if v, ok := e.Properties["title"].(string); ok {
+		t.Title = v
+	}
+	if v, ok := e.Properties["description"].(string); ok {
+		t.Description = v
+	}
+	if v, ok := e.Properties["status"].(string); ok {
+		t.Status = TaskStatus(v)
+	}
+	if v, ok := e.Properties["priority"].(string); ok {
+		t.Priority = TaskPriority(v)
+	}
+	if v, ok := e.Properties["assigned_to"].(string); ok {
+		t.AssignedTo = v
+	}
+	if v, ok := e.Properties["created_at"].(string); ok {
+		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
+			t.CreatedAt = ts
+		}
+	}
+	if v, ok := e.Properties["updated_at"].(string); ok {
+		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
+			t.UpdatedAt = ts
+		}
+	}
+	if v, ok := e.Properties["completed_at"].(string); ok && v != "" {
+		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
+			t.CompletedAt = &ts
+		}
+	}
+	return t
 }

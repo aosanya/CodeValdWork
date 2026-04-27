@@ -1,11 +1,11 @@
-// Package grpcserver implements the TaskService gRPC handler.
+// Package server implements the TaskService gRPC handler.
 // It wraps a codevaldwork.TaskManager and translates between proto messages
-// and domain types.
-package grpcserver
+// and domain types. EntityServer (for the schema-driven generic CRUD path) is
+// re-exported via entity_server.go.
+package server
 
 import (
 	"context"
-	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -193,12 +193,4 @@ func protoToPriority(p pb.TaskPriority) codevaldwork.TaskPriority {
 	default:
 		return ""
 	}
-}
-
-// optionalTime returns nil when t is the zero value.
-func optionalTime(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
 }
