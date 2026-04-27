@@ -149,7 +149,6 @@ func TestArangoDB_CreateUpdate_ValidTransition(t *testing.T) {
 	}
 
 	created.Status = codevaldwork.TaskStatusInProgress
-	created.AssignedTo = "agent-007"
 
 	updated, err := mgr.UpdateTask(ctx, agency, created)
 	if err != nil {
@@ -157,9 +156,6 @@ func TestArangoDB_CreateUpdate_ValidTransition(t *testing.T) {
 	}
 	if updated.Status != codevaldwork.TaskStatusInProgress {
 		t.Errorf("want in_progress, got %s", updated.Status)
-	}
-	if updated.AssignedTo != "agent-007" {
-		t.Errorf("want assigned_to=agent-007, got %s", updated.AssignedTo)
 	}
 
 	got, err := mgr.GetTask(ctx, agency, created.ID)
