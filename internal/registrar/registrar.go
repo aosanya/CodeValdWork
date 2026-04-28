@@ -89,29 +89,47 @@ func (r *Registrar) Publish(_ context.Context, e eventbus.Event) error {
 // workRoutes returns the HTTP routes that CodeValdWork exposes via Cross.
 //
 // It combines:
-//   - Static routes for the TaskService gRPC methods (CRUD over tasks).
+//   - Static routes for the TaskService gRPC methods, grouped by domain
+//     (Task lifecycle, Agent + assignment, TaskGroup CRUD + membership,
+//     graph relationships).
 //   - Dynamic entity CRUD routes generated from [codevaldwork.DefaultWorkSchema]
 //     via a single [schemaroutes.RoutesFromSchema] call.
 func workRoutes() []types.RouteInfo {
-	static := []types.RouteInfo{
+	routes := taskRoutes()
+	routes = append(routes, agentRoutes()...)
+	routes = append(routes, taskGroupRoutes()...)
+	routes = append(routes, relationshipRoutes()...)
+	routes = append(routes, schemaroutes.RoutesFromSchema(
+		codevaldwork.DefaultWorkSchema(),
+		"/work/{agencyId}",
+		"agencyId",
+		egserver.GRPCServicePath,
+	)...)
+	return routes
+}
+
+// agencyBinding is the recurring {agencyId}→agency_id binding shared by every
+// route under /work/{agencyId}/...
+var agencyBinding = types.PathBinding{URLParam: "agencyId", Field: "agency_id"}
+
+// taskRoutes covers Task CRUD plus the assignee sub-resource that writes the
+// `assigned_to` graph edge (WORK-010).
+func taskRoutes() []types.RouteInfo {
+	return []types.RouteInfo{
 		{
-			Method:     "POST",
-			Pattern:    "/work/{agencyId}/tasks",
-			Capability: "create_task",
-			GrpcMethod: "/codevaldwork.v1.TaskService/CreateTask",
-			IsWrite:    true,
-			PathBindings: []types.PathBinding{
-				{URLParam: "agencyId", Field: "agency_id"},
-			},
+			Method:       "POST",
+			Pattern:      "/work/{agencyId}/tasks",
+			Capability:   "create_task",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/CreateTask",
+			IsWrite:      true,
+			PathBindings: []types.PathBinding{agencyBinding},
 		},
 		{
-			Method:     "GET",
-			Pattern:    "/work/{agencyId}/tasks",
-			Capability: "list_tasks",
-			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasks",
-			PathBindings: []types.PathBinding{
-				{URLParam: "agencyId", Field: "agency_id"},
-			},
+			Method:       "GET",
+			Pattern:      "/work/{agencyId}/tasks",
+			Capability:   "list_tasks",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/ListTasks",
+			PathBindings: []types.PathBinding{agencyBinding},
 		},
 		{
 			Method:     "GET",
@@ -119,7 +137,7 @@ func workRoutes() []types.RouteInfo {
 			Capability: "get_task",
 			GrpcMethod: "/codevaldwork.v1.TaskService/GetTask",
 			PathBindings: []types.PathBinding{
-				{URLParam: "agencyId", Field: "agency_id"},
+				agencyBinding,
 				{URLParam: "taskId", Field: "task_id"},
 			},
 		},
@@ -130,7 +148,7 @@ func workRoutes() []types.RouteInfo {
 			GrpcMethod: "/codevaldwork.v1.TaskService/UpdateTask",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
-				{URLParam: "agencyId", Field: "agency_id"},
+				agencyBinding,
 				{URLParam: "taskId", Field: "task_id"},
 			},
 		},
@@ -141,18 +159,208 @@ func workRoutes() []types.RouteInfo {
 			GrpcMethod: "/codevaldwork.v1.TaskService/DeleteTask",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
-				{URLParam: "agencyId", Field: "agency_id"},
+				agencyBinding,
+				{URLParam: "taskId", Field: "task_id"},
+			},
+		},
+		{
+			Method:     "PUT",
+			Pattern:    "/work/{agencyId}/tasks/{taskId}/assignee/{agentId}",
+			Capability: "assign_task",
+			GrpcMethod: "/codevaldwork.v1.TaskService/AssignTask",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskId", Field: "task_id"},
+				{URLParam: "agentId", Field: "agent_id"},
+			},
+		},
+		{
+			Method:     "DELETE",
+			Pattern:    "/work/{agencyId}/tasks/{taskId}/assignee",
+			Capability: "unassign_task",
+			GrpcMethod: "/codevaldwork.v1.TaskService/UnassignTask",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskId", Field: "task_id"},
+			},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/work/{agencyId}/tasks/{taskId}/groups",
+			Capability: "list_groups_for_task",
+			GrpcMethod: "/codevaldwork.v1.TaskService/ListGroupsForTask",
+			PathBindings: []types.PathBinding{
+				agencyBinding,
 				{URLParam: "taskId", Field: "task_id"},
 			},
 		},
 	}
+}
 
-	dynamic := schemaroutes.RoutesFromSchema(
-		codevaldwork.DefaultWorkSchema(),
-		"/work/{agencyId}",
-		"agencyId",
-		egserver.GRPCServicePath,
-	)
+// agentRoutes covers Agent vertex upsert / read / list. The {agentId} path
+// segment on UpsertAgent binds into the nested `agent.agent_id` natural key,
+// while GetAgent uses the top-level entity-ID lookup.
+func agentRoutes() []types.RouteInfo {
+	return []types.RouteInfo{
+		{
+			Method:     "PUT",
+			Pattern:    "/work/{agencyId}/agents/{agentId}",
+			Capability: "upsert_agent",
+			GrpcMethod: "/codevaldwork.v1.TaskService/UpsertAgent",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "agentId", Field: "agent.agent_id"},
+			},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/work/{agencyId}/agents/{agentId}",
+			Capability: "get_agent",
+			GrpcMethod: "/codevaldwork.v1.TaskService/GetAgent",
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "agentId", Field: "agent_id"},
+			},
+		},
+		{
+			Method:       "GET",
+			Pattern:      "/work/{agencyId}/agents",
+			Capability:   "list_agents",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/ListAgents",
+			PathBindings: []types.PathBinding{agencyBinding},
+		},
+	}
+}
 
-	return append(static, dynamic...)
+// taskGroupRoutes covers TaskGroup CRUD plus the `member_of` membership edges.
+// UpdateTaskGroup binds {taskGroupId} into the nested `group.id` because the
+// request carries the full TaskGroup proto rather than a top-level id field.
+func taskGroupRoutes() []types.RouteInfo {
+	return []types.RouteInfo{
+		{
+			Method:       "POST",
+			Pattern:      "/work/{agencyId}/task-groups",
+			Capability:   "create_task_group",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/CreateTaskGroup",
+			IsWrite:      true,
+			PathBindings: []types.PathBinding{agencyBinding},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}",
+			Capability: "get_task_group",
+			GrpcMethod: "/codevaldwork.v1.TaskService/GetTaskGroup",
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskGroupId", Field: "task_group_id"},
+			},
+		},
+		{
+			Method:     "PUT",
+			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}",
+			Capability: "update_task_group",
+			GrpcMethod: "/codevaldwork.v1.TaskService/UpdateTaskGroup",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskGroupId", Field: "group.id"},
+			},
+		},
+		{
+			Method:     "DELETE",
+			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}",
+			Capability: "delete_task_group",
+			GrpcMethod: "/codevaldwork.v1.TaskService/DeleteTaskGroup",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskGroupId", Field: "task_group_id"},
+			},
+		},
+		{
+			Method:       "GET",
+			Pattern:      "/work/{agencyId}/task-groups",
+			Capability:   "list_task_groups",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/ListTaskGroups",
+			PathBindings: []types.PathBinding{agencyBinding},
+		},
+		{
+			Method:     "PUT",
+			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}/tasks/{taskId}",
+			Capability: "add_task_to_group",
+			GrpcMethod: "/codevaldwork.v1.TaskService/AddTaskToGroup",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskGroupId", Field: "task_group_id"},
+				{URLParam: "taskId", Field: "task_id"},
+			},
+		},
+		{
+			Method:     "DELETE",
+			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}/tasks/{taskId}",
+			Capability: "remove_task_from_group",
+			GrpcMethod: "/codevaldwork.v1.TaskService/RemoveTaskFromGroup",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskGroupId", Field: "task_group_id"},
+				{URLParam: "taskId", Field: "task_id"},
+			},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}/tasks",
+			Capability: "list_tasks_in_group",
+			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasksInGroup",
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskGroupId", Field: "task_group_id"},
+			},
+		},
+	}
+}
+
+// relationshipRoutes covers the generic graph-edge surface. Direction on
+// TraverseRelationships is supplied as a `?direction=` query parameter and is
+// merged into the request body by Cross's dynamic proxy — no PathBinding
+// required.
+func relationshipRoutes() []types.RouteInfo {
+	return []types.RouteInfo{
+		{
+			Method:       "POST",
+			Pattern:      "/work/{agencyId}/relationships",
+			Capability:   "create_relationship",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/CreateRelationship",
+			IsWrite:      true,
+			PathBindings: []types.PathBinding{agencyBinding},
+		},
+		{
+			Method:     "DELETE",
+			Pattern:    "/work/{agencyId}/relationships/{label}/from/{fromId}/to/{toId}",
+			Capability: "delete_relationship",
+			GrpcMethod: "/codevaldwork.v1.TaskService/DeleteRelationship",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "label", Field: "label"},
+				{URLParam: "fromId", Field: "from_id"},
+				{URLParam: "toId", Field: "to_id"},
+			},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/work/{agencyId}/vertices/{vertexId}/relationships/{label}",
+			Capability: "traverse_relationships",
+			GrpcMethod: "/codevaldwork.v1.TaskService/TraverseRelationships",
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "vertexId", Field: "vertex_id"},
+				{URLParam: "label", Field: "label"},
+			},
+		},
+	}
 }

@@ -85,7 +85,7 @@ and loses `assigned_to`.
 
 ## MVP-WORK-015 — HTTP convenience routes
 
-**Status**: 🟒 Not Started
+**Status**: ✅ Complete
 **Branch**: `feature/WORK-015_http_routes`
 **Depends on**: MVP-WORK-013
 
