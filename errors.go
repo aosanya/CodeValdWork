@@ -23,6 +23,11 @@ var ErrInvalidTask = errors.New("invalid task: missing required fields")
 // given agencyID and entity ID.
 var ErrAgentNotFound = errors.New("agent not found")
 
+// ErrAgentAlreadyExists is reserved for callers that want to distinguish the
+// create branch of [TaskManager.UpsertAgent] from the merge branch. The
+// upsert path itself does not return this error.
+var ErrAgentAlreadyExists = errors.New("agent already exists")
+
 // ErrTaskGroupNotFound is returned when a TaskGroup vertex does not exist
 // for the given agencyID and entity ID.
 var ErrTaskGroupNotFound = errors.New("task group not found")

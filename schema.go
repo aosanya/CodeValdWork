@@ -148,8 +148,12 @@ func taskGroupTypeDefinition() types.TypeDefinition {
 
 // agentTypeDefinition declares the Agent entity class — the Work-domain
 // projection of an AI agent. Each Agent becomes a graph vertex so that
-// `assigned_to` edges (added in MVP-WORK-010) are first-class graph
-// relationships rather than string fields on the Task document.
+// `assigned_to` edges are first-class graph relationships rather than string
+// fields on the Task document.
+//
+// UniqueKey: ["agentID"] makes the external agent identifier the natural key
+// for [DataManager.UpsertEntity] — [TaskManager.UpsertAgent] (added in
+// MVP-WORK-010) relies on this to find-or-create.
 func agentTypeDefinition() types.TypeDefinition {
 	return types.TypeDefinition{
 		Name:              "Agent",
@@ -157,9 +161,10 @@ func agentTypeDefinition() types.TypeDefinition {
 		PathSegment:       "agents",
 		EntityIDParam:     "agentId",
 		StorageCollection: "work_agents",
+		UniqueKey:         []string{"agentID"},
 		Properties: []types.PropertyDefinition{
 			// agentID is the external agent identifier (e.g. CodeValdAI agent ID).
-			// Unique per (agencyID, agentID) — enforced at the UpsertAgent boundary.
+			// Unique per (agencyID, agentID) — enforced via UpsertEntity.
 			{Name: "agentID", Type: types.PropertyTypeString, Required: true},
 			// displayName is a human-readable label for the agent.
 			{Name: "displayName", Type: types.PropertyTypeString},

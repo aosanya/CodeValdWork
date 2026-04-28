@@ -132,16 +132,6 @@ func TestDefaultWorkSchema_PriorityOptionsMatchConstants(t *testing.T) {
 
 // ── taskToProperties ─────────────────────────────────────────────────────────
 
-func TestTaskToProperties_DropsAssignedToKey(t *testing.T) {
-	props := taskToProperties(Task{
-		Title:      "x",
-		AssignedTo: "agent-007",
-	})
-	if _, ok := props["assigned_to"]; ok {
-		t.Errorf("taskToProperties wrote assigned_to key — must be dropped in Phase 2; got %v", props)
-	}
-}
-
 func TestTaskToProperties_DropsEntityTimestampKeys(t *testing.T) {
 	now := time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC)
 	props := taskToProperties(Task{

@@ -82,6 +82,29 @@ type TaskManager interface {
 	// empty result — callers that need a strict not-found check should call
 	// [TaskManager.GetTask] (or the equivalent type-specific lookup) first.
 	TraverseRelationships(ctx context.Context, agencyID, vertexID, label string, dir Direction) ([]Relationship, error)
+
+	// UpsertAgent creates or merges an Agent vertex keyed by the
+	// (agencyID, agent.AgentID) natural key. On the merge branch, displayName
+	// and capability are updated; agentID is immutable.
+	UpsertAgent(ctx context.Context, agencyID string, agent Agent) (Agent, error)
+
+	// GetAgent retrieves a single Agent by its entity ID within the given
+	// agency. Returns [ErrAgentNotFound] if no matching entity exists.
+	GetAgent(ctx context.Context, agencyID, entityID string) (Agent, error)
+
+	// ListAgents returns all non-deleted Agents in the agency. Returns an
+	// empty slice (not an error) when none exist.
+	ListAgents(ctx context.Context, agencyID string) ([]Agent, error)
+
+	// AssignTask sets the assignee of a Task by writing the `assigned_to`
+	// edge (Task → Agent). Replaces any prior assignee — a Task has at
+	// most one outbound `assigned_to` edge. Returns [ErrTaskNotFound] or
+	// [ErrAgentNotFound] when the respective vertex is missing.
+	AssignTask(ctx context.Context, agencyID, taskID, agentID string) error
+
+	// UnassignTask removes any outbound `assigned_to` edge from the Task.
+	// Idempotent — returns nil whether or not an edge was present.
+	UnassignTask(ctx context.Context, agencyID, taskID string) error
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].
@@ -221,8 +244,9 @@ func (m *taskManager) DeleteTask(ctx context.Context, agencyID, taskID string) e
 }
 
 // ListTasks returns all non-deleted Task entities for the agency that match
-// the filter. Filtering on Status / Priority / AssignedTo is pushed down to
-// the DataManager's property filter.
+// the filter. Status and Priority are pushed down to the DataManager's
+// property filter; assignment-by-agent is no longer a property — callers
+// needing it should traverse inbound `assigned_to` from the Agent vertex.
 func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter TaskFilter) ([]Task, error) {
 	props := map[string]any{}
 	if filter.Status != "" {
@@ -230,9 +254,6 @@ func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter Tas
 	}
 	if filter.Priority != "" {
 		props["priority"] = string(filter.Priority)
-	}
-	if filter.AssignedTo != "" {
-		props["assigned_to"] = filter.AssignedTo
 	}
 
 	entities, err := m.dm.ListEntities(ctx, entitygraph.EntityFilter{
