@@ -42,3 +42,38 @@ var ErrInvalidRelationship = errors.New("invalid relationship")
 // when no edge matches the given (fromID, toID, label) triple in the
 // agency.
 var ErrRelationshipNotFound = errors.New("relationship not found")
+
+// ErrBlocked is the sentinel returned by [TaskManager.UpdateTask] when a
+// pending → in_progress transition is rejected because the task has one or
+// more non-terminal `blocks`-inbound predecessors. Match it with
+// [errors.Is]; to extract the blocker IDs, use [errors.As] against
+// [*BlockedError].
+var ErrBlocked = errors.New("task is blocked by non-terminal blockers")
+
+// BlockedError carries the IDs of the still-non-terminal predecessor tasks
+// that prevented a pending → in_progress transition. The error wraps
+// [ErrBlocked] for sentinel matching:
+//
+//	if errors.Is(err, codevaldwork.ErrBlocked) { ... }
+//	var be *codevaldwork.BlockedError
+//	if errors.As(err, &be) { use(be.BlockerTaskIDs) }
+//
+// The gRPC layer maps this to codes.FailedPrecondition and packs the IDs into
+// a [BlockedByInfo] status detail.
+type BlockedError struct {
+	// BlockerTaskIDs lists the IDs of non-terminal blocker tasks. Order
+	// matches the traversal order returned by the underlying graph and is
+	// not otherwise meaningful.
+	BlockerTaskIDs []string
+}
+
+// Error implements the error interface.
+func (e *BlockedError) Error() string {
+	return ErrBlocked.Error()
+}
+
+// Is reports whether target is [ErrBlocked] so [errors.Is] callers can match
+// the sentinel without unwrapping.
+func (e *BlockedError) Is(target error) bool {
+	return target == ErrBlocked
+}
