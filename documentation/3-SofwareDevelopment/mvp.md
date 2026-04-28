@@ -46,7 +46,7 @@ and a complete pub/sub publishing pipeline. Phase 2 closes that gap.
 
 | Task ID | Title | Status | Depends On |
 |---|---|---|---|
-| MVP-WORK-008 | Schema extension — `TaskGroup` + `Agent` TypeDefinitions; richer Task properties (`dueAt`, `tags`, `estimatedHours`, `context`, `completedAt`); `option` typing for `status`/`priority` | 🟒 Not Started | — |
+| MVP-WORK-008 | Schema extension — `TaskGroup` + `Agent` TypeDefinitions; richer Task properties (`dueAt`, `tags`, `estimatedHours`, `context`, `completedAt`); `option` typing for `status`/`priority` | ✅ Complete | — |
 | MVP-WORK-009 | Graph relationship API — `work_relationships` edge collection, `work_graph` named graph, edge-label whitelist (`blocks`, `subtask_of`, `depends_on`, `member_of`, `assigned_to`), `CreateRelationship` / `DeleteRelationship` / `TraverseRelationships` on `TaskManager` | 🟒 Not Started | MVP-WORK-008 |
 | MVP-WORK-010 | Agent vertex + `assigned_to` edge — drop `assigned_to` string property, add `UpsertAgent` and `AssignTask(agencyID, taskID, agentID)` creating the edge | 🟒 Not Started | MVP-WORK-008, MVP-WORK-009 |
 | MVP-WORK-011 | Hard blocker enforcement — `pending → in_progress` traverses inbound `blocks`; new `ErrBlocked` (`FAILED_PRECONDITION`) with `BlockedByInfo` proto detail | 🟒 Not Started | MVP-WORK-009 |
