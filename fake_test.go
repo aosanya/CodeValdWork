@@ -117,8 +117,54 @@ func (f *fakeDataManager) ListEntities(_ context.Context, filter entitygraph.Ent
 	return out, nil
 }
 
-func (f *fakeDataManager) UpsertEntity(_ context.Context, _ entitygraph.CreateEntityRequest) (entitygraph.Entity, error) {
-	panic("UpsertEntity not implemented in fakeDataManager")
+// UpsertEntity in the fake matches a non-deleted entity by every property
+// listed in the type's UniqueKey. The fake doesn't carry the schema, so
+// callers pass UniqueKey-relevant property values via req.Properties and
+// the fake key-matches against those — sufficient for unit tests where the
+// caller knows which keys are unique.
+func (f *fakeDataManager) UpsertEntity(ctx context.Context, req entitygraph.CreateEntityRequest) (entitygraph.Entity, error) {
+	uniqueKey := uniqueKeyFor(req.TypeID)
+	if len(uniqueKey) == 0 {
+		return entitygraph.Entity{}, entitygraph.ErrUniqueKeyNotDefined
+	}
+	for _, e := range f.entities {
+		if e.Deleted || e.AgencyID != req.AgencyID || e.TypeID != req.TypeID {
+			continue
+		}
+		match := true
+		for _, k := range uniqueKey {
+			if e.Properties[k] != req.Properties[k] {
+				match = false
+				break
+			}
+		}
+		if !match {
+			continue
+		}
+		// Merge: patch properties onto the existing entity.
+		if e.Properties == nil {
+			e.Properties = map[string]any{}
+		}
+		for k, v := range req.Properties {
+			e.Properties[k] = v
+		}
+		e.UpdatedAt = time.Now().UTC()
+		f.entities[f.key(req.AgencyID, e.ID)] = e
+		return e, nil
+	}
+	// Insert path.
+	return f.CreateEntity(ctx, req)
+}
+
+// uniqueKeyFor returns the property names that form the natural key for
+// the given Work type. Mirrors the schema.go UniqueKey declarations.
+func uniqueKeyFor(typeID string) []string {
+	switch typeID {
+	case "Agent":
+		return []string{"agentID"}
+	default:
+		return nil
+	}
 }
 
 func (f *fakeDataManager) CreateRelationship(_ context.Context, req entitygraph.CreateRelationshipRequest) (entitygraph.Relationship, error) {

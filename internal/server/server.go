@@ -77,6 +77,9 @@ func (s *Server) ListTasks(ctx context.Context, req *pb.ListTasksRequest) (*pb.L
 // ── Conversion helpers ────────────────────────────────────────────────────────
 
 func taskToProto(t codevaldwork.Task) *pb.Task {
+	// Note: pb.Task.AssignedTo is left empty here. The string field will be
+	// removed from the proto in MVP-WORK-013; the assignee is now represented
+	// by an `assigned_to` graph edge, callers fetch it via TraverseRelationships.
 	pt := &pb.Task{
 		Id:          t.ID,
 		AgencyId:    t.AgencyID,
@@ -84,7 +87,6 @@ func taskToProto(t codevaldwork.Task) *pb.Task {
 		Description: t.Description,
 		Status:      statusToProto(t.Status),
 		Priority:    priorityToProto(t.Priority),
-		AssignedTo:  t.AssignedTo,
 		CreatedAt:   timestamppb.New(t.CreatedAt),
 		UpdatedAt:   timestamppb.New(t.UpdatedAt),
 	}
@@ -105,7 +107,6 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 		Description: pt.Description,
 		Status:      protoToStatus(pt.Status),
 		Priority:    protoToPriority(pt.Priority),
-		AssignedTo:  pt.AssignedTo,
 	}
 	if pt.CreatedAt != nil {
 		t.CreatedAt = pt.CreatedAt.AsTime()
@@ -124,10 +125,13 @@ func protoToFilter(pf *pb.TaskFilter) codevaldwork.TaskFilter {
 	if pf == nil {
 		return codevaldwork.TaskFilter{}
 	}
+	// pb.TaskFilter.AssignedTo is intentionally not propagated — the field
+	// is removed from the Go domain in WORK-010 and from the proto in
+	// WORK-013. Callers needing tasks-for-agent should traverse inbound
+	// `assigned_to` from the Agent vertex.
 	return codevaldwork.TaskFilter{
-		Status:     protoToStatus(pf.Status),
-		Priority:   protoToPriority(pf.Priority),
-		AssignedTo: pf.AssignedTo,
+		Status:   protoToStatus(pf.Status),
+		Priority: protoToPriority(pf.Priority),
 	}
 }
 

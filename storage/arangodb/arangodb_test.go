@@ -407,3 +407,90 @@ func TestArangoDB_Relationship_RoundTrip(t *testing.T) {
 		t.Errorf("second DeleteRelationship: got %v, want ErrRelationshipNotFound", err)
 	}
 }
+
+// TestArangoDB_AgentAssignment_RoundTrip exercises the WORK-010 Agent +
+// AssignTask surface end to end against a live ArangoDB: upsert two Agents
+// (verify the second upsert with the same agentID merges rather than
+// duplicating), assign a Task to A1, reassign to A2, verify only one outbound
+// edge remains, then unassign.
+func TestArangoDB_AgentAssignment_RoundTrip(t *testing.T) {
+	mgr := openTestManager(t)
+	ctx := context.Background()
+	agency := uniqueAgency("assign")
+
+	a1, err := mgr.UpsertAgent(ctx, agency, codevaldwork.Agent{
+		AgentID: "agent-1", DisplayName: "First", Capability: "code",
+	})
+	if err != nil {
+		t.Fatalf("UpsertAgent a1: %v", err)
+	}
+
+	// Idempotent upsert (same agentID, different display name).
+	a1again, err := mgr.UpsertAgent(ctx, agency, codevaldwork.Agent{
+		AgentID: "agent-1", DisplayName: "Renamed", Capability: "code",
+	})
+	if err != nil {
+		t.Fatalf("UpsertAgent a1 again: %v", err)
+	}
+	if a1again.ID != a1.ID {
+		t.Errorf("upsert created new vertex: first=%s second=%s", a1.ID, a1again.ID)
+	}
+	if a1again.DisplayName != "Renamed" {
+		t.Errorf("merge did not patch displayName: %+v", a1again)
+	}
+
+	a2, err := mgr.UpsertAgent(ctx, agency, codevaldwork.Agent{
+		AgentID: "agent-2", DisplayName: "Second",
+	})
+	if err != nil {
+		t.Fatalf("UpsertAgent a2: %v", err)
+	}
+
+	task, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "assign me"})
+	if err != nil {
+		t.Fatalf("CreateTask: %v", err)
+	}
+
+	if err := mgr.AssignTask(ctx, agency, task.ID, a1.ID); err != nil {
+		t.Fatalf("AssignTask a1: %v", err)
+	}
+	edges, err := mgr.TraverseRelationships(ctx, agency, task.ID, codevaldwork.RelLabelAssignedTo, codevaldwork.DirectionOutbound)
+	if err != nil {
+		t.Fatalf("traverse after a1: %v", err)
+	}
+	if len(edges) != 1 || edges[0].ToID != a1.ID {
+		t.Fatalf("after a1 assignment: edges=%v", edges)
+	}
+
+	// Reassign to a2 — should replace the prior edge.
+	if err := mgr.AssignTask(ctx, agency, task.ID, a2.ID); err != nil {
+		t.Fatalf("AssignTask a2: %v", err)
+	}
+	edges, err = mgr.TraverseRelationships(ctx, agency, task.ID, codevaldwork.RelLabelAssignedTo, codevaldwork.DirectionOutbound)
+	if err != nil {
+		t.Fatalf("traverse after a2: %v", err)
+	}
+	if len(edges) != 1 {
+		t.Fatalf("want 1 edge after reassign, got %d", len(edges))
+	}
+	if edges[0].ToID != a2.ID {
+		t.Errorf("after reassign: edge points to %s, want %s", edges[0].ToID, a2.ID)
+	}
+
+	// Unassign — edge gone.
+	if err := mgr.UnassignTask(ctx, agency, task.ID); err != nil {
+		t.Fatalf("UnassignTask: %v", err)
+	}
+	edges, err = mgr.TraverseRelationships(ctx, agency, task.ID, codevaldwork.RelLabelAssignedTo, codevaldwork.DirectionOutbound)
+	if err != nil {
+		t.Fatalf("traverse after unassign: %v", err)
+	}
+	if len(edges) != 0 {
+		t.Errorf("want 0 edges after unassign, got %d", len(edges))
+	}
+
+	// Unassign again — idempotent.
+	if err := mgr.UnassignTask(ctx, agency, task.ID); err != nil {
+		t.Errorf("UnassignTask second call: got %v, want nil", err)
+	}
+}
