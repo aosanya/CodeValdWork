@@ -243,7 +243,11 @@ func (m *taskManager) CreateRelationship(ctx context.Context, agencyID string, r
 	}
 
 	out := relationshipFromEntitygraph(created)
-	m.publish(ctx, "work.relationship.created", agencyID)
+	m.publish(ctx, TopicRelationshipCreated, agencyID, RelationshipCreatedPayload{
+		FromID: out.FromID,
+		ToID:   out.ToID,
+		Label:  out.Label,
+	})
 	return out, nil
 }
 

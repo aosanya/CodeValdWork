@@ -162,9 +162,23 @@ func TestUpdateTask_ValidTransition_InProgressToCompleted(t *testing.T) {
 	if updated.Status != codevaldwork.TaskStatusCompleted {
 		t.Errorf("want completed, got %s", updated.Status)
 	}
-	// Expect: created, updated (in_progress), completed.
-	if len(pub.events) != 3 || pub.events[2] != "work.task.completed|a" {
-		t.Errorf("expected work.task.completed last, got %v", pub.events)
+	// MVP-WORK-014 wiring: created, status.changed (pending→in_progress),
+	// status.changed (in_progress→completed), completed. The terminal
+	// completed hook fires AFTER the matching status.changed event so
+	// subscribers see the transition before the terminal signal.
+	want := []string{
+		"work.task.created|a",
+		"work.task.status.changed|a",
+		"work.task.status.changed|a",
+		"work.task.completed|a",
+	}
+	if len(pub.events) != len(want) {
+		t.Fatalf("event count: got %d (%v), want %d (%v)", len(pub.events), pub.events, len(want), want)
+	}
+	for i := range want {
+		if pub.events[i] != want[i] {
+			t.Errorf("event[%d]: got %q, want %q", i, pub.events[i], want[i])
+		}
 	}
 }
 
