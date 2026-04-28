@@ -13,18 +13,26 @@ import (
 // mapError converts a domain error to its corresponding gRPC status error.
 // Unknown errors map to codes.Internal.
 //
-// When err is a *BlockedError, the returned status carries a BlockedByInfo
-// detail listing the non-terminal blocker task IDs so clients can surface
-// them without a follow-up RPC.
+// Detail attachments:
+//   - *BlockedError → FailedPrecondition + BlockedByInfo
+//   - ErrInvalidRelationship → InvalidArgument + InvalidRelationshipInfo
+//     (best-effort: only the reason field is always populated)
 func mapError(err error) error {
 	var blocked *codevaldwork.BlockedError
 	switch {
-	case errors.Is(err, codevaldwork.ErrTaskNotFound):
+	case errors.Is(err, codevaldwork.ErrTaskNotFound),
+		errors.Is(err, codevaldwork.ErrAgentNotFound),
+		errors.Is(err, codevaldwork.ErrTaskGroupNotFound),
+		errors.Is(err, codevaldwork.ErrRelationshipNotFound):
 		return status.Error(codes.NotFound, err.Error())
-	case errors.Is(err, codevaldwork.ErrTaskAlreadyExists):
+	case errors.Is(err, codevaldwork.ErrTaskAlreadyExists),
+		errors.Is(err, codevaldwork.ErrAgentAlreadyExists),
+		errors.Is(err, codevaldwork.ErrTaskGroupAlreadyExists):
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.As(err, &blocked):
 		return blockedStatus(blocked)
+	case errors.Is(err, codevaldwork.ErrInvalidRelationship):
+		return invalidRelationshipStatus(err)
 	case errors.Is(err, codevaldwork.ErrInvalidStatusTransition):
 		return status.Error(codes.FailedPrecondition, err.Error())
 	case errors.Is(err, codevaldwork.ErrInvalidTask):
@@ -32,6 +40,23 @@ func mapError(err error) error {
 	default:
 		return status.Error(codes.Internal, err.Error())
 	}
+}
+
+// invalidRelationshipStatus builds an InvalidArgument status with an
+// InvalidRelationshipInfo detail. The reason field is populated from the
+// wrapped error message; finer-grained fields are left empty since the
+// domain error doesn't currently carry structured info (a follow-up could
+// promote ErrInvalidRelationship to a typed error with more context, the
+// same way WORK-011 did for ErrBlocked).
+func invalidRelationshipStatus(err error) error {
+	st := status.New(codes.InvalidArgument, err.Error())
+	stWithDetails, dErr := st.WithDetails(&pb.InvalidRelationshipInfo{
+		Reason: err.Error(),
+	})
+	if dErr != nil {
+		return st.Err()
+	}
+	return stWithDetails.Err()
 }
 
 // blockedStatus builds a FailedPrecondition status with a BlockedByInfo

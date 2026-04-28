@@ -137,6 +137,98 @@ func (x *BlockedByInfo) GetBlockerTaskIds() []string {
 	return nil
 }
 
+// InvalidRelationshipInfo is packed into a google.rpc.Status detail field
+// when CreateRelationship / DeleteRelationship returns
+// codes.InvalidArgument due to a label, type, or cross-agency violation.
+//
+// Fields populated on a best-effort basis — `reason` is always set; the
+// remaining fields carry the offending values when known.
+type InvalidRelationshipInfo struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// reason is a stable machine token: "unknown_label", "wrong_from_type",
+	// "wrong_to_type", "missing_endpoint", "cross_agency", or "missing_ids".
+	Reason        string `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
+	Label         string `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	FromId        string `protobuf:"bytes,3,opt,name=from_id,json=fromId,proto3" json:"from_id,omitempty"`
+	ToId          string `protobuf:"bytes,4,opt,name=to_id,json=toId,proto3" json:"to_id,omitempty"`
+	FromType      string `protobuf:"bytes,5,opt,name=from_type,json=fromType,proto3" json:"from_type,omitempty"`
+	ToType        string `protobuf:"bytes,6,opt,name=to_type,json=toType,proto3" json:"to_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InvalidRelationshipInfo) Reset() {
+	*x = InvalidRelationshipInfo{}
+	mi := &file_codevaldwork_v1_errors_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InvalidRelationshipInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InvalidRelationshipInfo) ProtoMessage() {}
+
+func (x *InvalidRelationshipInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_errors_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InvalidRelationshipInfo.ProtoReflect.Descriptor instead.
+func (*InvalidRelationshipInfo) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_errors_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *InvalidRelationshipInfo) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *InvalidRelationshipInfo) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *InvalidRelationshipInfo) GetFromId() string {
+	if x != nil {
+		return x.FromId
+	}
+	return ""
+}
+
+func (x *InvalidRelationshipInfo) GetToId() string {
+	if x != nil {
+		return x.ToId
+	}
+	return ""
+}
+
+func (x *InvalidRelationshipInfo) GetFromType() string {
+	if x != nil {
+		return x.FromType
+	}
+	return ""
+}
+
+func (x *InvalidRelationshipInfo) GetToType() string {
+	if x != nil {
+		return x.ToType
+	}
+	return ""
+}
+
 var File_codevaldwork_v1_errors_proto protoreflect.FileDescriptor
 
 const file_codevaldwork_v1_errors_proto_rawDesc = "" +
@@ -147,7 +239,14 @@ const file_codevaldwork_v1_errors_proto_rawDesc = "" +
 	"\x10requested_status\x18\x02 \x01(\tR\x0frequestedStatus\x12\x17\n" +
 	"\atask_id\x18\x03 \x01(\tR\x06taskId\"9\n" +
 	"\rBlockedByInfo\x12(\n" +
-	"\x10blocker_task_ids\x18\x01 \x03(\tR\x0eblockerTaskIdsBGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
+	"\x10blocker_task_ids\x18\x01 \x03(\tR\x0eblockerTaskIds\"\xab\x01\n" +
+	"\x17InvalidRelationshipInfo\x12\x16\n" +
+	"\x06reason\x18\x01 \x01(\tR\x06reason\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x17\n" +
+	"\afrom_id\x18\x03 \x01(\tR\x06fromId\x12\x13\n" +
+	"\x05to_id\x18\x04 \x01(\tR\x04toId\x12\x1b\n" +
+	"\tfrom_type\x18\x05 \x01(\tR\bfromType\x12\x17\n" +
+	"\ato_type\x18\x06 \x01(\tR\x06toTypeBGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
 
 var (
 	file_codevaldwork_v1_errors_proto_rawDescOnce sync.Once
@@ -161,10 +260,11 @@ func file_codevaldwork_v1_errors_proto_rawDescGZIP() []byte {
 	return file_codevaldwork_v1_errors_proto_rawDescData
 }
 
-var file_codevaldwork_v1_errors_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_codevaldwork_v1_errors_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_codevaldwork_v1_errors_proto_goTypes = []any{
 	(*InvalidStatusTransitionInfo)(nil), // 0: codevaldwork.v1.InvalidStatusTransitionInfo
 	(*BlockedByInfo)(nil),               // 1: codevaldwork.v1.BlockedByInfo
+	(*InvalidRelationshipInfo)(nil),     // 2: codevaldwork.v1.InvalidRelationshipInfo
 }
 var file_codevaldwork_v1_errors_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -185,7 +285,7 @@ func file_codevaldwork_v1_errors_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codevaldwork_v1_errors_proto_rawDesc), len(file_codevaldwork_v1_errors_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
