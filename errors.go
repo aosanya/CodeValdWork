@@ -32,6 +32,10 @@ var ErrAgentAlreadyExists = errors.New("agent already exists")
 // for the given agencyID and entity ID.
 var ErrTaskGroupNotFound = errors.New("task group not found")
 
+// ErrTaskGroupAlreadyExists is returned by [TaskManager.CreateTaskGroup]
+// when a TaskGroup with the same ID already exists in the agency.
+var ErrTaskGroupAlreadyExists = errors.New("task group already exists")
+
 // ErrInvalidRelationship is returned by [TaskManager.CreateRelationship]
 // when the (label, fromType, toType) triple is not in the Work edge-label
 // whitelist, when the endpoints are in different agencies, or when an
