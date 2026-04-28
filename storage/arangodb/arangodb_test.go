@@ -323,3 +323,87 @@ func TestArangoDB_ListTasks_EmptyResult(t *testing.T) {
 		t.Errorf("want 0 tasks, got %d", len(tasks))
 	}
 }
+
+// TestArangoDB_Relationship_RoundTrip exercises the WORK-009 edge API end to
+// end against a live ArangoDB: create two Tasks, connect them with a
+// `blocks` edge, verify the edge surfaces via TraverseRelationships in both
+// directions, and that DeleteRelationship removes it.
+func TestArangoDB_Relationship_RoundTrip(t *testing.T) {
+	mgr := openTestManager(t)
+	ctx := context.Background()
+	agency := uniqueAgency("rel")
+
+	taskA, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "A"})
+	if err != nil {
+		t.Fatalf("CreateTask A: %v", err)
+	}
+	taskB, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "B"})
+	if err != nil {
+		t.Fatalf("CreateTask B: %v", err)
+	}
+
+	created, err := mgr.CreateRelationship(ctx, agency, codevaldwork.Relationship{
+		Label:  codevaldwork.RelLabelBlocks,
+		FromID: taskA.ID,
+		ToID:   taskB.ID,
+		Properties: map[string]any{
+			"reason": "A must finish first",
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateRelationship: %v", err)
+	}
+	if created.ID == "" {
+		t.Fatal("created edge missing ID")
+	}
+
+	// Outbound traversal from A — should yield the A→B edge.
+	outbound, err := mgr.TraverseRelationships(ctx, agency, taskA.ID, codevaldwork.RelLabelBlocks, codevaldwork.DirectionOutbound)
+	if err != nil {
+		t.Fatalf("TraverseRelationships outbound: %v", err)
+	}
+	if len(outbound) != 1 {
+		t.Fatalf("want 1 outbound edge from A, got %d", len(outbound))
+	}
+	if outbound[0].FromID != taskA.ID || outbound[0].ToID != taskB.ID {
+		t.Errorf("wrong edge: %+v", outbound[0])
+	}
+
+	// Inbound traversal on B — should also yield exactly one edge.
+	inbound, err := mgr.TraverseRelationships(ctx, agency, taskB.ID, codevaldwork.RelLabelBlocks, codevaldwork.DirectionInbound)
+	if err != nil {
+		t.Fatalf("TraverseRelationships inbound: %v", err)
+	}
+	if len(inbound) != 1 {
+		t.Fatalf("want 1 inbound edge on B, got %d", len(inbound))
+	}
+
+	// Idempotent re-create.
+	again, err := mgr.CreateRelationship(ctx, agency, codevaldwork.Relationship{
+		Label: codevaldwork.RelLabelBlocks, FromID: taskA.ID, ToID: taskB.ID,
+	})
+	if err != nil {
+		t.Fatalf("second CreateRelationship: %v", err)
+	}
+	if again.ID != created.ID {
+		t.Errorf("idempotent re-create returned new edge: first=%s second=%s", created.ID, again.ID)
+	}
+
+	if err := mgr.DeleteRelationship(ctx, agency, taskA.ID, taskB.ID, codevaldwork.RelLabelBlocks); err != nil {
+		t.Fatalf("DeleteRelationship: %v", err)
+	}
+
+	// After delete, traversal should yield no edges.
+	after, err := mgr.TraverseRelationships(ctx, agency, taskA.ID, codevaldwork.RelLabelBlocks, codevaldwork.DirectionOutbound)
+	if err != nil {
+		t.Fatalf("TraverseRelationships after delete: %v", err)
+	}
+	if len(after) != 0 {
+		t.Errorf("want 0 edges after delete, got %d", len(after))
+	}
+
+	// Deleting again returns ErrRelationshipNotFound.
+	if err := mgr.DeleteRelationship(ctx, agency, taskA.ID, taskB.ID, codevaldwork.RelLabelBlocks); !errors.Is(err, codevaldwork.ErrRelationshipNotFound) {
+		t.Errorf("second DeleteRelationship: got %v, want ErrRelationshipNotFound", err)
+	}
+}

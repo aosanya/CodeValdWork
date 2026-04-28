@@ -14,14 +14,18 @@ import (
 // ── Fake DataManager ─────────────────────────────────────────────────────────
 
 // fakeDataManager is an in-memory entitygraph.DataManager used for unit tests.
-// Only the entity-side methods exercised by codevaldwork are implemented;
-// relationship/graph methods panic to surface accidental use.
+// Entity-side methods plus relationship CRUD and a single-hop TraverseGraph
+// are implemented; UpsertEntity (Agent path, WORK-010) still panics.
 type fakeDataManager struct {
-	entities map[string]entitygraph.Entity // key: agencyID + "/" + entityID
+	entities      map[string]entitygraph.Entity     // key: agencyID + "/" + entityID
+	relationships map[string]entitygraph.Relationship // key: agencyID + "/" + relID
 }
 
 func newFakeDataManager() *fakeDataManager {
-	return &fakeDataManager{entities: make(map[string]entitygraph.Entity)}
+	return &fakeDataManager{
+		entities:      make(map[string]entitygraph.Entity),
+		relationships: make(map[string]entitygraph.Relationship),
+	}
 }
 
 func (f *fakeDataManager) key(agencyID, entityID string) string {
@@ -120,24 +124,105 @@ func (f *fakeDataManager) UpsertEntity(_ context.Context, _ entitygraph.CreateEn
 	panic("UpsertEntity not implemented in fakeDataManager")
 }
 
-func (f *fakeDataManager) CreateRelationship(_ context.Context, _ entitygraph.CreateRelationshipRequest) (entitygraph.Relationship, error) {
-	panic("CreateRelationship not implemented in fakeDataManager")
+func (f *fakeDataManager) CreateRelationship(_ context.Context, req entitygraph.CreateRelationshipRequest) (entitygraph.Relationship, error) {
+	if _, ok := f.entities[f.key(req.AgencyID, req.FromID)]; !ok {
+		return entitygraph.Relationship{}, entitygraph.ErrEntityNotFound
+	}
+	if _, ok := f.entities[f.key(req.AgencyID, req.ToID)]; !ok {
+		return entitygraph.Relationship{}, entitygraph.ErrEntityNotFound
+	}
+	id := uuid.NewString()
+	props := make(map[string]any, len(req.Properties))
+	for k, v := range req.Properties {
+		props[k] = v
+	}
+	r := entitygraph.Relationship{
+		ID:         id,
+		AgencyID:   req.AgencyID,
+		Name:       req.Name,
+		FromID:     req.FromID,
+		ToID:       req.ToID,
+		Properties: props,
+		CreatedAt:  time.Now().UTC(),
+	}
+	f.relationships[f.key(req.AgencyID, id)] = r
+	return r, nil
 }
 
-func (f *fakeDataManager) GetRelationship(_ context.Context, _, _ string) (entitygraph.Relationship, error) {
-	panic("GetRelationship not implemented in fakeDataManager")
+func (f *fakeDataManager) GetRelationship(_ context.Context, agencyID, relID string) (entitygraph.Relationship, error) {
+	r, ok := f.relationships[f.key(agencyID, relID)]
+	if !ok {
+		return entitygraph.Relationship{}, entitygraph.ErrRelationshipNotFound
+	}
+	return r, nil
 }
 
-func (f *fakeDataManager) DeleteRelationship(_ context.Context, _, _ string) error {
-	panic("DeleteRelationship not implemented in fakeDataManager")
+func (f *fakeDataManager) DeleteRelationship(_ context.Context, agencyID, relID string) error {
+	k := f.key(agencyID, relID)
+	if _, ok := f.relationships[k]; !ok {
+		return entitygraph.ErrRelationshipNotFound
+	}
+	delete(f.relationships, k)
+	return nil
 }
 
-func (f *fakeDataManager) ListRelationships(_ context.Context, _ entitygraph.RelationshipFilter) ([]entitygraph.Relationship, error) {
-	panic("ListRelationships not implemented in fakeDataManager")
+func (f *fakeDataManager) ListRelationships(_ context.Context, filter entitygraph.RelationshipFilter) ([]entitygraph.Relationship, error) {
+	out := make([]entitygraph.Relationship, 0)
+	for _, r := range f.relationships {
+		if filter.AgencyID != "" && r.AgencyID != filter.AgencyID {
+			continue
+		}
+		if filter.FromID != "" && r.FromID != filter.FromID {
+			continue
+		}
+		if filter.ToID != "" && r.ToID != filter.ToID {
+			continue
+		}
+		if filter.Name != "" && r.Name != filter.Name {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out, nil
 }
 
-func (f *fakeDataManager) TraverseGraph(_ context.Context, _ entitygraph.TraverseGraphRequest) (entitygraph.TraverseGraphResult, error) {
-	panic("TraverseGraph not implemented in fakeDataManager")
+// TraverseGraph in the fake supports the single-hop traversal needed by
+// TaskManager.TraverseRelationships: depth=1 with a single name filter.
+// Direction values "inbound" / "outbound" select the orientation; "any"
+// returns both. Visited vertices are not populated — only Edges, which is
+// what TraverseRelationships consumes.
+func (f *fakeDataManager) TraverseGraph(_ context.Context, req entitygraph.TraverseGraphRequest) (entitygraph.TraverseGraphResult, error) {
+	res := entitygraph.TraverseGraphResult{Edges: []entitygraph.Relationship{}}
+	allowedNames := map[string]struct{}{}
+	for _, n := range req.Names {
+		allowedNames[n] = struct{}{}
+	}
+	for _, r := range f.relationships {
+		if r.AgencyID != req.AgencyID {
+			continue
+		}
+		if len(allowedNames) > 0 {
+			if _, ok := allowedNames[r.Name]; !ok {
+				continue
+			}
+		}
+		switch req.Direction {
+		case "outbound":
+			if r.FromID != req.StartID {
+				continue
+			}
+		case "inbound":
+			if r.ToID != req.StartID {
+				continue
+			}
+		default: // "any" or empty
+			if r.FromID != req.StartID && r.ToID != req.StartID {
+				continue
+			}
+		}
+		res.Edges = append(res.Edges, r)
+	}
+	return res, nil
 }
 
 // ── recordingPublisher ───────────────────────────────────────────────────────

@@ -20,6 +20,12 @@ import (
 // taskTypeID is the TypeDefinition.Name used for Task entities in the schema.
 const taskTypeID = "Task"
 
+// taskGroupTypeID is the TypeDefinition.Name used for TaskGroup entities.
+const taskGroupTypeID = "TaskGroup"
+
+// agentTypeID is the TypeDefinition.Name used for Agent entities.
+const agentTypeID = "Agent"
+
 // TaskManager is the primary interface for task lifecycle management.
 // All operations are scoped to the manager's agencyID, fixed at construction.
 //
@@ -47,6 +53,35 @@ type TaskManager interface {
 	// ListTasks returns all non-deleted tasks for the given agency that match
 	// the filter. Returns an empty slice (not an error) when no tasks match.
 	ListTasks(ctx context.Context, agencyID string, filter TaskFilter) ([]Task, error)
+
+	// CreateRelationship creates a directed edge between two Work vertices.
+	// rel.Label must be one of the RelLabel* constants and the (FromID, ToID)
+	// vertex types must match the label's whitelist entry, otherwise
+	// [ErrInvalidRelationship] is returned.
+	//
+	// Both endpoints must already exist in the same agency. A missing endpoint
+	// returns [ErrTaskNotFound], [ErrAgentNotFound], or [ErrTaskGroupNotFound]
+	// depending on the label's expected vertex type.
+	//
+	// Re-creating an existing (FromID, ToID, Label) edge is idempotent — the
+	// existing edge is returned with no error and no second edge is written.
+	CreateRelationship(ctx context.Context, agencyID string, rel Relationship) (Relationship, error)
+
+	// DeleteRelationship removes a single edge identified by the
+	// (fromID, toID, label) triple within the agency. Returns
+	// [ErrRelationshipNotFound] if no such edge exists.
+	DeleteRelationship(ctx context.Context, agencyID, fromID, toID, label string) error
+
+	// TraverseRelationships returns the single-hop edges incident on
+	// vertexID with the given label and direction. Multi-hop traversal is
+	// out of scope — callers needing it should use entitygraph.DataManager.TraverseGraph
+	// directly.
+	//
+	// Returns an empty slice (not an error) when no edges match. If vertexID
+	// does not exist in the agency, the underlying graph traversal returns an
+	// empty result — callers that need a strict not-found check should call
+	// [TaskManager.GetTask] (or the equivalent type-specific lookup) first.
+	TraverseRelationships(ctx context.Context, agencyID, vertexID, label string, dir Direction) ([]Relationship, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].
