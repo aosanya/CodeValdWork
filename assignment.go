@@ -48,7 +48,10 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 		return fmt.Errorf("AssignTask: create edge: %w", err)
 	}
 
-	m.publish(ctx, "work.task.assigned", agencyID)
+	m.publish(ctx, TopicTaskAssigned, agencyID, TaskAssignedPayload{
+		TaskID:  taskID,
+		AgentID: agentID,
+	})
 	return nil
 }
 

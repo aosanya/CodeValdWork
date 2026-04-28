@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
+	"github.com/aosanya/CodeValdSharedLib/eventbus"
 )
 
 // taskTypeID is the TypeDefinition.Name used for Task entities in the schema.
@@ -148,29 +149,29 @@ type TaskManager interface {
 // Used by internal/app to seed [DefaultWorkSchema] on startup.
 type WorkSchemaManager = entitygraph.SchemaManager
 
-// CrossPublisher publishes Work lifecycle events to CodeValdCross.
-// Implementations must be safe for concurrent use. A nil CrossPublisher is
-// valid — publish calls are silently skipped.
-type CrossPublisher interface {
-	// Publish delivers an event for the given topic and agencyID to
-	// CodeValdCross. Errors are non-fatal: implementations should log and
-	// return nil for best-effort delivery.
-	Publish(ctx context.Context, topic string, agencyID string) error
-}
+// CrossPublisher is the historical name for the event-publishing contract
+// CodeValdWork callers inject. As of MVP-WORK-014 it is a type alias for
+// [eventbus.Publisher] — the SharedLib package that unifies the publish
+// contract across CodeValdAgency, CodeValdComm, CodeValdDT, and CodeValdWork.
+//
+// New callers should refer to [eventbus.Publisher] directly; this alias
+// remains for source compatibility and reads well in the [NewTaskManager]
+// signature.
+type CrossPublisher = eventbus.Publisher
 
 // taskManager is the concrete implementation of [TaskManager].
 // It wraps an [entitygraph.DataManager] to persist Task entities in the
-// agency graph and emits work.task.* events via the optional CrossPublisher.
+// agency graph and emits work.task.* events via the optional Publisher.
 type taskManager struct {
 	dm        entitygraph.DataManager
-	publisher CrossPublisher // optional; nil = skip event publishing
+	publisher eventbus.Publisher // optional; nil = skip event publishing
 }
 
 // NewTaskManager constructs a [TaskManager] backed by the given
 // [entitygraph.DataManager].
 // pub may be nil — cross-service events are skipped when no publisher is set.
 // Returns an error if dm is nil.
-func NewTaskManager(dm entitygraph.DataManager, pub CrossPublisher) (TaskManager, error) {
+func NewTaskManager(dm entitygraph.DataManager, pub eventbus.Publisher) (TaskManager, error) {
 	if dm == nil {
 		return nil, fmt.Errorf("NewTaskManager: data manager must not be nil")
 	}
@@ -207,7 +208,11 @@ func (m *taskManager) CreateTask(ctx context.Context, agencyID string, task Task
 	}
 
 	out := taskFromEntity(created)
-	m.publish(ctx, "work.task.created", agencyID)
+	m.publish(ctx, TopicTaskCreated, agencyID, TaskCreatedPayload{
+		TaskID:   out.ID,
+		Title:    out.Title,
+		Priority: out.Priority,
+	})
 	return out, nil
 }
 
@@ -239,7 +244,10 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 	if err != nil {
 		return Task{}, err
 	}
-	if !current.Status.CanTransitionTo(task.Status) {
+	// Only validate the transition when status is actually changing —
+	// same-status edits (e.g. patching title or description while pending)
+	// are no-op transitions and must be permitted.
+	if current.Status != task.Status && !current.Status.CanTransitionTo(task.Status) {
 		return Task{}, ErrInvalidStatusTransition
 	}
 	if current.Status == TaskStatusPending && task.Status == TaskStatusInProgress {
@@ -270,11 +278,32 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 	}
 
 	out := taskFromEntity(updated)
-	switch task.Status {
-	case TaskStatusCompleted, TaskStatusFailed, TaskStatusCancelled:
-		m.publish(ctx, "work.task.completed", agencyID)
-	default:
-		m.publish(ctx, "work.task.updated", agencyID)
+
+	// Publish hooks. Order matters: status.changed precedes completed when
+	// both fire so subscribers see the transition before the terminal hook.
+	if changed := nonStatusChangedFields(current, out); len(changed) > 0 {
+		m.publish(ctx, TopicTaskUpdated, agencyID, TaskUpdatedPayload{
+			TaskID:        out.ID,
+			ChangedFields: changed,
+		})
+	}
+	if current.Status != out.Status {
+		m.publish(ctx, TopicTaskStatusChanged, agencyID, TaskStatusChangedPayload{
+			TaskID: out.ID,
+			From:   current.Status,
+			To:     out.Status,
+		})
+		if isTerminalStatus(out.Status) {
+			completedAt := now
+			if out.CompletedAt != nil {
+				completedAt = *out.CompletedAt
+			}
+			m.publish(ctx, TopicTaskCompleted, agencyID, TaskCompletedPayload{
+				TaskID:         out.ID,
+				TerminalStatus: out.Status,
+				CompletedAt:    completedAt,
+			})
+		}
 	}
 	return out, nil
 }
@@ -322,14 +351,16 @@ func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter Tas
 	return tasks, nil
 }
 
-// publish emits an event via the optional CrossPublisher.
-// Errors are swallowed — events are best-effort and must not fail the
-// originating operation.
-func (m *taskManager) publish(ctx context.Context, topic, agencyID string) {
-	if m.publisher == nil {
-		return
-	}
-	_ = m.publisher.Publish(ctx, topic, agencyID)
+// publish emits a typed [eventbus.Event] via the optional Publisher.
+// A nil publisher is silently skipped; errors from the publisher are
+// swallowed — events are best-effort and must not fail the originating
+// operation.
+func (m *taskManager) publish(ctx context.Context, topic, agencyID string, payload any) {
+	eventbus.SafePublish(ctx, m.publisher, eventbus.Event{
+		Topic:    topic,
+		AgencyID: agencyID,
+		Payload:  payload,
+	})
 }
 
 // isTerminalStatus reports whether the status is one of the terminal lifecycle
@@ -341,6 +372,65 @@ func isTerminalStatus(s TaskStatus) bool {
 	default:
 		return false
 	}
+}
+
+// nonStatusChangedFields lists the mutable Task property names that differ
+// between before and after, excluding Status (reported separately via
+// [TopicTaskStatusChanged]) and entity timestamps. Drives
+// [TaskUpdatedPayload.ChangedFields] so subscribers know what changed
+// without diffing the payload themselves. Returns nil when nothing
+// non-status differs.
+func nonStatusChangedFields(before, after Task) []string {
+	var out []string
+	if before.Title != after.Title {
+		out = append(out, "title")
+	}
+	if before.Description != after.Description {
+		out = append(out, "description")
+	}
+	if before.Priority != after.Priority {
+		out = append(out, "priority")
+	}
+	if !timePtrEqual(before.DueAt, after.DueAt) {
+		out = append(out, "dueAt")
+	}
+	if !stringSlicesEqual(before.Tags, after.Tags) {
+		out = append(out, "tags")
+	}
+	if before.EstimatedHours != after.EstimatedHours {
+		out = append(out, "estimatedHours")
+	}
+	if before.Context != after.Context {
+		out = append(out, "context")
+	}
+	return out
+}
+
+// timePtrEqual reports whether two *time.Time pointers refer to the same
+// instant (or are both nil).
+func timePtrEqual(a, b *time.Time) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return a.Equal(*b)
+}
+
+// stringSlicesEqual reports whether two string slices have identical
+// length and elements in order. Used by [nonStatusChangedFields] to
+// detect Task.Tags changes.
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // findActiveBlockers returns the IDs of tasks that block taskID via inbound

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
+	"github.com/aosanya/CodeValdSharedLib/eventbus"
 	"github.com/google/uuid"
 )
 
@@ -270,11 +271,16 @@ func (f *fakeDataManager) TraverseGraph(_ context.Context, req entitygraph.Trave
 
 // ── recordingPublisher ───────────────────────────────────────────────────────
 
+// recordingPublisher is the test-side implementation of [eventbus.Publisher].
+// It records every Event for assertions and also derives a "topic|agencyID"
+// string list (events) so the legacy assertion form keeps working.
 type recordingPublisher struct {
-	events []string // "topic|agencyID"
+	full   []eventbus.Event
+	events []string // "topic|agencyID" projection of full
 }
 
-func (p *recordingPublisher) Publish(_ context.Context, topic, agencyID string) error {
-	p.events = append(p.events, topic+"|"+agencyID)
+func (p *recordingPublisher) Publish(_ context.Context, e eventbus.Event) error {
+	p.full = append(p.full, e)
+	p.events = append(p.events, e.Topic+"|"+e.AgencyID)
 	return nil
 }
