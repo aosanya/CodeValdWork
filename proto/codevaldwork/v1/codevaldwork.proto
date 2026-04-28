@@ -80,9 +80,9 @@ message Agent {
   google.protobuf.Timestamp updated_at = 7;
 }
 
-// TaskGroup is an optional container that groups related tasks (sprints,
+// Project is an optional container that groups related tasks (sprints,
 // milestones, epics). Tasks become members via `member_of` edges.
-message TaskGroup {
+message Project {
   string id          = 1;
   string agency_id   = 2;
   string name        = 3;
@@ -90,6 +90,9 @@ message TaskGroup {
   google.protobuf.Timestamp due_at     = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+  // github_repo is the canonical GitHub repository for the project, e.g.
+  // "owner/name" or a full https URL. Optional.
+  string github_repo = 8;
 }
 
 // Relationship is the Work-domain projection of a directed graph edge.

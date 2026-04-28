@@ -6,13 +6,13 @@
 //
 // The schema declares three TypeDefinitions:
 //   - Task — task assigned to an Agent (mutable)
-//   - TaskGroup — optional container that groups related tasks
+//   - Project — optional container that groups related tasks
 //   - Agent — Work-domain projection of an AI agent (vertex for the
 //     `assigned_to` graph edge added in MVP-WORK-010)
 //
 // All edges live in the "work_relationships" edge collection (declared by
 // MVP-WORK-009). Tasks live in the "work_tasks" document collection,
-// TaskGroups in "work_groups", and Agents in "work_agents".
+// Projects in "work_projects", and Agents in "work_agents".
 package codevaldwork
 
 import "github.com/aosanya/CodeValdSharedLib/types"
@@ -27,7 +27,7 @@ func DefaultWorkSchema() types.Schema {
 		Tag:     "v1",
 		Types: []types.TypeDefinition{
 			taskTypeDefinition(),
-			taskGroupTypeDefinition(),
+			projectTypeDefinition(),
 			agentTypeDefinition(),
 		},
 	}
@@ -114,9 +114,9 @@ func taskTypeDefinition() types.TypeDefinition {
 			{
 				Name:        RelLabelMemberOf,
 				Label:       "Member of",
-				ToType:      "TaskGroup",
+				ToType:      "Project",
 				ToMany:      true,
-				PathSegment: "groups",
+				PathSegment: "projects",
 				Properties: []types.PropertyDefinition{
 					{Name: "addedAt", Type: types.PropertyTypeDatetime},
 				},
@@ -125,22 +125,25 @@ func taskTypeDefinition() types.TypeDefinition {
 	}
 }
 
-// taskGroupTypeDefinition declares the TaskGroup entity class — an optional
+// projectTypeDefinition declares the Project entity class — an optional
 // container that groups related tasks via the `member_of` graph edge added in
 // MVP-WORK-012.
-func taskGroupTypeDefinition() types.TypeDefinition {
+func projectTypeDefinition() types.TypeDefinition {
 	return types.TypeDefinition{
-		Name:              "TaskGroup",
-		DisplayName:       "Task Group",
-		PathSegment:       "task-groups",
-		EntityIDParam:     "taskGroupId",
-		StorageCollection: "work_groups",
+		Name:              "Project",
+		DisplayName:       "Project",
+		PathSegment:       "projects",
+		EntityIDParam:     "projectId",
+		StorageCollection: "work_projects",
 		Properties: []types.PropertyDefinition{
 			// name is the short human-readable label. Required.
 			{Name: "name", Type: types.PropertyTypeString, Required: true},
-			// description provides additional context for the group.
+			// description provides additional context for the project.
 			{Name: "description", Type: types.PropertyTypeString},
-			// dueAt is the target completion date for the group.
+			// githubRepo is the canonical GitHub repository for the project,
+			// e.g. "owner/name" or a full https URL.
+			{Name: "githubRepo", Type: types.PropertyTypeString},
+			// dueAt is the target completion date for the project.
 			{Name: "dueAt", Type: types.PropertyTypeDatetime},
 		},
 	}

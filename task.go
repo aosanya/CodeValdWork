@@ -21,8 +21,8 @@ import (
 // taskTypeID is the TypeDefinition.Name used for Task entities in the schema.
 const taskTypeID = "Task"
 
-// taskGroupTypeID is the TypeDefinition.Name used for TaskGroup entities.
-const taskGroupTypeID = "TaskGroup"
+// projectTypeID is the TypeDefinition.Name used for Project entities.
+const projectTypeID = "Project"
 
 // agentTypeID is the TypeDefinition.Name used for Agent entities.
 const agentTypeID = "Agent"
@@ -61,7 +61,7 @@ type TaskManager interface {
 	// [ErrInvalidRelationship] is returned.
 	//
 	// Both endpoints must already exist in the same agency. A missing endpoint
-	// returns [ErrTaskNotFound], [ErrAgentNotFound], or [ErrTaskGroupNotFound]
+	// returns [ErrTaskNotFound], [ErrAgentNotFound], or [ErrProjectNotFound]
 	// depending on the label's expected vertex type.
 	//
 	// Re-creating an existing (FromID, ToID, Label) edge is idempotent — the
@@ -107,42 +107,42 @@ type TaskManager interface {
 	// Idempotent — returns nil whether or not an edge was present.
 	UnassignTask(ctx context.Context, agencyID, taskID string) error
 
-	// CreateTaskGroup creates a new TaskGroup vertex. Returns
-	// [ErrInvalidTask] when Name is empty and [ErrTaskGroupAlreadyExists]
+	// CreateProject creates a new Project vertex. Returns
+	// [ErrInvalidTask] when Name is empty and [ErrProjectAlreadyExists]
 	// when the underlying store reports a duplicate.
-	CreateTaskGroup(ctx context.Context, agencyID string, g TaskGroup) (TaskGroup, error)
+	CreateProject(ctx context.Context, agencyID string, p Project) (Project, error)
 
-	// GetTaskGroup retrieves a single TaskGroup by entity ID. Returns
-	// [ErrTaskGroupNotFound] if no matching group exists.
-	GetTaskGroup(ctx context.Context, agencyID, groupID string) (TaskGroup, error)
+	// GetProject retrieves a single Project by entity ID. Returns
+	// [ErrProjectNotFound] if no matching project exists.
+	GetProject(ctx context.Context, agencyID, projectID string) (Project, error)
 
-	// UpdateTaskGroup replaces the mutable fields of an existing TaskGroup.
-	// Returns [ErrTaskGroupNotFound] if the group does not exist.
-	UpdateTaskGroup(ctx context.Context, agencyID string, g TaskGroup) (TaskGroup, error)
+	// UpdateProject replaces the mutable fields of an existing Project.
+	// Returns [ErrProjectNotFound] if the project does not exist.
+	UpdateProject(ctx context.Context, agencyID string, p Project) (Project, error)
 
-	// DeleteTaskGroup soft-deletes the TaskGroup vertex AND removes every
+	// DeleteProject soft-deletes the Project vertex AND removes every
 	// inbound `member_of` edge so member Tasks lose the membership.
 	// Member Tasks themselves are not deleted.
-	DeleteTaskGroup(ctx context.Context, agencyID, groupID string) error
+	DeleteProject(ctx context.Context, agencyID, projectID string) error
 
-	// ListTaskGroups returns all non-deleted TaskGroups in the agency.
-	ListTaskGroups(ctx context.Context, agencyID string) ([]TaskGroup, error)
+	// ListProjects returns all non-deleted Projects in the agency.
+	ListProjects(ctx context.Context, agencyID string) ([]Project, error)
 
-	// AddTaskToGroup writes the `member_of` edge from taskID to groupID.
+	// AddTaskToProject writes the `member_of` edge from taskID to projectID.
 	// Idempotent — returns nil whether or not the edge already existed.
-	AddTaskToGroup(ctx context.Context, agencyID, taskID, groupID string) error
+	AddTaskToProject(ctx context.Context, agencyID, taskID, projectID string) error
 
-	// RemoveTaskFromGroup removes the `member_of` edge from taskID to
-	// groupID. Returns [ErrRelationshipNotFound] if no membership existed.
-	RemoveTaskFromGroup(ctx context.Context, agencyID, taskID, groupID string) error
+	// RemoveTaskFromProject removes the `member_of` edge from taskID to
+	// projectID. Returns [ErrRelationshipNotFound] if no membership existed.
+	RemoveTaskFromProject(ctx context.Context, agencyID, taskID, projectID string) error
 
-	// ListTasksInGroup returns the Tasks belonging to the given group via
+	// ListTasksInProject returns the Tasks belonging to the given project via
 	// inbound `member_of` edges.
-	ListTasksInGroup(ctx context.Context, agencyID, groupID string) ([]Task, error)
+	ListTasksInProject(ctx context.Context, agencyID, projectID string) ([]Task, error)
 
-	// ListGroupsForTask returns the TaskGroups the given Task belongs to
+	// ListProjectsForTask returns the Projects the given Task belongs to
 	// via outbound `member_of` edges.
-	ListGroupsForTask(ctx context.Context, agencyID, taskID string) ([]TaskGroup, error)
+	ListProjectsForTask(ctx context.Context, agencyID, taskID string) ([]Project, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].

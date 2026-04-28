@@ -29,15 +29,15 @@ const (
 	TaskService_UpsertAgent_FullMethodName           = "/codevaldwork.v1.TaskService/UpsertAgent"
 	TaskService_GetAgent_FullMethodName              = "/codevaldwork.v1.TaskService/GetAgent"
 	TaskService_ListAgents_FullMethodName            = "/codevaldwork.v1.TaskService/ListAgents"
-	TaskService_CreateTaskGroup_FullMethodName       = "/codevaldwork.v1.TaskService/CreateTaskGroup"
-	TaskService_GetTaskGroup_FullMethodName          = "/codevaldwork.v1.TaskService/GetTaskGroup"
-	TaskService_UpdateTaskGroup_FullMethodName       = "/codevaldwork.v1.TaskService/UpdateTaskGroup"
-	TaskService_DeleteTaskGroup_FullMethodName       = "/codevaldwork.v1.TaskService/DeleteTaskGroup"
-	TaskService_ListTaskGroups_FullMethodName        = "/codevaldwork.v1.TaskService/ListTaskGroups"
-	TaskService_AddTaskToGroup_FullMethodName        = "/codevaldwork.v1.TaskService/AddTaskToGroup"
-	TaskService_RemoveTaskFromGroup_FullMethodName   = "/codevaldwork.v1.TaskService/RemoveTaskFromGroup"
-	TaskService_ListTasksInGroup_FullMethodName      = "/codevaldwork.v1.TaskService/ListTasksInGroup"
-	TaskService_ListGroupsForTask_FullMethodName     = "/codevaldwork.v1.TaskService/ListGroupsForTask"
+	TaskService_CreateProject_FullMethodName         = "/codevaldwork.v1.TaskService/CreateProject"
+	TaskService_GetProject_FullMethodName            = "/codevaldwork.v1.TaskService/GetProject"
+	TaskService_UpdateProject_FullMethodName         = "/codevaldwork.v1.TaskService/UpdateProject"
+	TaskService_DeleteProject_FullMethodName         = "/codevaldwork.v1.TaskService/DeleteProject"
+	TaskService_ListProjects_FullMethodName          = "/codevaldwork.v1.TaskService/ListProjects"
+	TaskService_AddTaskToProject_FullMethodName      = "/codevaldwork.v1.TaskService/AddTaskToProject"
+	TaskService_RemoveTaskFromProject_FullMethodName = "/codevaldwork.v1.TaskService/RemoveTaskFromProject"
+	TaskService_ListTasksInProject_FullMethodName    = "/codevaldwork.v1.TaskService/ListTasksInProject"
+	TaskService_ListProjectsForTask_FullMethodName   = "/codevaldwork.v1.TaskService/ListProjectsForTask"
 	TaskService_CreateRelationship_FullMethodName    = "/codevaldwork.v1.TaskService/CreateRelationship"
 	TaskService_DeleteRelationship_FullMethodName    = "/codevaldwork.v1.TaskService/DeleteRelationship"
 	TaskService_TraverseRelationships_FullMethodName = "/codevaldwork.v1.TaskService/TraverseRelationships"
@@ -85,33 +85,33 @@ type TaskServiceClient interface {
 	GetAgent(ctx context.Context, in *GetAgentRequest, opts ...grpc.CallOption) (*GetAgentResponse, error)
 	// ListAgents returns every Agent in the agency.
 	ListAgents(ctx context.Context, in *ListAgentsRequest, opts ...grpc.CallOption) (*ListAgentsResponse, error)
-	// CreateTaskGroup creates a new TaskGroup vertex.
-	// Error: ALREADY_EXISTS if the group ID is already taken.
+	// CreateProject creates a new Project vertex.
+	// Error: ALREADY_EXISTS if the project ID is already taken.
 	// Error: INVALID_ARGUMENT if name is empty.
-	CreateTaskGroup(ctx context.Context, in *CreateTaskGroupRequest, opts ...grpc.CallOption) (*CreateTaskGroupResponse, error)
-	// GetTaskGroup retrieves a single TaskGroup.
-	// Error: NOT_FOUND if the group does not exist.
-	GetTaskGroup(ctx context.Context, in *GetTaskGroupRequest, opts ...grpc.CallOption) (*GetTaskGroupResponse, error)
-	// UpdateTaskGroup patches the mutable fields of an existing TaskGroup.
-	UpdateTaskGroup(ctx context.Context, in *UpdateTaskGroupRequest, opts ...grpc.CallOption) (*UpdateTaskGroupResponse, error)
-	// DeleteTaskGroup removes the group AND all inbound `member_of` edges.
+	CreateProject(ctx context.Context, in *CreateProjectRequest, opts ...grpc.CallOption) (*CreateProjectResponse, error)
+	// GetProject retrieves a single Project.
+	// Error: NOT_FOUND if the project does not exist.
+	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
+	// UpdateProject patches the mutable fields of an existing Project.
+	UpdateProject(ctx context.Context, in *UpdateProjectRequest, opts ...grpc.CallOption) (*UpdateProjectResponse, error)
+	// DeleteProject removes the project AND all inbound `member_of` edges.
 	// Member tasks themselves are preserved.
-	DeleteTaskGroup(ctx context.Context, in *DeleteTaskGroupRequest, opts ...grpc.CallOption) (*DeleteTaskGroupResponse, error)
-	// ListTaskGroups returns every TaskGroup in the agency.
-	ListTaskGroups(ctx context.Context, in *ListTaskGroupsRequest, opts ...grpc.CallOption) (*ListTaskGroupsResponse, error)
-	// AddTaskToGroup writes the `member_of` edge from task to group.
+	DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*DeleteProjectResponse, error)
+	// ListProjects returns every Project in the agency.
+	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
+	// AddTaskToProject writes the `member_of` edge from task to project.
 	// Idempotent — re-adding an existing membership succeeds without
 	// creating a duplicate edge.
-	AddTaskToGroup(ctx context.Context, in *AddTaskToGroupRequest, opts ...grpc.CallOption) (*AddTaskToGroupResponse, error)
-	// RemoveTaskFromGroup removes the `member_of` edge from task to group.
+	AddTaskToProject(ctx context.Context, in *AddTaskToProjectRequest, opts ...grpc.CallOption) (*AddTaskToProjectResponse, error)
+	// RemoveTaskFromProject removes the `member_of` edge from task to project.
 	// Error: NOT_FOUND if no membership existed.
-	RemoveTaskFromGroup(ctx context.Context, in *RemoveTaskFromGroupRequest, opts ...grpc.CallOption) (*RemoveTaskFromGroupResponse, error)
-	// ListTasksInGroup returns the tasks belonging to the given group via
+	RemoveTaskFromProject(ctx context.Context, in *RemoveTaskFromProjectRequest, opts ...grpc.CallOption) (*RemoveTaskFromProjectResponse, error)
+	// ListTasksInProject returns the tasks belonging to the given project via
 	// inbound `member_of` edges.
-	ListTasksInGroup(ctx context.Context, in *ListTasksInGroupRequest, opts ...grpc.CallOption) (*ListTasksInGroupResponse, error)
-	// ListGroupsForTask returns the groups a task belongs to via outbound
+	ListTasksInProject(ctx context.Context, in *ListTasksInProjectRequest, opts ...grpc.CallOption) (*ListTasksInProjectResponse, error)
+	// ListProjectsForTask returns the projects a task belongs to via outbound
 	// `member_of` edges.
-	ListGroupsForTask(ctx context.Context, in *ListGroupsForTaskRequest, opts ...grpc.CallOption) (*ListGroupsForTaskResponse, error)
+	ListProjectsForTask(ctx context.Context, in *ListProjectsForTaskRequest, opts ...grpc.CallOption) (*ListProjectsForTaskResponse, error)
 	// CreateRelationship validates the (label, from_id, to_id) triple against
 	// the Work edge-label whitelist and creates the edge. Idempotent — a
 	// matching pre-existing edge is returned without creating a duplicate.
@@ -235,90 +235,90 @@ func (c *taskServiceClient) ListAgents(ctx context.Context, in *ListAgentsReques
 	return out, nil
 }
 
-func (c *taskServiceClient) CreateTaskGroup(ctx context.Context, in *CreateTaskGroupRequest, opts ...grpc.CallOption) (*CreateTaskGroupResponse, error) {
+func (c *taskServiceClient) CreateProject(ctx context.Context, in *CreateProjectRequest, opts ...grpc.CallOption) (*CreateProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateTaskGroupResponse)
-	err := c.cc.Invoke(ctx, TaskService_CreateTaskGroup_FullMethodName, in, out, cOpts...)
+	out := new(CreateProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_CreateProject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) GetTaskGroup(ctx context.Context, in *GetTaskGroupRequest, opts ...grpc.CallOption) (*GetTaskGroupResponse, error) {
+func (c *taskServiceClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetTaskGroupResponse)
-	err := c.cc.Invoke(ctx, TaskService_GetTaskGroup_FullMethodName, in, out, cOpts...)
+	out := new(GetProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_GetProject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) UpdateTaskGroup(ctx context.Context, in *UpdateTaskGroupRequest, opts ...grpc.CallOption) (*UpdateTaskGroupResponse, error) {
+func (c *taskServiceClient) UpdateProject(ctx context.Context, in *UpdateProjectRequest, opts ...grpc.CallOption) (*UpdateProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateTaskGroupResponse)
-	err := c.cc.Invoke(ctx, TaskService_UpdateTaskGroup_FullMethodName, in, out, cOpts...)
+	out := new(UpdateProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_UpdateProject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) DeleteTaskGroup(ctx context.Context, in *DeleteTaskGroupRequest, opts ...grpc.CallOption) (*DeleteTaskGroupResponse, error) {
+func (c *taskServiceClient) DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*DeleteProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteTaskGroupResponse)
-	err := c.cc.Invoke(ctx, TaskService_DeleteTaskGroup_FullMethodName, in, out, cOpts...)
+	out := new(DeleteProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_DeleteProject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) ListTaskGroups(ctx context.Context, in *ListTaskGroupsRequest, opts ...grpc.CallOption) (*ListTaskGroupsResponse, error) {
+func (c *taskServiceClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListTaskGroupsResponse)
-	err := c.cc.Invoke(ctx, TaskService_ListTaskGroups_FullMethodName, in, out, cOpts...)
+	out := new(ListProjectsResponse)
+	err := c.cc.Invoke(ctx, TaskService_ListProjects_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) AddTaskToGroup(ctx context.Context, in *AddTaskToGroupRequest, opts ...grpc.CallOption) (*AddTaskToGroupResponse, error) {
+func (c *taskServiceClient) AddTaskToProject(ctx context.Context, in *AddTaskToProjectRequest, opts ...grpc.CallOption) (*AddTaskToProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AddTaskToGroupResponse)
-	err := c.cc.Invoke(ctx, TaskService_AddTaskToGroup_FullMethodName, in, out, cOpts...)
+	out := new(AddTaskToProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_AddTaskToProject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) RemoveTaskFromGroup(ctx context.Context, in *RemoveTaskFromGroupRequest, opts ...grpc.CallOption) (*RemoveTaskFromGroupResponse, error) {
+func (c *taskServiceClient) RemoveTaskFromProject(ctx context.Context, in *RemoveTaskFromProjectRequest, opts ...grpc.CallOption) (*RemoveTaskFromProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RemoveTaskFromGroupResponse)
-	err := c.cc.Invoke(ctx, TaskService_RemoveTaskFromGroup_FullMethodName, in, out, cOpts...)
+	out := new(RemoveTaskFromProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_RemoveTaskFromProject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) ListTasksInGroup(ctx context.Context, in *ListTasksInGroupRequest, opts ...grpc.CallOption) (*ListTasksInGroupResponse, error) {
+func (c *taskServiceClient) ListTasksInProject(ctx context.Context, in *ListTasksInProjectRequest, opts ...grpc.CallOption) (*ListTasksInProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListTasksInGroupResponse)
-	err := c.cc.Invoke(ctx, TaskService_ListTasksInGroup_FullMethodName, in, out, cOpts...)
+	out := new(ListTasksInProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_ListTasksInProject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) ListGroupsForTask(ctx context.Context, in *ListGroupsForTaskRequest, opts ...grpc.CallOption) (*ListGroupsForTaskResponse, error) {
+func (c *taskServiceClient) ListProjectsForTask(ctx context.Context, in *ListProjectsForTaskRequest, opts ...grpc.CallOption) (*ListProjectsForTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListGroupsForTaskResponse)
-	err := c.cc.Invoke(ctx, TaskService_ListGroupsForTask_FullMethodName, in, out, cOpts...)
+	out := new(ListProjectsForTaskResponse)
+	err := c.cc.Invoke(ctx, TaskService_ListProjectsForTask_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -397,33 +397,33 @@ type TaskServiceServer interface {
 	GetAgent(context.Context, *GetAgentRequest) (*GetAgentResponse, error)
 	// ListAgents returns every Agent in the agency.
 	ListAgents(context.Context, *ListAgentsRequest) (*ListAgentsResponse, error)
-	// CreateTaskGroup creates a new TaskGroup vertex.
-	// Error: ALREADY_EXISTS if the group ID is already taken.
+	// CreateProject creates a new Project vertex.
+	// Error: ALREADY_EXISTS if the project ID is already taken.
 	// Error: INVALID_ARGUMENT if name is empty.
-	CreateTaskGroup(context.Context, *CreateTaskGroupRequest) (*CreateTaskGroupResponse, error)
-	// GetTaskGroup retrieves a single TaskGroup.
-	// Error: NOT_FOUND if the group does not exist.
-	GetTaskGroup(context.Context, *GetTaskGroupRequest) (*GetTaskGroupResponse, error)
-	// UpdateTaskGroup patches the mutable fields of an existing TaskGroup.
-	UpdateTaskGroup(context.Context, *UpdateTaskGroupRequest) (*UpdateTaskGroupResponse, error)
-	// DeleteTaskGroup removes the group AND all inbound `member_of` edges.
+	CreateProject(context.Context, *CreateProjectRequest) (*CreateProjectResponse, error)
+	// GetProject retrieves a single Project.
+	// Error: NOT_FOUND if the project does not exist.
+	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
+	// UpdateProject patches the mutable fields of an existing Project.
+	UpdateProject(context.Context, *UpdateProjectRequest) (*UpdateProjectResponse, error)
+	// DeleteProject removes the project AND all inbound `member_of` edges.
 	// Member tasks themselves are preserved.
-	DeleteTaskGroup(context.Context, *DeleteTaskGroupRequest) (*DeleteTaskGroupResponse, error)
-	// ListTaskGroups returns every TaskGroup in the agency.
-	ListTaskGroups(context.Context, *ListTaskGroupsRequest) (*ListTaskGroupsResponse, error)
-	// AddTaskToGroup writes the `member_of` edge from task to group.
+	DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error)
+	// ListProjects returns every Project in the agency.
+	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
+	// AddTaskToProject writes the `member_of` edge from task to project.
 	// Idempotent — re-adding an existing membership succeeds without
 	// creating a duplicate edge.
-	AddTaskToGroup(context.Context, *AddTaskToGroupRequest) (*AddTaskToGroupResponse, error)
-	// RemoveTaskFromGroup removes the `member_of` edge from task to group.
+	AddTaskToProject(context.Context, *AddTaskToProjectRequest) (*AddTaskToProjectResponse, error)
+	// RemoveTaskFromProject removes the `member_of` edge from task to project.
 	// Error: NOT_FOUND if no membership existed.
-	RemoveTaskFromGroup(context.Context, *RemoveTaskFromGroupRequest) (*RemoveTaskFromGroupResponse, error)
-	// ListTasksInGroup returns the tasks belonging to the given group via
+	RemoveTaskFromProject(context.Context, *RemoveTaskFromProjectRequest) (*RemoveTaskFromProjectResponse, error)
+	// ListTasksInProject returns the tasks belonging to the given project via
 	// inbound `member_of` edges.
-	ListTasksInGroup(context.Context, *ListTasksInGroupRequest) (*ListTasksInGroupResponse, error)
-	// ListGroupsForTask returns the groups a task belongs to via outbound
+	ListTasksInProject(context.Context, *ListTasksInProjectRequest) (*ListTasksInProjectResponse, error)
+	// ListProjectsForTask returns the projects a task belongs to via outbound
 	// `member_of` edges.
-	ListGroupsForTask(context.Context, *ListGroupsForTaskRequest) (*ListGroupsForTaskResponse, error)
+	ListProjectsForTask(context.Context, *ListProjectsForTaskRequest) (*ListProjectsForTaskResponse, error)
 	// CreateRelationship validates the (label, from_id, to_id) triple against
 	// the Work edge-label whitelist and creates the edge. Idempotent — a
 	// matching pre-existing edge is returned without creating a duplicate.
@@ -477,32 +477,32 @@ func (UnimplementedTaskServiceServer) GetAgent(context.Context, *GetAgentRequest
 func (UnimplementedTaskServiceServer) ListAgents(context.Context, *ListAgentsRequest) (*ListAgentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListAgents not implemented")
 }
-func (UnimplementedTaskServiceServer) CreateTaskGroup(context.Context, *CreateTaskGroupRequest) (*CreateTaskGroupResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateTaskGroup not implemented")
+func (UnimplementedTaskServiceServer) CreateProject(context.Context, *CreateProjectRequest) (*CreateProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateProject not implemented")
 }
-func (UnimplementedTaskServiceServer) GetTaskGroup(context.Context, *GetTaskGroupRequest) (*GetTaskGroupResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetTaskGroup not implemented")
+func (UnimplementedTaskServiceServer) GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetProject not implemented")
 }
-func (UnimplementedTaskServiceServer) UpdateTaskGroup(context.Context, *UpdateTaskGroupRequest) (*UpdateTaskGroupResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateTaskGroup not implemented")
+func (UnimplementedTaskServiceServer) UpdateProject(context.Context, *UpdateProjectRequest) (*UpdateProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateProject not implemented")
 }
-func (UnimplementedTaskServiceServer) DeleteTaskGroup(context.Context, *DeleteTaskGroupRequest) (*DeleteTaskGroupResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method DeleteTaskGroup not implemented")
+func (UnimplementedTaskServiceServer) DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteProject not implemented")
 }
-func (UnimplementedTaskServiceServer) ListTaskGroups(context.Context, *ListTaskGroupsRequest) (*ListTaskGroupsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListTaskGroups not implemented")
+func (UnimplementedTaskServiceServer) ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListProjects not implemented")
 }
-func (UnimplementedTaskServiceServer) AddTaskToGroup(context.Context, *AddTaskToGroupRequest) (*AddTaskToGroupResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AddTaskToGroup not implemented")
+func (UnimplementedTaskServiceServer) AddTaskToProject(context.Context, *AddTaskToProjectRequest) (*AddTaskToProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddTaskToProject not implemented")
 }
-func (UnimplementedTaskServiceServer) RemoveTaskFromGroup(context.Context, *RemoveTaskFromGroupRequest) (*RemoveTaskFromGroupResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RemoveTaskFromGroup not implemented")
+func (UnimplementedTaskServiceServer) RemoveTaskFromProject(context.Context, *RemoveTaskFromProjectRequest) (*RemoveTaskFromProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveTaskFromProject not implemented")
 }
-func (UnimplementedTaskServiceServer) ListTasksInGroup(context.Context, *ListTasksInGroupRequest) (*ListTasksInGroupResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListTasksInGroup not implemented")
+func (UnimplementedTaskServiceServer) ListTasksInProject(context.Context, *ListTasksInProjectRequest) (*ListTasksInProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTasksInProject not implemented")
 }
-func (UnimplementedTaskServiceServer) ListGroupsForTask(context.Context, *ListGroupsForTaskRequest) (*ListGroupsForTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListGroupsForTask not implemented")
+func (UnimplementedTaskServiceServer) ListProjectsForTask(context.Context, *ListProjectsForTaskRequest) (*ListProjectsForTaskResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListProjectsForTask not implemented")
 }
 func (UnimplementedTaskServiceServer) CreateRelationship(context.Context, *CreateRelationshipRequest) (*CreateRelationshipResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateRelationship not implemented")
@@ -714,164 +714,164 @@ func _TaskService_ListAgents_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_CreateTaskGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateTaskGroupRequest)
+func _TaskService_CreateProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateProjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).CreateTaskGroup(ctx, in)
+		return srv.(TaskServiceServer).CreateProject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_CreateTaskGroup_FullMethodName,
+		FullMethod: TaskService_CreateProject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).CreateTaskGroup(ctx, req.(*CreateTaskGroupRequest))
+		return srv.(TaskServiceServer).CreateProject(ctx, req.(*CreateProjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_GetTaskGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTaskGroupRequest)
+func _TaskService_GetProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).GetTaskGroup(ctx, in)
+		return srv.(TaskServiceServer).GetProject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_GetTaskGroup_FullMethodName,
+		FullMethod: TaskService_GetProject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).GetTaskGroup(ctx, req.(*GetTaskGroupRequest))
+		return srv.(TaskServiceServer).GetProject(ctx, req.(*GetProjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_UpdateTaskGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateTaskGroupRequest)
+func _TaskService_UpdateProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateProjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).UpdateTaskGroup(ctx, in)
+		return srv.(TaskServiceServer).UpdateProject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_UpdateTaskGroup_FullMethodName,
+		FullMethod: TaskService_UpdateProject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).UpdateTaskGroup(ctx, req.(*UpdateTaskGroupRequest))
+		return srv.(TaskServiceServer).UpdateProject(ctx, req.(*UpdateProjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_DeleteTaskGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteTaskGroupRequest)
+func _TaskService_DeleteProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteProjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).DeleteTaskGroup(ctx, in)
+		return srv.(TaskServiceServer).DeleteProject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_DeleteTaskGroup_FullMethodName,
+		FullMethod: TaskService_DeleteProject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).DeleteTaskGroup(ctx, req.(*DeleteTaskGroupRequest))
+		return srv.(TaskServiceServer).DeleteProject(ctx, req.(*DeleteProjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_ListTaskGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTaskGroupsRequest)
+func _TaskService_ListProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).ListTaskGroups(ctx, in)
+		return srv.(TaskServiceServer).ListProjects(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_ListTaskGroups_FullMethodName,
+		FullMethod: TaskService_ListProjects_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).ListTaskGroups(ctx, req.(*ListTaskGroupsRequest))
+		return srv.(TaskServiceServer).ListProjects(ctx, req.(*ListProjectsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_AddTaskToGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddTaskToGroupRequest)
+func _TaskService_AddTaskToProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTaskToProjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).AddTaskToGroup(ctx, in)
+		return srv.(TaskServiceServer).AddTaskToProject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_AddTaskToGroup_FullMethodName,
+		FullMethod: TaskService_AddTaskToProject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).AddTaskToGroup(ctx, req.(*AddTaskToGroupRequest))
+		return srv.(TaskServiceServer).AddTaskToProject(ctx, req.(*AddTaskToProjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_RemoveTaskFromGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveTaskFromGroupRequest)
+func _TaskService_RemoveTaskFromProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveTaskFromProjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).RemoveTaskFromGroup(ctx, in)
+		return srv.(TaskServiceServer).RemoveTaskFromProject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_RemoveTaskFromGroup_FullMethodName,
+		FullMethod: TaskService_RemoveTaskFromProject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).RemoveTaskFromGroup(ctx, req.(*RemoveTaskFromGroupRequest))
+		return srv.(TaskServiceServer).RemoveTaskFromProject(ctx, req.(*RemoveTaskFromProjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_ListTasksInGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTasksInGroupRequest)
+func _TaskService_ListTasksInProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTasksInProjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).ListTasksInGroup(ctx, in)
+		return srv.(TaskServiceServer).ListTasksInProject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_ListTasksInGroup_FullMethodName,
+		FullMethod: TaskService_ListTasksInProject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).ListTasksInGroup(ctx, req.(*ListTasksInGroupRequest))
+		return srv.(TaskServiceServer).ListTasksInProject(ctx, req.(*ListTasksInProjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_ListGroupsForTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListGroupsForTaskRequest)
+func _TaskService_ListProjectsForTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectsForTaskRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).ListGroupsForTask(ctx, in)
+		return srv.(TaskServiceServer).ListProjectsForTask(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_ListGroupsForTask_FullMethodName,
+		FullMethod: TaskService_ListProjectsForTask_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).ListGroupsForTask(ctx, req.(*ListGroupsForTaskRequest))
+		return srv.(TaskServiceServer).ListProjectsForTask(ctx, req.(*ListProjectsForTaskRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -978,40 +978,40 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TaskService_ListAgents_Handler,
 		},
 		{
-			MethodName: "CreateTaskGroup",
-			Handler:    _TaskService_CreateTaskGroup_Handler,
+			MethodName: "CreateProject",
+			Handler:    _TaskService_CreateProject_Handler,
 		},
 		{
-			MethodName: "GetTaskGroup",
-			Handler:    _TaskService_GetTaskGroup_Handler,
+			MethodName: "GetProject",
+			Handler:    _TaskService_GetProject_Handler,
 		},
 		{
-			MethodName: "UpdateTaskGroup",
-			Handler:    _TaskService_UpdateTaskGroup_Handler,
+			MethodName: "UpdateProject",
+			Handler:    _TaskService_UpdateProject_Handler,
 		},
 		{
-			MethodName: "DeleteTaskGroup",
-			Handler:    _TaskService_DeleteTaskGroup_Handler,
+			MethodName: "DeleteProject",
+			Handler:    _TaskService_DeleteProject_Handler,
 		},
 		{
-			MethodName: "ListTaskGroups",
-			Handler:    _TaskService_ListTaskGroups_Handler,
+			MethodName: "ListProjects",
+			Handler:    _TaskService_ListProjects_Handler,
 		},
 		{
-			MethodName: "AddTaskToGroup",
-			Handler:    _TaskService_AddTaskToGroup_Handler,
+			MethodName: "AddTaskToProject",
+			Handler:    _TaskService_AddTaskToProject_Handler,
 		},
 		{
-			MethodName: "RemoveTaskFromGroup",
-			Handler:    _TaskService_RemoveTaskFromGroup_Handler,
+			MethodName: "RemoveTaskFromProject",
+			Handler:    _TaskService_RemoveTaskFromProject_Handler,
 		},
 		{
-			MethodName: "ListTasksInGroup",
-			Handler:    _TaskService_ListTasksInGroup_Handler,
+			MethodName: "ListTasksInProject",
+			Handler:    _TaskService_ListTasksInProject_Handler,
 		},
 		{
-			MethodName: "ListGroupsForTask",
-			Handler:    _TaskService_ListGroupsForTask_Handler,
+			MethodName: "ListProjectsForTask",
+			Handler:    _TaskService_ListProjectsForTask_Handler,
 		},
 		{
 			MethodName: "CreateRelationship",

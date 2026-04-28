@@ -60,43 +60,43 @@ service TaskService {
   // ListAgents returns every Agent in the agency.
   rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse);
 
-  // ── TaskGroup CRUD + membership ────────────────────────────────────────────
+  // ── Project CRUD + membership ──────────────────────────────────────────────
 
-  // CreateTaskGroup creates a new TaskGroup vertex.
-  // Error: ALREADY_EXISTS if the group ID is already taken.
+  // CreateProject creates a new Project vertex.
+  // Error: ALREADY_EXISTS if the project ID is already taken.
   // Error: INVALID_ARGUMENT if name is empty.
-  rpc CreateTaskGroup(CreateTaskGroupRequest) returns (CreateTaskGroupResponse);
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
 
-  // GetTaskGroup retrieves a single TaskGroup.
-  // Error: NOT_FOUND if the group does not exist.
-  rpc GetTaskGroup(GetTaskGroupRequest) returns (GetTaskGroupResponse);
+  // GetProject retrieves a single Project.
+  // Error: NOT_FOUND if the project does not exist.
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
 
-  // UpdateTaskGroup patches the mutable fields of an existing TaskGroup.
-  rpc UpdateTaskGroup(UpdateTaskGroupRequest) returns (UpdateTaskGroupResponse);
+  // UpdateProject patches the mutable fields of an existing Project.
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
 
-  // DeleteTaskGroup removes the group AND all inbound `member_of` edges.
+  // DeleteProject removes the project AND all inbound `member_of` edges.
   // Member tasks themselves are preserved.
-  rpc DeleteTaskGroup(DeleteTaskGroupRequest) returns (DeleteTaskGroupResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
 
-  // ListTaskGroups returns every TaskGroup in the agency.
-  rpc ListTaskGroups(ListTaskGroupsRequest) returns (ListTaskGroupsResponse);
+  // ListProjects returns every Project in the agency.
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
 
-  // AddTaskToGroup writes the `member_of` edge from task to group.
+  // AddTaskToProject writes the `member_of` edge from task to project.
   // Idempotent — re-adding an existing membership succeeds without
   // creating a duplicate edge.
-  rpc AddTaskToGroup(AddTaskToGroupRequest) returns (AddTaskToGroupResponse);
+  rpc AddTaskToProject(AddTaskToProjectRequest) returns (AddTaskToProjectResponse);
 
-  // RemoveTaskFromGroup removes the `member_of` edge from task to group.
+  // RemoveTaskFromProject removes the `member_of` edge from task to project.
   // Error: NOT_FOUND if no membership existed.
-  rpc RemoveTaskFromGroup(RemoveTaskFromGroupRequest) returns (RemoveTaskFromGroupResponse);
+  rpc RemoveTaskFromProject(RemoveTaskFromProjectRequest) returns (RemoveTaskFromProjectResponse);
 
-  // ListTasksInGroup returns the tasks belonging to the given group via
+  // ListTasksInProject returns the tasks belonging to the given project via
   // inbound `member_of` edges.
-  rpc ListTasksInGroup(ListTasksInGroupRequest) returns (ListTasksInGroupResponse);
+  rpc ListTasksInProject(ListTasksInProjectRequest) returns (ListTasksInProjectResponse);
 
-  // ListGroupsForTask returns the groups a task belongs to via outbound
+  // ListProjectsForTask returns the projects a task belongs to via outbound
   // `member_of` edges.
-  rpc ListGroupsForTask(ListGroupsForTaskRequest) returns (ListGroupsForTaskResponse);
+  rpc ListProjectsForTask(ListProjectsForTaskRequest) returns (ListProjectsForTaskResponse);
 
   // ── Generic graph relationships ────────────────────────────────────────────
 
@@ -195,73 +195,73 @@ message ListAgentsResponse {
   repeated Agent agents = 1;
 }
 
-// ── TaskGroup messages ────────────────────────────────────────────────────────
+// ── Project messages ──────────────────────────────────────────────────────────
 
-message CreateTaskGroupRequest {
-  string    agency_id = 1;
-  TaskGroup group     = 2;
+message CreateProjectRequest {
+  string  agency_id = 1;
+  Project project   = 2;
 }
-message CreateTaskGroupResponse {
-  TaskGroup group = 1;
-}
-
-message GetTaskGroupRequest {
-  string agency_id     = 1;
-  string task_group_id = 2;
-}
-message GetTaskGroupResponse {
-  TaskGroup group = 1;
+message CreateProjectResponse {
+  Project project = 1;
 }
 
-message UpdateTaskGroupRequest {
-  string    agency_id = 1;
-  TaskGroup group     = 2;
+message GetProjectRequest {
+  string agency_id  = 1;
+  string project_id = 2;
 }
-message UpdateTaskGroupResponse {
-  TaskGroup group = 1;
+message GetProjectResponse {
+  Project project = 1;
 }
 
-message DeleteTaskGroupRequest {
-  string agency_id     = 1;
-  string task_group_id = 2;
+message UpdateProjectRequest {
+  string  agency_id = 1;
+  Project project   = 2;
 }
-message DeleteTaskGroupResponse {}
+message UpdateProjectResponse {
+  Project project = 1;
+}
 
-message ListTaskGroupsRequest {
+message DeleteProjectRequest {
+  string agency_id  = 1;
+  string project_id = 2;
+}
+message DeleteProjectResponse {}
+
+message ListProjectsRequest {
   string agency_id = 1;
 }
-message ListTaskGroupsResponse {
-  repeated TaskGroup groups = 1;
+message ListProjectsResponse {
+  repeated Project projects = 1;
 }
 
-message AddTaskToGroupRequest {
-  string agency_id     = 1;
-  string task_id       = 2;
-  string task_group_id = 3;
+message AddTaskToProjectRequest {
+  string agency_id  = 1;
+  string task_id    = 2;
+  string project_id = 3;
 }
-message AddTaskToGroupResponse {}
+message AddTaskToProjectResponse {}
 
-message RemoveTaskFromGroupRequest {
-  string agency_id     = 1;
-  string task_id       = 2;
-  string task_group_id = 3;
+message RemoveTaskFromProjectRequest {
+  string agency_id  = 1;
+  string task_id    = 2;
+  string project_id = 3;
 }
-message RemoveTaskFromGroupResponse {}
+message RemoveTaskFromProjectResponse {}
 
-message ListTasksInGroupRequest {
-  string agency_id     = 1;
-  string task_group_id = 2;
+message ListTasksInProjectRequest {
+  string agency_id  = 1;
+  string project_id = 2;
 }
-message ListTasksInGroupResponse {
+message ListTasksInProjectResponse {
   repeated Task tasks = 1;
 }
 
-message ListGroupsForTaskRequest {
+message ListProjectsForTaskRequest {
   string agency_id = 1;
   string task_id   = 2;
 }
-message ListGroupsForTaskResponse {
-  repeated TaskGroup groups = 1;
+message ListProjectsForTaskResponse {
+  repeated Project projects = 1;
 }
 
 // ── Relationship messages ─────────────────────────────────────────────────────

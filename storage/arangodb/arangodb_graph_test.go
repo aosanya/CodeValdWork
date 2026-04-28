@@ -180,78 +180,78 @@ func TestArangoDB_AgentAssignment_RoundTrip(t *testing.T) {
 	}
 }
 
-// TestArangoDB_TaskGroup_RoundTrip exercises the WORK-012 TaskGroup +
-// member_of surface end to end against a live ArangoDB: create a group,
+// TestArangoDB_Project_RoundTrip exercises the WORK-012 Project +
+// member_of surface end to end against a live ArangoDB: create a project,
 // add two task members, verify membership listings in both directions,
-// idempotent re-add, remove one, then DeleteTaskGroup and verify the group
+// idempotent re-add, remove one, then DeleteProject and verify the project
 // is gone, all member_of edges are gone, and the member tasks themselves
 // still exist.
-func TestArangoDB_TaskGroup_RoundTrip(t *testing.T) {
+func TestArangoDB_Project_RoundTrip(t *testing.T) {
 	mgr := openTestManager(t)
 	ctx := context.Background()
-	agency := uniqueAgency("group")
+	agency := uniqueAgency("project")
 
-	g, err := mgr.CreateTaskGroup(ctx, agency, codevaldwork.TaskGroup{
-		Name: "Sprint 7", Description: "Q2 push",
+	p, err := mgr.CreateProject(ctx, agency, codevaldwork.Project{
+		Name: "Sprint 7", Description: "Q2 push", GithubRepo: "aosanya/CodeValdWork",
 	})
 	if err != nil {
-		t.Fatalf("CreateTaskGroup: %v", err)
+		t.Fatalf("CreateProject: %v", err)
 	}
 
 	t1, _ := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "task-1"})
 	t2, _ := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "task-2"})
 
-	if err := mgr.AddTaskToGroup(ctx, agency, t1.ID, g.ID); err != nil {
-		t.Fatalf("AddTaskToGroup t1: %v", err)
+	if err := mgr.AddTaskToProject(ctx, agency, t1.ID, p.ID); err != nil {
+		t.Fatalf("AddTaskToProject t1: %v", err)
 	}
-	if err := mgr.AddTaskToGroup(ctx, agency, t2.ID, g.ID); err != nil {
-		t.Fatalf("AddTaskToGroup t2: %v", err)
+	if err := mgr.AddTaskToProject(ctx, agency, t2.ID, p.ID); err != nil {
+		t.Fatalf("AddTaskToProject t2: %v", err)
 	}
 
 	// Idempotent re-add.
-	if err := mgr.AddTaskToGroup(ctx, agency, t1.ID, g.ID); err != nil {
-		t.Errorf("idempotent AddTaskToGroup: %v", err)
+	if err := mgr.AddTaskToProject(ctx, agency, t1.ID, p.ID); err != nil {
+		t.Errorf("idempotent AddTaskToProject: %v", err)
 	}
 
-	tasks, err := mgr.ListTasksInGroup(ctx, agency, g.ID)
+	tasks, err := mgr.ListTasksInProject(ctx, agency, p.ID)
 	if err != nil {
-		t.Fatalf("ListTasksInGroup: %v", err)
+		t.Fatalf("ListTasksInProject: %v", err)
 	}
 	if len(tasks) != 2 {
 		t.Fatalf("want 2 members, got %d", len(tasks))
 	}
 
-	groups, err := mgr.ListGroupsForTask(ctx, agency, t1.ID)
+	projects, err := mgr.ListProjectsForTask(ctx, agency, t1.ID)
 	if err != nil {
-		t.Fatalf("ListGroupsForTask: %v", err)
+		t.Fatalf("ListProjectsForTask: %v", err)
 	}
-	if len(groups) != 1 || groups[0].ID != g.ID {
-		t.Errorf("ListGroupsForTask: got %v, want [%s]", groups, g.ID)
+	if len(projects) != 1 || projects[0].ID != p.ID {
+		t.Errorf("ListProjectsForTask: got %v, want [%s]", projects, p.ID)
 	}
 
-	if err := mgr.RemoveTaskFromGroup(ctx, agency, t1.ID, g.ID); err != nil {
-		t.Fatalf("RemoveTaskFromGroup: %v", err)
+	if err := mgr.RemoveTaskFromProject(ctx, agency, t1.ID, p.ID); err != nil {
+		t.Fatalf("RemoveTaskFromProject: %v", err)
 	}
-	tasks, _ = mgr.ListTasksInGroup(ctx, agency, g.ID)
+	tasks, _ = mgr.ListTasksInProject(ctx, agency, p.ID)
 	if len(tasks) != 1 || tasks[0].ID != t2.ID {
 		t.Fatalf("after remove: want only t2, got %v", tasks)
 	}
 
-	if err := mgr.DeleteTaskGroup(ctx, agency, g.ID); err != nil {
-		t.Fatalf("DeleteTaskGroup: %v", err)
+	if err := mgr.DeleteProject(ctx, agency, p.ID); err != nil {
+		t.Fatalf("DeleteProject: %v", err)
 	}
 
-	if _, err := mgr.GetTaskGroup(ctx, agency, g.ID); !errors.Is(err, codevaldwork.ErrTaskGroupNotFound) {
-		t.Errorf("group still resolves: got %v, want ErrTaskGroupNotFound", err)
+	if _, err := mgr.GetProject(ctx, agency, p.ID); !errors.Is(err, codevaldwork.ErrProjectNotFound) {
+		t.Errorf("project still resolves: got %v, want ErrProjectNotFound", err)
 	}
 	for _, id := range []string{t1.ID, t2.ID} {
 		if _, err := mgr.GetTask(ctx, agency, id); err != nil {
-			t.Errorf("task %s should survive group delete: %v", id, err)
+			t.Errorf("task %s should survive project delete: %v", id, err)
 		}
 	}
-	// Inbound member_of from a non-existent group returns no edges.
-	edges, _ := mgr.TraverseRelationships(ctx, agency, g.ID, codevaldwork.RelLabelMemberOf, codevaldwork.DirectionInbound)
+	// Inbound member_of from a non-existent project returns no edges.
+	edges, _ := mgr.TraverseRelationships(ctx, agency, p.ID, codevaldwork.RelLabelMemberOf, codevaldwork.DirectionInbound)
 	if len(edges) != 0 {
-		t.Errorf("want 0 inbound member_of edges after group delete, got %d", len(edges))
+		t.Errorf("want 0 inbound member_of edges after project delete, got %d", len(edges))
 	}
 }

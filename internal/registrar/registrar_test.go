@@ -26,16 +26,16 @@ func TestWorkRoutes_StaticCapabilitySnapshot(t *testing.T) {
 		"upsert_agent",
 		"get_agent",
 		"list_agents",
-		// TaskGroup CRUD + membership (WORK-012)
-		"create_task_group",
-		"get_task_group",
-		"update_task_group",
-		"delete_task_group",
-		"list_task_groups",
-		"add_task_to_group",
-		"remove_task_from_group",
-		"list_tasks_in_group",
-		"list_groups_for_task",
+		// Project CRUD + membership (WORK-012)
+		"create_project",
+		"get_project",
+		"update_project",
+		"delete_project",
+		"list_projects",
+		"add_task_to_project",
+		"remove_task_from_project",
+		"list_tasks_in_project",
+		"list_projects_for_task",
 		// Generic graph relationships (WORK-009)
 		"create_relationship",
 		"delete_relationship",
@@ -84,11 +84,11 @@ func TestWorkRoutes_IsWriteFlags(t *testing.T) {
 		"assign_task":            true,
 		"unassign_task":          true,
 		"upsert_agent":           true,
-		"create_task_group":      true,
-		"update_task_group":      true,
-		"delete_task_group":      true,
-		"add_task_to_group":      true,
-		"remove_task_from_group": true,
+		"create_project":           true,
+		"update_project":           true,
+		"delete_project":           true,
+		"add_task_to_project":      true,
+		"remove_task_from_project": true,
 		"create_relationship":    true,
 		"delete_relationship":    true,
 	}
@@ -100,7 +100,7 @@ func TestWorkRoutes_IsWriteFlags(t *testing.T) {
 }
 
 // TestWorkRoutes_PathBindingSpotChecks verifies the trickier path bindings —
-// the nested-field bindings on UpsertAgent / UpdateTaskGroup, plus the
+// the nested-field bindings on UpsertAgent / UpdateProject, plus the
 // multi-segment delete_relationship pattern.
 func TestWorkRoutes_PathBindingSpotChecks(t *testing.T) {
 	cases := []struct {
@@ -122,10 +122,10 @@ func TestWorkRoutes_PathBindingSpotChecks(t *testing.T) {
 			},
 		},
 		{
-			capability: "update_task_group",
+			capability: "update_project",
 			want: []types.PathBinding{
 				{URLParam: "agencyId", Field: "agency_id"},
-				{URLParam: "taskGroupId", Field: "group.id"},
+				{URLParam: "projectId", Field: "project.id"},
 			},
 		},
 		{
@@ -173,7 +173,7 @@ func TestWorkRoutes_PathBindingSpotChecks(t *testing.T) {
 func staticRoutes() []types.RouteInfo {
 	out := taskRoutes()
 	out = append(out, agentRoutes()...)
-	out = append(out, taskGroupRoutes()...)
+	out = append(out, projectRoutes()...)
 	out = append(out, relationshipRoutes()...)
 	return out
 }

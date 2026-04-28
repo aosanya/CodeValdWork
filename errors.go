@@ -28,13 +28,13 @@ var ErrAgentNotFound = errors.New("agent not found")
 // upsert path itself does not return this error.
 var ErrAgentAlreadyExists = errors.New("agent already exists")
 
-// ErrTaskGroupNotFound is returned when a TaskGroup vertex does not exist
+// ErrProjectNotFound is returned when a Project vertex does not exist
 // for the given agencyID and entity ID.
-var ErrTaskGroupNotFound = errors.New("task group not found")
+var ErrProjectNotFound = errors.New("project not found")
 
-// ErrTaskGroupAlreadyExists is returned by [TaskManager.CreateTaskGroup]
-// when a TaskGroup with the same ID already exists in the agency.
-var ErrTaskGroupAlreadyExists = errors.New("task group already exists")
+// ErrProjectAlreadyExists is returned by [TaskManager.CreateProject]
+// when a Project with the same ID already exists in the agency.
+var ErrProjectAlreadyExists = errors.New("project already exists")
 
 // ErrInvalidRelationship is returned by [TaskManager.CreateRelationship]
 // when the (label, fromType, toType) triple is not in the Work edge-label

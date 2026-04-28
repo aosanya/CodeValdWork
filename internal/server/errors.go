@@ -22,12 +22,12 @@ func mapError(err error) error {
 	switch {
 	case errors.Is(err, codevaldwork.ErrTaskNotFound),
 		errors.Is(err, codevaldwork.ErrAgentNotFound),
-		errors.Is(err, codevaldwork.ErrTaskGroupNotFound),
+		errors.Is(err, codevaldwork.ErrProjectNotFound),
 		errors.Is(err, codevaldwork.ErrRelationshipNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, codevaldwork.ErrTaskAlreadyExists),
 		errors.Is(err, codevaldwork.ErrAgentAlreadyExists),
-		errors.Is(err, codevaldwork.ErrTaskGroupAlreadyExists):
+		errors.Is(err, codevaldwork.ErrProjectAlreadyExists):
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.As(err, &blocked):
 		return blockedStatus(blocked)

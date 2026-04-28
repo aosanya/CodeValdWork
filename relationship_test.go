@@ -23,8 +23,8 @@ func seedTask(t *testing.T, mgr codevaldwork.TaskManager, agencyID, title string
 }
 
 // seedVertex inserts a raw entity of the given TypeID into the fake — used to
-// stand up Agent / TaskGroup vertices since the WORK-009 manager doesn't yet
-// expose UpsertAgent / CreateTaskGroup (those land in WORK-010 / WORK-012).
+// stand up Agent / Project vertices since the WORK-009 manager doesn't yet
+// expose UpsertAgent / CreateProject (those land in WORK-010 / WORK-012).
 func seedVertex(t *testing.T, fake *fakeDataManager, agencyID, typeID string) string {
 	t.Helper()
 	e, err := fake.CreateEntity(context.Background(), entitygraph.CreateEntityRequest{
@@ -52,7 +52,7 @@ func TestCreateRelationship_AllWhitelistedLabels(t *testing.T) {
 	taskA := seedTask(t, mgr, agency, "A")
 	taskB := seedTask(t, mgr, agency, "B")
 	agent := seedVertex(t, fake, agency, "Agent")
-	group := seedVertex(t, fake, agency, "TaskGroup")
+	project := seedVertex(t, fake, agency, "Project")
 
 	cases := []struct {
 		label  string
@@ -63,7 +63,7 @@ func TestCreateRelationship_AllWhitelistedLabels(t *testing.T) {
 		{codevaldwork.RelLabelBlocks, taskA, taskB},
 		{codevaldwork.RelLabelSubtaskOf, taskA, taskB},
 		{codevaldwork.RelLabelDependsOn, taskA, taskB},
-		{codevaldwork.RelLabelMemberOf, taskA, group},
+		{codevaldwork.RelLabelMemberOf, taskA, project},
 	}
 	for _, tc := range cases {
 		// Use a fresh source-target pair per label to avoid cardinality
@@ -112,11 +112,11 @@ func TestCreateRelationship_WrongVertexType_ReturnsErrInvalidRelationship(t *tes
 	fake := newFakeDataManager()
 	mgr, _ := codevaldwork.NewTaskManager(fake, nil)
 	taskID := seedTask(t, mgr, "ag", "task")
-	groupID := seedVertex(t, fake, "ag", "TaskGroup")
+	projectID := seedVertex(t, fake, "ag", "Project")
 
-	// blocks must point Task→Task; using TaskGroup as the target is invalid.
+	// blocks must point Task→Task; using Project as the target is invalid.
 	_, err := mgr.CreateRelationship(context.Background(), "ag", codevaldwork.Relationship{
-		Label: codevaldwork.RelLabelBlocks, FromID: taskID, ToID: groupID,
+		Label: codevaldwork.RelLabelBlocks, FromID: taskID, ToID: projectID,
 	})
 	if !errors.Is(err, codevaldwork.ErrInvalidRelationship) {
 		t.Fatalf("got %v, want ErrInvalidRelationship", err)
@@ -149,16 +149,16 @@ func TestCreateRelationship_MissingAgentEndpoint_ReturnsErrAgentNotFound(t *test
 	}
 }
 
-func TestCreateRelationship_MissingTaskGroupEndpoint_ReturnsErrTaskGroupNotFound(t *testing.T) {
+func TestCreateRelationship_MissingProjectEndpoint_ReturnsErrProjectNotFound(t *testing.T) {
 	fake := newFakeDataManager()
 	mgr, _ := codevaldwork.NewTaskManager(fake, nil)
 	taskID := seedTask(t, mgr, "ag", "a")
 
 	_, err := mgr.CreateRelationship(context.Background(), "ag", codevaldwork.Relationship{
-		Label: codevaldwork.RelLabelMemberOf, FromID: taskID, ToID: "no-such-group",
+		Label: codevaldwork.RelLabelMemberOf, FromID: taskID, ToID: "no-such-project",
 	})
-	if !errors.Is(err, codevaldwork.ErrTaskGroupNotFound) {
-		t.Fatalf("got %v, want ErrTaskGroupNotFound", err)
+	if !errors.Is(err, codevaldwork.ErrProjectNotFound) {
+		t.Fatalf("got %v, want ErrProjectNotFound", err)
 	}
 }
 

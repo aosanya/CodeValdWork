@@ -90,14 +90,14 @@ func (r *Registrar) Publish(_ context.Context, e eventbus.Event) error {
 //
 // It combines:
 //   - Static routes for the TaskService gRPC methods, grouped by domain
-//     (Task lifecycle, Agent + assignment, TaskGroup CRUD + membership,
+//     (Task lifecycle, Agent + assignment, Project CRUD + membership,
 //     graph relationships).
 //   - Dynamic entity CRUD routes generated from [codevaldwork.DefaultWorkSchema]
 //     via a single [schemaroutes.RoutesFromSchema] call.
 func workRoutes() []types.RouteInfo {
 	routes := taskRoutes()
 	routes = append(routes, agentRoutes()...)
-	routes = append(routes, taskGroupRoutes()...)
+	routes = append(routes, projectRoutes()...)
 	routes = append(routes, relationshipRoutes()...)
 	routes = append(routes, schemaroutes.RoutesFromSchema(
 		codevaldwork.DefaultWorkSchema(),
@@ -188,9 +188,9 @@ func taskRoutes() []types.RouteInfo {
 		},
 		{
 			Method:     "GET",
-			Pattern:    "/work/{agencyId}/tasks/{taskId}/groups",
-			Capability: "list_groups_for_task",
-			GrpcMethod: "/codevaldwork.v1.TaskService/ListGroupsForTask",
+			Pattern:    "/work/{agencyId}/tasks/{taskId}/projects",
+			Capability: "list_projects_for_task",
+			GrpcMethod: "/codevaldwork.v1.TaskService/ListProjectsForTask",
 			PathBindings: []types.PathBinding{
 				agencyBinding,
 				{URLParam: "taskId", Field: "task_id"},
@@ -235,90 +235,90 @@ func agentRoutes() []types.RouteInfo {
 	}
 }
 
-// taskGroupRoutes covers TaskGroup CRUD plus the `member_of` membership edges.
-// UpdateTaskGroup binds {taskGroupId} into the nested `group.id` because the
-// request carries the full TaskGroup proto rather than a top-level id field.
-func taskGroupRoutes() []types.RouteInfo {
+// projectRoutes covers Project CRUD plus the `member_of` membership edges.
+// UpdateProject binds {projectId} into the nested `project.id` because the
+// request carries the full Project proto rather than a top-level id field.
+func projectRoutes() []types.RouteInfo {
 	return []types.RouteInfo{
 		{
 			Method:       "POST",
-			Pattern:      "/work/{agencyId}/task-groups",
-			Capability:   "create_task_group",
-			GrpcMethod:   "/codevaldwork.v1.TaskService/CreateTaskGroup",
+			Pattern:      "/work/{agencyId}/projects",
+			Capability:   "create_project",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/CreateProject",
 			IsWrite:      true,
 			PathBindings: []types.PathBinding{agencyBinding},
 		},
 		{
 			Method:     "GET",
-			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}",
-			Capability: "get_task_group",
-			GrpcMethod: "/codevaldwork.v1.TaskService/GetTaskGroup",
+			Pattern:    "/work/{agencyId}/projects/{projectId}",
+			Capability: "get_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/GetProject",
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "taskGroupId", Field: "task_group_id"},
+				{URLParam: "projectId", Field: "project_id"},
 			},
 		},
 		{
 			Method:     "PUT",
-			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}",
-			Capability: "update_task_group",
-			GrpcMethod: "/codevaldwork.v1.TaskService/UpdateTaskGroup",
+			Pattern:    "/work/{agencyId}/projects/{projectId}",
+			Capability: "update_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/UpdateProject",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "taskGroupId", Field: "group.id"},
+				{URLParam: "projectId", Field: "project.id"},
 			},
 		},
 		{
 			Method:     "DELETE",
-			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}",
-			Capability: "delete_task_group",
-			GrpcMethod: "/codevaldwork.v1.TaskService/DeleteTaskGroup",
+			Pattern:    "/work/{agencyId}/projects/{projectId}",
+			Capability: "delete_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/DeleteProject",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "taskGroupId", Field: "task_group_id"},
+				{URLParam: "projectId", Field: "project_id"},
 			},
 		},
 		{
 			Method:       "GET",
-			Pattern:      "/work/{agencyId}/task-groups",
-			Capability:   "list_task_groups",
-			GrpcMethod:   "/codevaldwork.v1.TaskService/ListTaskGroups",
+			Pattern:      "/work/{agencyId}/projects",
+			Capability:   "list_projects",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/ListProjects",
 			PathBindings: []types.PathBinding{agencyBinding},
 		},
 		{
 			Method:     "PUT",
-			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}/tasks/{taskId}",
-			Capability: "add_task_to_group",
-			GrpcMethod: "/codevaldwork.v1.TaskService/AddTaskToGroup",
+			Pattern:    "/work/{agencyId}/projects/{projectId}/tasks/{taskId}",
+			Capability: "add_task_to_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/AddTaskToProject",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "taskGroupId", Field: "task_group_id"},
+				{URLParam: "projectId", Field: "project_id"},
 				{URLParam: "taskId", Field: "task_id"},
 			},
 		},
 		{
 			Method:     "DELETE",
-			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}/tasks/{taskId}",
-			Capability: "remove_task_from_group",
-			GrpcMethod: "/codevaldwork.v1.TaskService/RemoveTaskFromGroup",
+			Pattern:    "/work/{agencyId}/projects/{projectId}/tasks/{taskId}",
+			Capability: "remove_task_from_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/RemoveTaskFromProject",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "taskGroupId", Field: "task_group_id"},
+				{URLParam: "projectId", Field: "project_id"},
 				{URLParam: "taskId", Field: "task_id"},
 			},
 		},
 		{
 			Method:     "GET",
-			Pattern:    "/work/{agencyId}/task-groups/{taskGroupId}/tasks",
-			Capability: "list_tasks_in_group",
-			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasksInGroup",
+			Pattern:    "/work/{agencyId}/projects/{projectId}/tasks",
+			Capability: "list_tasks_in_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasksInProject",
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "taskGroupId", Field: "task_group_id"},
+				{URLParam: "projectId", Field: "project_id"},
 			},
 		},
 	}

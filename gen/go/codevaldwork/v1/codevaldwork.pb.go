@@ -484,35 +484,38 @@ func (x *Agent) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-// TaskGroup is an optional container that groups related tasks (sprints,
+// Project is an optional container that groups related tasks (sprints,
 // milestones, epics). Tasks become members via `member_of` edges.
-type TaskGroup struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	AgencyId      string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	DueAt         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=due_at,json=dueAt,proto3" json:"due_at,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+type Project struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AgencyId    string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	Name        string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	DueAt       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=due_at,json=dueAt,proto3" json:"due_at,omitempty"`
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	// github_repo is the canonical GitHub repository for the project, e.g.
+	// "owner/name" or a full https URL. Optional.
+	GithubRepo    string `protobuf:"bytes,8,opt,name=github_repo,json=githubRepo,proto3" json:"github_repo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TaskGroup) Reset() {
-	*x = TaskGroup{}
+func (x *Project) Reset() {
+	*x = Project{}
 	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TaskGroup) String() string {
+func (x *Project) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TaskGroup) ProtoMessage() {}
+func (*Project) ProtoMessage() {}
 
-func (x *TaskGroup) ProtoReflect() protoreflect.Message {
+func (x *Project) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -524,58 +527,65 @@ func (x *TaskGroup) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TaskGroup.ProtoReflect.Descriptor instead.
-func (*TaskGroup) Descriptor() ([]byte, []int) {
+// Deprecated: Use Project.ProtoReflect.Descriptor instead.
+func (*Project) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *TaskGroup) GetId() string {
+func (x *Project) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *TaskGroup) GetAgencyId() string {
+func (x *Project) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *TaskGroup) GetName() string {
+func (x *Project) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *TaskGroup) GetDescription() string {
+func (x *Project) GetDescription() string {
 	if x != nil {
 		return x.Description
 	}
 	return ""
 }
 
-func (x *TaskGroup) GetDueAt() *timestamppb.Timestamp {
+func (x *Project) GetDueAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.DueAt
 	}
 	return nil
 }
 
-func (x *TaskGroup) GetCreatedAt() *timestamppb.Timestamp {
+func (x *Project) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
 	}
 	return nil
 }
 
-func (x *TaskGroup) GetUpdatedAt() *timestamppb.Timestamp {
+func (x *Project) GetUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *Project) GetGithubRepo() string {
+	if x != nil {
+		return x.GithubRepo
+	}
+	return ""
 }
 
 // Relationship is the Work-domain projection of a directed graph edge.
@@ -713,8 +723,8 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x97\x02\n" +
-	"\tTaskGroup\x12\x0e\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xb6\x02\n" +
+	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
@@ -723,7 +733,9 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xf3\x01\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1f\n" +
+	"\vgithub_repo\x18\b \x01(\tR\n" +
+	"githubRepo\"\xf3\x01\n" +
 	"\fRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
@@ -775,7 +787,7 @@ var file_codevaldwork_v1_codevaldwork_proto_goTypes = []any{
 	(*Task)(nil),                  // 3: codevaldwork.v1.Task
 	(*TaskFilter)(nil),            // 4: codevaldwork.v1.TaskFilter
 	(*Agent)(nil),                 // 5: codevaldwork.v1.Agent
-	(*TaskGroup)(nil),             // 6: codevaldwork.v1.TaskGroup
+	(*Project)(nil),               // 6: codevaldwork.v1.Project
 	(*Relationship)(nil),          // 7: codevaldwork.v1.Relationship
 	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
 	(*structpb.Struct)(nil),       // 9: google.protobuf.Struct
@@ -791,9 +803,9 @@ var file_codevaldwork_v1_codevaldwork_proto_depIdxs = []int32{
 	1,  // 7: codevaldwork.v1.TaskFilter.priority:type_name -> codevaldwork.v1.TaskPriority
 	8,  // 8: codevaldwork.v1.Agent.created_at:type_name -> google.protobuf.Timestamp
 	8,  // 9: codevaldwork.v1.Agent.updated_at:type_name -> google.protobuf.Timestamp
-	8,  // 10: codevaldwork.v1.TaskGroup.due_at:type_name -> google.protobuf.Timestamp
-	8,  // 11: codevaldwork.v1.TaskGroup.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 12: codevaldwork.v1.TaskGroup.updated_at:type_name -> google.protobuf.Timestamp
+	8,  // 10: codevaldwork.v1.Project.due_at:type_name -> google.protobuf.Timestamp
+	8,  // 11: codevaldwork.v1.Project.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 12: codevaldwork.v1.Project.updated_at:type_name -> google.protobuf.Timestamp
 	9,  // 13: codevaldwork.v1.Relationship.properties:type_name -> google.protobuf.Struct
 	8,  // 14: codevaldwork.v1.Relationship.created_at:type_name -> google.protobuf.Timestamp
 	15, // [15:15] is the sub-list for method output_type

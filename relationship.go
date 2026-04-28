@@ -10,16 +10,16 @@ import (
 )
 
 // Relationship is the Work-domain projection of an entitygraph edge between
-// two Work vertices (Task / TaskGroup / Agent).
+// two Work vertices (Task / Project / Agent).
 //
 // The (Label, fromType, toType) triple is constrained by the Work edge-label
 // whitelist declared on Task's [types.TypeDefinition.Relationships]:
 //
-//	assigned_to  Task → Agent       (functional)   props: assignedAt, assignedBy
-//	blocks       Task → Task        (collection)   props: createdAt, reason
-//	subtask_of   Task → Task        (functional)   props: createdAt
-//	depends_on   Task → Task        (collection)   props: createdAt, reason
-//	member_of    Task → TaskGroup   (collection)   props: addedAt
+//	assigned_to  Task → Agent     (functional)   props: assignedAt, assignedBy
+//	blocks       Task → Task      (collection)   props: createdAt, reason
+//	subtask_of   Task → Task      (functional)   props: createdAt
+//	depends_on   Task → Task      (collection)   props: createdAt, reason
+//	member_of    Task → Project   (collection)   props: addedAt
 //
 // CreatedAt is set by [TaskManager.CreateRelationship] to time.Now().UTC().
 type Relationship struct {
@@ -97,7 +97,7 @@ const (
 	// status gate.
 	RelLabelDependsOn = "depends_on"
 
-	// RelLabelMemberOf links a Task to a TaskGroup. Group membership is
+	// RelLabelMemberOf links a Task to a Project. Project membership is
 	// many-to-many.
 	RelLabelMemberOf = "member_of"
 )
@@ -137,7 +137,7 @@ var relationshipEndpointTypes = map[string]struct {
 	RelLabelBlocks:     {fromType: taskTypeID, toType: taskTypeID},
 	RelLabelSubtaskOf:  {fromType: taskTypeID, toType: taskTypeID},
 	RelLabelDependsOn:  {fromType: taskTypeID, toType: taskTypeID},
-	RelLabelMemberOf:   {fromType: taskTypeID, toType: taskGroupTypeID},
+	RelLabelMemberOf:   {fromType: taskTypeID, toType: projectTypeID},
 }
 
 // notFoundForType returns the typed sentinel error to surface when a vertex
@@ -148,8 +148,8 @@ func notFoundForType(typeID string) error {
 		return ErrTaskNotFound
 	case agentTypeID:
 		return ErrAgentNotFound
-	case taskGroupTypeID:
-		return ErrTaskGroupNotFound
+	case projectTypeID:
+		return ErrProjectNotFound
 	default:
 		return entitygraph.ErrEntityNotFound
 	}

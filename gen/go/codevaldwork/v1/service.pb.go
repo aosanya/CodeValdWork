@@ -958,28 +958,28 @@ func (x *ListAgentsResponse) GetAgents() []*Agent {
 	return nil
 }
 
-type CreateTaskGroupRequest struct {
+type CreateProjectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	Group         *TaskGroup             `protobuf:"bytes,2,opt,name=group,proto3" json:"group,omitempty"`
+	Project       *Project               `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateTaskGroupRequest) Reset() {
-	*x = CreateTaskGroupRequest{}
+func (x *CreateProjectRequest) Reset() {
+	*x = CreateProjectRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateTaskGroupRequest) String() string {
+func (x *CreateProjectRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateTaskGroupRequest) ProtoMessage() {}
+func (*CreateProjectRequest) ProtoMessage() {}
 
-func (x *CreateTaskGroupRequest) ProtoReflect() protoreflect.Message {
+func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -991,46 +991,46 @@ func (x *CreateTaskGroupRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateTaskGroupRequest.ProtoReflect.Descriptor instead.
-func (*CreateTaskGroupRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
+func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *CreateTaskGroupRequest) GetAgencyId() string {
+func (x *CreateProjectRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *CreateTaskGroupRequest) GetGroup() *TaskGroup {
+func (x *CreateProjectRequest) GetProject() *Project {
 	if x != nil {
-		return x.Group
+		return x.Project
 	}
 	return nil
 }
 
-type CreateTaskGroupResponse struct {
+type CreateProjectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Group         *TaskGroup             `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateTaskGroupResponse) Reset() {
-	*x = CreateTaskGroupResponse{}
+func (x *CreateProjectResponse) Reset() {
+	*x = CreateProjectResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateTaskGroupResponse) String() string {
+func (x *CreateProjectResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateTaskGroupResponse) ProtoMessage() {}
+func (*CreateProjectResponse) ProtoMessage() {}
 
-func (x *CreateTaskGroupResponse) ProtoReflect() protoreflect.Message {
+func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1042,40 +1042,40 @@ func (x *CreateTaskGroupResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateTaskGroupResponse.ProtoReflect.Descriptor instead.
-func (*CreateTaskGroupResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateProjectResponse.ProtoReflect.Descriptor instead.
+func (*CreateProjectResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{21}
 }
 
-func (x *CreateTaskGroupResponse) GetGroup() *TaskGroup {
+func (x *CreateProjectResponse) GetProject() *Project {
 	if x != nil {
-		return x.Group
+		return x.Project
 	}
 	return nil
 }
 
-type GetTaskGroupRequest struct {
+type GetProjectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	TaskGroupId   string                 `protobuf:"bytes,2,opt,name=task_group_id,json=taskGroupId,proto3" json:"task_group_id,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetTaskGroupRequest) Reset() {
-	*x = GetTaskGroupRequest{}
+func (x *GetProjectRequest) Reset() {
+	*x = GetProjectRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTaskGroupRequest) String() string {
+func (x *GetProjectRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTaskGroupRequest) ProtoMessage() {}
+func (*GetProjectRequest) ProtoMessage() {}
 
-func (x *GetTaskGroupRequest) ProtoReflect() protoreflect.Message {
+func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1087,46 +1087,46 @@ func (x *GetTaskGroupRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTaskGroupRequest.ProtoReflect.Descriptor instead.
-func (*GetTaskGroupRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetProjectRequest.ProtoReflect.Descriptor instead.
+func (*GetProjectRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *GetTaskGroupRequest) GetAgencyId() string {
+func (x *GetProjectRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *GetTaskGroupRequest) GetTaskGroupId() string {
+func (x *GetProjectRequest) GetProjectId() string {
 	if x != nil {
-		return x.TaskGroupId
+		return x.ProjectId
 	}
 	return ""
 }
 
-type GetTaskGroupResponse struct {
+type GetProjectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Group         *TaskGroup             `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetTaskGroupResponse) Reset() {
-	*x = GetTaskGroupResponse{}
+func (x *GetProjectResponse) Reset() {
+	*x = GetProjectResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTaskGroupResponse) String() string {
+func (x *GetProjectResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTaskGroupResponse) ProtoMessage() {}
+func (*GetProjectResponse) ProtoMessage() {}
 
-func (x *GetTaskGroupResponse) ProtoReflect() protoreflect.Message {
+func (x *GetProjectResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1138,40 +1138,40 @@ func (x *GetTaskGroupResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTaskGroupResponse.ProtoReflect.Descriptor instead.
-func (*GetTaskGroupResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetProjectResponse.ProtoReflect.Descriptor instead.
+func (*GetProjectResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{23}
 }
 
-func (x *GetTaskGroupResponse) GetGroup() *TaskGroup {
+func (x *GetProjectResponse) GetProject() *Project {
 	if x != nil {
-		return x.Group
+		return x.Project
 	}
 	return nil
 }
 
-type UpdateTaskGroupRequest struct {
+type UpdateProjectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	Group         *TaskGroup             `protobuf:"bytes,2,opt,name=group,proto3" json:"group,omitempty"`
+	Project       *Project               `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateTaskGroupRequest) Reset() {
-	*x = UpdateTaskGroupRequest{}
+func (x *UpdateProjectRequest) Reset() {
+	*x = UpdateProjectRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateTaskGroupRequest) String() string {
+func (x *UpdateProjectRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateTaskGroupRequest) ProtoMessage() {}
+func (*UpdateProjectRequest) ProtoMessage() {}
 
-func (x *UpdateTaskGroupRequest) ProtoReflect() protoreflect.Message {
+func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1183,46 +1183,46 @@ func (x *UpdateTaskGroupRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateTaskGroupRequest.ProtoReflect.Descriptor instead.
-func (*UpdateTaskGroupRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpdateProjectRequest.ProtoReflect.Descriptor instead.
+func (*UpdateProjectRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *UpdateTaskGroupRequest) GetAgencyId() string {
+func (x *UpdateProjectRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *UpdateTaskGroupRequest) GetGroup() *TaskGroup {
+func (x *UpdateProjectRequest) GetProject() *Project {
 	if x != nil {
-		return x.Group
+		return x.Project
 	}
 	return nil
 }
 
-type UpdateTaskGroupResponse struct {
+type UpdateProjectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Group         *TaskGroup             `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateTaskGroupResponse) Reset() {
-	*x = UpdateTaskGroupResponse{}
+func (x *UpdateProjectResponse) Reset() {
+	*x = UpdateProjectResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateTaskGroupResponse) String() string {
+func (x *UpdateProjectResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateTaskGroupResponse) ProtoMessage() {}
+func (*UpdateProjectResponse) ProtoMessage() {}
 
-func (x *UpdateTaskGroupResponse) ProtoReflect() protoreflect.Message {
+func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1234,40 +1234,40 @@ func (x *UpdateTaskGroupResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateTaskGroupResponse.ProtoReflect.Descriptor instead.
-func (*UpdateTaskGroupResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpdateProjectResponse.ProtoReflect.Descriptor instead.
+func (*UpdateProjectResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{25}
 }
 
-func (x *UpdateTaskGroupResponse) GetGroup() *TaskGroup {
+func (x *UpdateProjectResponse) GetProject() *Project {
 	if x != nil {
-		return x.Group
+		return x.Project
 	}
 	return nil
 }
 
-type DeleteTaskGroupRequest struct {
+type DeleteProjectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	TaskGroupId   string                 `protobuf:"bytes,2,opt,name=task_group_id,json=taskGroupId,proto3" json:"task_group_id,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeleteTaskGroupRequest) Reset() {
-	*x = DeleteTaskGroupRequest{}
+func (x *DeleteProjectRequest) Reset() {
+	*x = DeleteProjectRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteTaskGroupRequest) String() string {
+func (x *DeleteProjectRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteTaskGroupRequest) ProtoMessage() {}
+func (*DeleteProjectRequest) ProtoMessage() {}
 
-func (x *DeleteTaskGroupRequest) ProtoReflect() protoreflect.Message {
+func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1279,45 +1279,45 @@ func (x *DeleteTaskGroupRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteTaskGroupRequest.ProtoReflect.Descriptor instead.
-func (*DeleteTaskGroupRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
+func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *DeleteTaskGroupRequest) GetAgencyId() string {
+func (x *DeleteProjectRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *DeleteTaskGroupRequest) GetTaskGroupId() string {
+func (x *DeleteProjectRequest) GetProjectId() string {
 	if x != nil {
-		return x.TaskGroupId
+		return x.ProjectId
 	}
 	return ""
 }
 
-type DeleteTaskGroupResponse struct {
+type DeleteProjectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeleteTaskGroupResponse) Reset() {
-	*x = DeleteTaskGroupResponse{}
+func (x *DeleteProjectResponse) Reset() {
+	*x = DeleteProjectResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteTaskGroupResponse) String() string {
+func (x *DeleteProjectResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteTaskGroupResponse) ProtoMessage() {}
+func (*DeleteProjectResponse) ProtoMessage() {}
 
-func (x *DeleteTaskGroupResponse) ProtoReflect() protoreflect.Message {
+func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1329,32 +1329,32 @@ func (x *DeleteTaskGroupResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteTaskGroupResponse.ProtoReflect.Descriptor instead.
-func (*DeleteTaskGroupResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeleteProjectResponse.ProtoReflect.Descriptor instead.
+func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{27}
 }
 
-type ListTaskGroupsRequest struct {
+type ListProjectsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListTaskGroupsRequest) Reset() {
-	*x = ListTaskGroupsRequest{}
+func (x *ListProjectsRequest) Reset() {
+	*x = ListProjectsRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListTaskGroupsRequest) String() string {
+func (x *ListProjectsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListTaskGroupsRequest) ProtoMessage() {}
+func (*ListProjectsRequest) ProtoMessage() {}
 
-func (x *ListTaskGroupsRequest) ProtoReflect() protoreflect.Message {
+func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1366,39 +1366,39 @@ func (x *ListTaskGroupsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTaskGroupsRequest.ProtoReflect.Descriptor instead.
-func (*ListTaskGroupsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
+func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *ListTaskGroupsRequest) GetAgencyId() string {
+func (x *ListProjectsRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-type ListTaskGroupsResponse struct {
+type ListProjectsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Groups        []*TaskGroup           `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
+	Projects      []*Project             `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListTaskGroupsResponse) Reset() {
-	*x = ListTaskGroupsResponse{}
+func (x *ListProjectsResponse) Reset() {
+	*x = ListProjectsResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListTaskGroupsResponse) String() string {
+func (x *ListProjectsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListTaskGroupsResponse) ProtoMessage() {}
+func (*ListProjectsResponse) ProtoMessage() {}
 
-func (x *ListTaskGroupsResponse) ProtoReflect() protoreflect.Message {
+func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1410,41 +1410,41 @@ func (x *ListTaskGroupsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTaskGroupsResponse.ProtoReflect.Descriptor instead.
-func (*ListTaskGroupsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
+func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *ListTaskGroupsResponse) GetGroups() []*TaskGroup {
+func (x *ListProjectsResponse) GetProjects() []*Project {
 	if x != nil {
-		return x.Groups
+		return x.Projects
 	}
 	return nil
 }
 
-type AddTaskToGroupRequest struct {
+type AddTaskToProjectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
 	TaskId        string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	TaskGroupId   string                 `protobuf:"bytes,3,opt,name=task_group_id,json=taskGroupId,proto3" json:"task_group_id,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AddTaskToGroupRequest) Reset() {
-	*x = AddTaskToGroupRequest{}
+func (x *AddTaskToProjectRequest) Reset() {
+	*x = AddTaskToProjectRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AddTaskToGroupRequest) String() string {
+func (x *AddTaskToProjectRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AddTaskToGroupRequest) ProtoMessage() {}
+func (*AddTaskToProjectRequest) ProtoMessage() {}
 
-func (x *AddTaskToGroupRequest) ProtoReflect() protoreflect.Message {
+func (x *AddTaskToProjectRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1456,52 +1456,52 @@ func (x *AddTaskToGroupRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AddTaskToGroupRequest.ProtoReflect.Descriptor instead.
-func (*AddTaskToGroupRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AddTaskToProjectRequest.ProtoReflect.Descriptor instead.
+func (*AddTaskToProjectRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *AddTaskToGroupRequest) GetAgencyId() string {
+func (x *AddTaskToProjectRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *AddTaskToGroupRequest) GetTaskId() string {
+func (x *AddTaskToProjectRequest) GetTaskId() string {
 	if x != nil {
 		return x.TaskId
 	}
 	return ""
 }
 
-func (x *AddTaskToGroupRequest) GetTaskGroupId() string {
+func (x *AddTaskToProjectRequest) GetProjectId() string {
 	if x != nil {
-		return x.TaskGroupId
+		return x.ProjectId
 	}
 	return ""
 }
 
-type AddTaskToGroupResponse struct {
+type AddTaskToProjectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AddTaskToGroupResponse) Reset() {
-	*x = AddTaskToGroupResponse{}
+func (x *AddTaskToProjectResponse) Reset() {
+	*x = AddTaskToProjectResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AddTaskToGroupResponse) String() string {
+func (x *AddTaskToProjectResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AddTaskToGroupResponse) ProtoMessage() {}
+func (*AddTaskToProjectResponse) ProtoMessage() {}
 
-func (x *AddTaskToGroupResponse) ProtoReflect() protoreflect.Message {
+func (x *AddTaskToProjectResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1513,34 +1513,34 @@ func (x *AddTaskToGroupResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AddTaskToGroupResponse.ProtoReflect.Descriptor instead.
-func (*AddTaskToGroupResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AddTaskToProjectResponse.ProtoReflect.Descriptor instead.
+func (*AddTaskToProjectResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{31}
 }
 
-type RemoveTaskFromGroupRequest struct {
+type RemoveTaskFromProjectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
 	TaskId        string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	TaskGroupId   string                 `protobuf:"bytes,3,opt,name=task_group_id,json=taskGroupId,proto3" json:"task_group_id,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RemoveTaskFromGroupRequest) Reset() {
-	*x = RemoveTaskFromGroupRequest{}
+func (x *RemoveTaskFromProjectRequest) Reset() {
+	*x = RemoveTaskFromProjectRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RemoveTaskFromGroupRequest) String() string {
+func (x *RemoveTaskFromProjectRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RemoveTaskFromGroupRequest) ProtoMessage() {}
+func (*RemoveTaskFromProjectRequest) ProtoMessage() {}
 
-func (x *RemoveTaskFromGroupRequest) ProtoReflect() protoreflect.Message {
+func (x *RemoveTaskFromProjectRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1552,52 +1552,52 @@ func (x *RemoveTaskFromGroupRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RemoveTaskFromGroupRequest.ProtoReflect.Descriptor instead.
-func (*RemoveTaskFromGroupRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RemoveTaskFromProjectRequest.ProtoReflect.Descriptor instead.
+func (*RemoveTaskFromProjectRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *RemoveTaskFromGroupRequest) GetAgencyId() string {
+func (x *RemoveTaskFromProjectRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *RemoveTaskFromGroupRequest) GetTaskId() string {
+func (x *RemoveTaskFromProjectRequest) GetTaskId() string {
 	if x != nil {
 		return x.TaskId
 	}
 	return ""
 }
 
-func (x *RemoveTaskFromGroupRequest) GetTaskGroupId() string {
+func (x *RemoveTaskFromProjectRequest) GetProjectId() string {
 	if x != nil {
-		return x.TaskGroupId
+		return x.ProjectId
 	}
 	return ""
 }
 
-type RemoveTaskFromGroupResponse struct {
+type RemoveTaskFromProjectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RemoveTaskFromGroupResponse) Reset() {
-	*x = RemoveTaskFromGroupResponse{}
+func (x *RemoveTaskFromProjectResponse) Reset() {
+	*x = RemoveTaskFromProjectResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RemoveTaskFromGroupResponse) String() string {
+func (x *RemoveTaskFromProjectResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RemoveTaskFromGroupResponse) ProtoMessage() {}
+func (*RemoveTaskFromProjectResponse) ProtoMessage() {}
 
-func (x *RemoveTaskFromGroupResponse) ProtoReflect() protoreflect.Message {
+func (x *RemoveTaskFromProjectResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1609,33 +1609,33 @@ func (x *RemoveTaskFromGroupResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RemoveTaskFromGroupResponse.ProtoReflect.Descriptor instead.
-func (*RemoveTaskFromGroupResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RemoveTaskFromProjectResponse.ProtoReflect.Descriptor instead.
+func (*RemoveTaskFromProjectResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{33}
 }
 
-type ListTasksInGroupRequest struct {
+type ListTasksInProjectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	TaskGroupId   string                 `protobuf:"bytes,2,opt,name=task_group_id,json=taskGroupId,proto3" json:"task_group_id,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListTasksInGroupRequest) Reset() {
-	*x = ListTasksInGroupRequest{}
+func (x *ListTasksInProjectRequest) Reset() {
+	*x = ListTasksInProjectRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListTasksInGroupRequest) String() string {
+func (x *ListTasksInProjectRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListTasksInGroupRequest) ProtoMessage() {}
+func (*ListTasksInProjectRequest) ProtoMessage() {}
 
-func (x *ListTasksInGroupRequest) ProtoReflect() protoreflect.Message {
+func (x *ListTasksInProjectRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1647,46 +1647,46 @@ func (x *ListTasksInGroupRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTasksInGroupRequest.ProtoReflect.Descriptor instead.
-func (*ListTasksInGroupRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListTasksInProjectRequest.ProtoReflect.Descriptor instead.
+func (*ListTasksInProjectRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{34}
 }
 
-func (x *ListTasksInGroupRequest) GetAgencyId() string {
+func (x *ListTasksInProjectRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *ListTasksInGroupRequest) GetTaskGroupId() string {
+func (x *ListTasksInProjectRequest) GetProjectId() string {
 	if x != nil {
-		return x.TaskGroupId
+		return x.ProjectId
 	}
 	return ""
 }
 
-type ListTasksInGroupResponse struct {
+type ListTasksInProjectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Tasks         []*Task                `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListTasksInGroupResponse) Reset() {
-	*x = ListTasksInGroupResponse{}
+func (x *ListTasksInProjectResponse) Reset() {
+	*x = ListTasksInProjectResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListTasksInGroupResponse) String() string {
+func (x *ListTasksInProjectResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListTasksInGroupResponse) ProtoMessage() {}
+func (*ListTasksInProjectResponse) ProtoMessage() {}
 
-func (x *ListTasksInGroupResponse) ProtoReflect() protoreflect.Message {
+func (x *ListTasksInProjectResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1698,19 +1698,19 @@ func (x *ListTasksInGroupResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTasksInGroupResponse.ProtoReflect.Descriptor instead.
-func (*ListTasksInGroupResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListTasksInProjectResponse.ProtoReflect.Descriptor instead.
+func (*ListTasksInProjectResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{35}
 }
 
-func (x *ListTasksInGroupResponse) GetTasks() []*Task {
+func (x *ListTasksInProjectResponse) GetTasks() []*Task {
 	if x != nil {
 		return x.Tasks
 	}
 	return nil
 }
 
-type ListGroupsForTaskRequest struct {
+type ListProjectsForTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
 	TaskId        string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
@@ -1718,20 +1718,20 @@ type ListGroupsForTaskRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListGroupsForTaskRequest) Reset() {
-	*x = ListGroupsForTaskRequest{}
+func (x *ListProjectsForTaskRequest) Reset() {
+	*x = ListProjectsForTaskRequest{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListGroupsForTaskRequest) String() string {
+func (x *ListProjectsForTaskRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListGroupsForTaskRequest) ProtoMessage() {}
+func (*ListProjectsForTaskRequest) ProtoMessage() {}
 
-func (x *ListGroupsForTaskRequest) ProtoReflect() protoreflect.Message {
+func (x *ListProjectsForTaskRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1743,46 +1743,46 @@ func (x *ListGroupsForTaskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListGroupsForTaskRequest.ProtoReflect.Descriptor instead.
-func (*ListGroupsForTaskRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListProjectsForTaskRequest.ProtoReflect.Descriptor instead.
+func (*ListProjectsForTaskRequest) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{36}
 }
 
-func (x *ListGroupsForTaskRequest) GetAgencyId() string {
+func (x *ListProjectsForTaskRequest) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
 	}
 	return ""
 }
 
-func (x *ListGroupsForTaskRequest) GetTaskId() string {
+func (x *ListProjectsForTaskRequest) GetTaskId() string {
 	if x != nil {
 		return x.TaskId
 	}
 	return ""
 }
 
-type ListGroupsForTaskResponse struct {
+type ListProjectsForTaskResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Groups        []*TaskGroup           `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
+	Projects      []*Project             `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListGroupsForTaskResponse) Reset() {
-	*x = ListGroupsForTaskResponse{}
+func (x *ListProjectsForTaskResponse) Reset() {
+	*x = ListProjectsForTaskResponse{}
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListGroupsForTaskResponse) String() string {
+func (x *ListProjectsForTaskResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListGroupsForTaskResponse) ProtoMessage() {}
+func (*ListProjectsForTaskResponse) ProtoMessage() {}
 
-func (x *ListGroupsForTaskResponse) ProtoReflect() protoreflect.Message {
+func (x *ListProjectsForTaskResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codevaldwork_v1_service_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1794,14 +1794,14 @@ func (x *ListGroupsForTaskResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListGroupsForTaskResponse.ProtoReflect.Descriptor instead.
-func (*ListGroupsForTaskResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListProjectsForTaskResponse.ProtoReflect.Descriptor instead.
+func (*ListProjectsForTaskResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{37}
 }
 
-func (x *ListGroupsForTaskResponse) GetGroups() []*TaskGroup {
+func (x *ListProjectsForTaskResponse) GetProjects() []*Project {
 	if x != nil {
-		return x.Groups
+		return x.Projects
 	}
 	return nil
 }
@@ -2194,49 +2194,54 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\"D\n" +
 	"\x12ListAgentsResponse\x12.\n" +
 	"\x06agents\x18\x01 \x03(\v2\x16.codevaldwork.v1.AgentR\x06agents\"g\n" +
-	"\x16CreateTaskGroupRequest\x12\x1b\n" +
-	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x120\n" +
-	"\x05group\x18\x02 \x01(\v2\x1a.codevaldwork.v1.TaskGroupR\x05group\"K\n" +
-	"\x17CreateTaskGroupResponse\x120\n" +
-	"\x05group\x18\x01 \x01(\v2\x1a.codevaldwork.v1.TaskGroupR\x05group\"V\n" +
-	"\x13GetTaskGroupRequest\x12\x1b\n" +
-	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\"\n" +
-	"\rtask_group_id\x18\x02 \x01(\tR\vtaskGroupId\"H\n" +
-	"\x14GetTaskGroupResponse\x120\n" +
-	"\x05group\x18\x01 \x01(\v2\x1a.codevaldwork.v1.TaskGroupR\x05group\"g\n" +
-	"\x16UpdateTaskGroupRequest\x12\x1b\n" +
-	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x120\n" +
-	"\x05group\x18\x02 \x01(\v2\x1a.codevaldwork.v1.TaskGroupR\x05group\"K\n" +
-	"\x17UpdateTaskGroupResponse\x120\n" +
-	"\x05group\x18\x01 \x01(\v2\x1a.codevaldwork.v1.TaskGroupR\x05group\"Y\n" +
-	"\x16DeleteTaskGroupRequest\x12\x1b\n" +
-	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\"\n" +
-	"\rtask_group_id\x18\x02 \x01(\tR\vtaskGroupId\"\x19\n" +
-	"\x17DeleteTaskGroupResponse\"4\n" +
-	"\x15ListTaskGroupsRequest\x12\x1b\n" +
+	"\x14CreateProjectRequest\x12\x1b\n" +
+	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x122\n" +
+	"\aproject\x18\x02 \x01(\v2\x18.codevaldwork.v1.ProjectR\aproject\"K\n" +
+	"\x15CreateProjectResponse\x122\n" +
+	"\aproject\x18\x01 \x01(\v2\x18.codevaldwork.v1.ProjectR\aproject\"O\n" +
+	"\x11GetProjectRequest\x12\x1b\n" +
+	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\"H\n" +
+	"\x12GetProjectResponse\x122\n" +
+	"\aproject\x18\x01 \x01(\v2\x18.codevaldwork.v1.ProjectR\aproject\"g\n" +
+	"\x14UpdateProjectRequest\x12\x1b\n" +
+	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x122\n" +
+	"\aproject\x18\x02 \x01(\v2\x18.codevaldwork.v1.ProjectR\aproject\"K\n" +
+	"\x15UpdateProjectResponse\x122\n" +
+	"\aproject\x18\x01 \x01(\v2\x18.codevaldwork.v1.ProjectR\aproject\"R\n" +
+	"\x14DeleteProjectRequest\x12\x1b\n" +
+	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\"\x17\n" +
+	"\x15DeleteProjectResponse\"2\n" +
+	"\x13ListProjectsRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\"L\n" +
-	"\x16ListTaskGroupsResponse\x122\n" +
-	"\x06groups\x18\x01 \x03(\v2\x1a.codevaldwork.v1.TaskGroupR\x06groups\"q\n" +
-	"\x15AddTaskToGroupRequest\x12\x1b\n" +
+	"\x14ListProjectsResponse\x124\n" +
+	"\bprojects\x18\x01 \x03(\v2\x18.codevaldwork.v1.ProjectR\bprojects\"n\n" +
+	"\x17AddTaskToProjectRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x17\n" +
-	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12\"\n" +
-	"\rtask_group_id\x18\x03 \x01(\tR\vtaskGroupId\"\x18\n" +
-	"\x16AddTaskToGroupResponse\"v\n" +
-	"\x1aRemoveTaskFromGroupRequest\x12\x1b\n" +
+	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x03 \x01(\tR\tprojectId\"\x1a\n" +
+	"\x18AddTaskToProjectResponse\"s\n" +
+	"\x1cRemoveTaskFromProjectRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x17\n" +
-	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12\"\n" +
-	"\rtask_group_id\x18\x03 \x01(\tR\vtaskGroupId\"\x1d\n" +
-	"\x1bRemoveTaskFromGroupResponse\"Z\n" +
-	"\x17ListTasksInGroupRequest\x12\x1b\n" +
-	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\"\n" +
-	"\rtask_group_id\x18\x02 \x01(\tR\vtaskGroupId\"G\n" +
-	"\x18ListTasksInGroupResponse\x12+\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x15.codevaldwork.v1.TaskR\x05tasks\"P\n" +
-	"\x18ListGroupsForTaskRequest\x12\x1b\n" +
+	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x03 \x01(\tR\tprojectId\"\x1f\n" +
+	"\x1dRemoveTaskFromProjectResponse\"W\n" +
+	"\x19ListTasksInProjectRequest\x12\x1b\n" +
+	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\"I\n" +
+	"\x1aListTasksInProjectResponse\x12+\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x15.codevaldwork.v1.TaskR\x05tasks\"R\n" +
+	"\x1aListProjectsForTaskRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x17\n" +
-	"\atask_id\x18\x02 \x01(\tR\x06taskId\"O\n" +
-	"\x19ListGroupsForTaskResponse\x122\n" +
-	"\x06groups\x18\x01 \x03(\v2\x1a.codevaldwork.v1.TaskGroupR\x06groups\"\xb5\x01\n" +
+	"\atask_id\x18\x02 \x01(\tR\x06taskId\"S\n" +
+	"\x1bListProjectsForTaskResponse\x124\n" +
+	"\bprojects\x18\x01 \x03(\v2\x18.codevaldwork.v1.ProjectR\bprojects\"\xb5\x01\n" +
 	"\x19CreateRelationshipRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12\x17\n" +
@@ -2259,7 +2264,7 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x128\n" +
 	"\tdirection\x18\x04 \x01(\x0e2\x1a.codevaldwork.v1.DirectionR\tdirection\"d\n" +
 	"\x1dTraverseRelationshipsResponse\x12C\n" +
-	"\rrelationships\x18\x01 \x03(\v2\x1d.codevaldwork.v1.RelationshipR\rrelationships2\xdc\x10\n" +
+	"\rrelationships\x18\x01 \x03(\v2\x1d.codevaldwork.v1.RelationshipR\rrelationships2\xd6\x10\n" +
 	"\vTaskService\x12U\n" +
 	"\n" +
 	"CreateTask\x12\".codevaldwork.v1.CreateTaskRequest\x1a#.codevaldwork.v1.CreateTaskResponse\x12L\n" +
@@ -2275,16 +2280,17 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\vUpsertAgent\x12#.codevaldwork.v1.UpsertAgentRequest\x1a$.codevaldwork.v1.UpsertAgentResponse\x12O\n" +
 	"\bGetAgent\x12 .codevaldwork.v1.GetAgentRequest\x1a!.codevaldwork.v1.GetAgentResponse\x12U\n" +
 	"\n" +
-	"ListAgents\x12\".codevaldwork.v1.ListAgentsRequest\x1a#.codevaldwork.v1.ListAgentsResponse\x12d\n" +
-	"\x0fCreateTaskGroup\x12'.codevaldwork.v1.CreateTaskGroupRequest\x1a(.codevaldwork.v1.CreateTaskGroupResponse\x12[\n" +
-	"\fGetTaskGroup\x12$.codevaldwork.v1.GetTaskGroupRequest\x1a%.codevaldwork.v1.GetTaskGroupResponse\x12d\n" +
-	"\x0fUpdateTaskGroup\x12'.codevaldwork.v1.UpdateTaskGroupRequest\x1a(.codevaldwork.v1.UpdateTaskGroupResponse\x12d\n" +
-	"\x0fDeleteTaskGroup\x12'.codevaldwork.v1.DeleteTaskGroupRequest\x1a(.codevaldwork.v1.DeleteTaskGroupResponse\x12a\n" +
-	"\x0eListTaskGroups\x12&.codevaldwork.v1.ListTaskGroupsRequest\x1a'.codevaldwork.v1.ListTaskGroupsResponse\x12a\n" +
-	"\x0eAddTaskToGroup\x12&.codevaldwork.v1.AddTaskToGroupRequest\x1a'.codevaldwork.v1.AddTaskToGroupResponse\x12p\n" +
-	"\x13RemoveTaskFromGroup\x12+.codevaldwork.v1.RemoveTaskFromGroupRequest\x1a,.codevaldwork.v1.RemoveTaskFromGroupResponse\x12g\n" +
-	"\x10ListTasksInGroup\x12(.codevaldwork.v1.ListTasksInGroupRequest\x1a).codevaldwork.v1.ListTasksInGroupResponse\x12j\n" +
-	"\x11ListGroupsForTask\x12).codevaldwork.v1.ListGroupsForTaskRequest\x1a*.codevaldwork.v1.ListGroupsForTaskResponse\x12m\n" +
+	"ListAgents\x12\".codevaldwork.v1.ListAgentsRequest\x1a#.codevaldwork.v1.ListAgentsResponse\x12^\n" +
+	"\rCreateProject\x12%.codevaldwork.v1.CreateProjectRequest\x1a&.codevaldwork.v1.CreateProjectResponse\x12U\n" +
+	"\n" +
+	"GetProject\x12\".codevaldwork.v1.GetProjectRequest\x1a#.codevaldwork.v1.GetProjectResponse\x12^\n" +
+	"\rUpdateProject\x12%.codevaldwork.v1.UpdateProjectRequest\x1a&.codevaldwork.v1.UpdateProjectResponse\x12^\n" +
+	"\rDeleteProject\x12%.codevaldwork.v1.DeleteProjectRequest\x1a&.codevaldwork.v1.DeleteProjectResponse\x12[\n" +
+	"\fListProjects\x12$.codevaldwork.v1.ListProjectsRequest\x1a%.codevaldwork.v1.ListProjectsResponse\x12g\n" +
+	"\x10AddTaskToProject\x12(.codevaldwork.v1.AddTaskToProjectRequest\x1a).codevaldwork.v1.AddTaskToProjectResponse\x12v\n" +
+	"\x15RemoveTaskFromProject\x12-.codevaldwork.v1.RemoveTaskFromProjectRequest\x1a..codevaldwork.v1.RemoveTaskFromProjectResponse\x12m\n" +
+	"\x12ListTasksInProject\x12*.codevaldwork.v1.ListTasksInProjectRequest\x1a+.codevaldwork.v1.ListTasksInProjectResponse\x12p\n" +
+	"\x13ListProjectsForTask\x12+.codevaldwork.v1.ListProjectsForTaskRequest\x1a,.codevaldwork.v1.ListProjectsForTaskResponse\x12m\n" +
 	"\x12CreateRelationship\x12*.codevaldwork.v1.CreateRelationshipRequest\x1a+.codevaldwork.v1.CreateRelationshipResponse\x12m\n" +
 	"\x12DeleteRelationship\x12*.codevaldwork.v1.DeleteRelationshipRequest\x1a+.codevaldwork.v1.DeleteRelationshipResponse\x12v\n" +
 	"\x15TraverseRelationships\x12-.codevaldwork.v1.TraverseRelationshipsRequest\x1a..codevaldwork.v1.TraverseRelationshipsResponseBGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
@@ -2323,24 +2329,24 @@ var file_codevaldwork_v1_service_proto_goTypes = []any{
 	(*GetAgentResponse)(nil),              // 17: codevaldwork.v1.GetAgentResponse
 	(*ListAgentsRequest)(nil),             // 18: codevaldwork.v1.ListAgentsRequest
 	(*ListAgentsResponse)(nil),            // 19: codevaldwork.v1.ListAgentsResponse
-	(*CreateTaskGroupRequest)(nil),        // 20: codevaldwork.v1.CreateTaskGroupRequest
-	(*CreateTaskGroupResponse)(nil),       // 21: codevaldwork.v1.CreateTaskGroupResponse
-	(*GetTaskGroupRequest)(nil),           // 22: codevaldwork.v1.GetTaskGroupRequest
-	(*GetTaskGroupResponse)(nil),          // 23: codevaldwork.v1.GetTaskGroupResponse
-	(*UpdateTaskGroupRequest)(nil),        // 24: codevaldwork.v1.UpdateTaskGroupRequest
-	(*UpdateTaskGroupResponse)(nil),       // 25: codevaldwork.v1.UpdateTaskGroupResponse
-	(*DeleteTaskGroupRequest)(nil),        // 26: codevaldwork.v1.DeleteTaskGroupRequest
-	(*DeleteTaskGroupResponse)(nil),       // 27: codevaldwork.v1.DeleteTaskGroupResponse
-	(*ListTaskGroupsRequest)(nil),         // 28: codevaldwork.v1.ListTaskGroupsRequest
-	(*ListTaskGroupsResponse)(nil),        // 29: codevaldwork.v1.ListTaskGroupsResponse
-	(*AddTaskToGroupRequest)(nil),         // 30: codevaldwork.v1.AddTaskToGroupRequest
-	(*AddTaskToGroupResponse)(nil),        // 31: codevaldwork.v1.AddTaskToGroupResponse
-	(*RemoveTaskFromGroupRequest)(nil),    // 32: codevaldwork.v1.RemoveTaskFromGroupRequest
-	(*RemoveTaskFromGroupResponse)(nil),   // 33: codevaldwork.v1.RemoveTaskFromGroupResponse
-	(*ListTasksInGroupRequest)(nil),       // 34: codevaldwork.v1.ListTasksInGroupRequest
-	(*ListTasksInGroupResponse)(nil),      // 35: codevaldwork.v1.ListTasksInGroupResponse
-	(*ListGroupsForTaskRequest)(nil),      // 36: codevaldwork.v1.ListGroupsForTaskRequest
-	(*ListGroupsForTaskResponse)(nil),     // 37: codevaldwork.v1.ListGroupsForTaskResponse
+	(*CreateProjectRequest)(nil),          // 20: codevaldwork.v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),         // 21: codevaldwork.v1.CreateProjectResponse
+	(*GetProjectRequest)(nil),             // 22: codevaldwork.v1.GetProjectRequest
+	(*GetProjectResponse)(nil),            // 23: codevaldwork.v1.GetProjectResponse
+	(*UpdateProjectRequest)(nil),          // 24: codevaldwork.v1.UpdateProjectRequest
+	(*UpdateProjectResponse)(nil),         // 25: codevaldwork.v1.UpdateProjectResponse
+	(*DeleteProjectRequest)(nil),          // 26: codevaldwork.v1.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),         // 27: codevaldwork.v1.DeleteProjectResponse
+	(*ListProjectsRequest)(nil),           // 28: codevaldwork.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),          // 29: codevaldwork.v1.ListProjectsResponse
+	(*AddTaskToProjectRequest)(nil),       // 30: codevaldwork.v1.AddTaskToProjectRequest
+	(*AddTaskToProjectResponse)(nil),      // 31: codevaldwork.v1.AddTaskToProjectResponse
+	(*RemoveTaskFromProjectRequest)(nil),  // 32: codevaldwork.v1.RemoveTaskFromProjectRequest
+	(*RemoveTaskFromProjectResponse)(nil), // 33: codevaldwork.v1.RemoveTaskFromProjectResponse
+	(*ListTasksInProjectRequest)(nil),     // 34: codevaldwork.v1.ListTasksInProjectRequest
+	(*ListTasksInProjectResponse)(nil),    // 35: codevaldwork.v1.ListTasksInProjectResponse
+	(*ListProjectsForTaskRequest)(nil),    // 36: codevaldwork.v1.ListProjectsForTaskRequest
+	(*ListProjectsForTaskResponse)(nil),   // 37: codevaldwork.v1.ListProjectsForTaskResponse
 	(*CreateRelationshipRequest)(nil),     // 38: codevaldwork.v1.CreateRelationshipRequest
 	(*CreateRelationshipResponse)(nil),    // 39: codevaldwork.v1.CreateRelationshipResponse
 	(*DeleteRelationshipRequest)(nil),     // 40: codevaldwork.v1.DeleteRelationshipRequest
@@ -2350,7 +2356,7 @@ var file_codevaldwork_v1_service_proto_goTypes = []any{
 	(*Task)(nil),                          // 44: codevaldwork.v1.Task
 	(*TaskFilter)(nil),                    // 45: codevaldwork.v1.TaskFilter
 	(*Agent)(nil),                         // 46: codevaldwork.v1.Agent
-	(*TaskGroup)(nil),                     // 47: codevaldwork.v1.TaskGroup
+	(*Project)(nil),                       // 47: codevaldwork.v1.Project
 	(*structpb.Struct)(nil),               // 48: google.protobuf.Struct
 	(*Relationship)(nil),                  // 49: codevaldwork.v1.Relationship
 	(Direction)(0),                        // 50: codevaldwork.v1.Direction
@@ -2367,14 +2373,14 @@ var file_codevaldwork_v1_service_proto_depIdxs = []int32{
 	46, // 8: codevaldwork.v1.UpsertAgentResponse.agent:type_name -> codevaldwork.v1.Agent
 	46, // 9: codevaldwork.v1.GetAgentResponse.agent:type_name -> codevaldwork.v1.Agent
 	46, // 10: codevaldwork.v1.ListAgentsResponse.agents:type_name -> codevaldwork.v1.Agent
-	47, // 11: codevaldwork.v1.CreateTaskGroupRequest.group:type_name -> codevaldwork.v1.TaskGroup
-	47, // 12: codevaldwork.v1.CreateTaskGroupResponse.group:type_name -> codevaldwork.v1.TaskGroup
-	47, // 13: codevaldwork.v1.GetTaskGroupResponse.group:type_name -> codevaldwork.v1.TaskGroup
-	47, // 14: codevaldwork.v1.UpdateTaskGroupRequest.group:type_name -> codevaldwork.v1.TaskGroup
-	47, // 15: codevaldwork.v1.UpdateTaskGroupResponse.group:type_name -> codevaldwork.v1.TaskGroup
-	47, // 16: codevaldwork.v1.ListTaskGroupsResponse.groups:type_name -> codevaldwork.v1.TaskGroup
-	44, // 17: codevaldwork.v1.ListTasksInGroupResponse.tasks:type_name -> codevaldwork.v1.Task
-	47, // 18: codevaldwork.v1.ListGroupsForTaskResponse.groups:type_name -> codevaldwork.v1.TaskGroup
+	47, // 11: codevaldwork.v1.CreateProjectRequest.project:type_name -> codevaldwork.v1.Project
+	47, // 12: codevaldwork.v1.CreateProjectResponse.project:type_name -> codevaldwork.v1.Project
+	47, // 13: codevaldwork.v1.GetProjectResponse.project:type_name -> codevaldwork.v1.Project
+	47, // 14: codevaldwork.v1.UpdateProjectRequest.project:type_name -> codevaldwork.v1.Project
+	47, // 15: codevaldwork.v1.UpdateProjectResponse.project:type_name -> codevaldwork.v1.Project
+	47, // 16: codevaldwork.v1.ListProjectsResponse.projects:type_name -> codevaldwork.v1.Project
+	44, // 17: codevaldwork.v1.ListTasksInProjectResponse.tasks:type_name -> codevaldwork.v1.Task
+	47, // 18: codevaldwork.v1.ListProjectsForTaskResponse.projects:type_name -> codevaldwork.v1.Project
 	48, // 19: codevaldwork.v1.CreateRelationshipRequest.properties:type_name -> google.protobuf.Struct
 	49, // 20: codevaldwork.v1.CreateRelationshipResponse.relationship:type_name -> codevaldwork.v1.Relationship
 	50, // 21: codevaldwork.v1.TraverseRelationshipsRequest.direction:type_name -> codevaldwork.v1.Direction
@@ -2389,15 +2395,15 @@ var file_codevaldwork_v1_service_proto_depIdxs = []int32{
 	14, // 30: codevaldwork.v1.TaskService.UpsertAgent:input_type -> codevaldwork.v1.UpsertAgentRequest
 	16, // 31: codevaldwork.v1.TaskService.GetAgent:input_type -> codevaldwork.v1.GetAgentRequest
 	18, // 32: codevaldwork.v1.TaskService.ListAgents:input_type -> codevaldwork.v1.ListAgentsRequest
-	20, // 33: codevaldwork.v1.TaskService.CreateTaskGroup:input_type -> codevaldwork.v1.CreateTaskGroupRequest
-	22, // 34: codevaldwork.v1.TaskService.GetTaskGroup:input_type -> codevaldwork.v1.GetTaskGroupRequest
-	24, // 35: codevaldwork.v1.TaskService.UpdateTaskGroup:input_type -> codevaldwork.v1.UpdateTaskGroupRequest
-	26, // 36: codevaldwork.v1.TaskService.DeleteTaskGroup:input_type -> codevaldwork.v1.DeleteTaskGroupRequest
-	28, // 37: codevaldwork.v1.TaskService.ListTaskGroups:input_type -> codevaldwork.v1.ListTaskGroupsRequest
-	30, // 38: codevaldwork.v1.TaskService.AddTaskToGroup:input_type -> codevaldwork.v1.AddTaskToGroupRequest
-	32, // 39: codevaldwork.v1.TaskService.RemoveTaskFromGroup:input_type -> codevaldwork.v1.RemoveTaskFromGroupRequest
-	34, // 40: codevaldwork.v1.TaskService.ListTasksInGroup:input_type -> codevaldwork.v1.ListTasksInGroupRequest
-	36, // 41: codevaldwork.v1.TaskService.ListGroupsForTask:input_type -> codevaldwork.v1.ListGroupsForTaskRequest
+	20, // 33: codevaldwork.v1.TaskService.CreateProject:input_type -> codevaldwork.v1.CreateProjectRequest
+	22, // 34: codevaldwork.v1.TaskService.GetProject:input_type -> codevaldwork.v1.GetProjectRequest
+	24, // 35: codevaldwork.v1.TaskService.UpdateProject:input_type -> codevaldwork.v1.UpdateProjectRequest
+	26, // 36: codevaldwork.v1.TaskService.DeleteProject:input_type -> codevaldwork.v1.DeleteProjectRequest
+	28, // 37: codevaldwork.v1.TaskService.ListProjects:input_type -> codevaldwork.v1.ListProjectsRequest
+	30, // 38: codevaldwork.v1.TaskService.AddTaskToProject:input_type -> codevaldwork.v1.AddTaskToProjectRequest
+	32, // 39: codevaldwork.v1.TaskService.RemoveTaskFromProject:input_type -> codevaldwork.v1.RemoveTaskFromProjectRequest
+	34, // 40: codevaldwork.v1.TaskService.ListTasksInProject:input_type -> codevaldwork.v1.ListTasksInProjectRequest
+	36, // 41: codevaldwork.v1.TaskService.ListProjectsForTask:input_type -> codevaldwork.v1.ListProjectsForTaskRequest
 	38, // 42: codevaldwork.v1.TaskService.CreateRelationship:input_type -> codevaldwork.v1.CreateRelationshipRequest
 	40, // 43: codevaldwork.v1.TaskService.DeleteRelationship:input_type -> codevaldwork.v1.DeleteRelationshipRequest
 	42, // 44: codevaldwork.v1.TaskService.TraverseRelationships:input_type -> codevaldwork.v1.TraverseRelationshipsRequest
@@ -2411,15 +2417,15 @@ var file_codevaldwork_v1_service_proto_depIdxs = []int32{
 	15, // 52: codevaldwork.v1.TaskService.UpsertAgent:output_type -> codevaldwork.v1.UpsertAgentResponse
 	17, // 53: codevaldwork.v1.TaskService.GetAgent:output_type -> codevaldwork.v1.GetAgentResponse
 	19, // 54: codevaldwork.v1.TaskService.ListAgents:output_type -> codevaldwork.v1.ListAgentsResponse
-	21, // 55: codevaldwork.v1.TaskService.CreateTaskGroup:output_type -> codevaldwork.v1.CreateTaskGroupResponse
-	23, // 56: codevaldwork.v1.TaskService.GetTaskGroup:output_type -> codevaldwork.v1.GetTaskGroupResponse
-	25, // 57: codevaldwork.v1.TaskService.UpdateTaskGroup:output_type -> codevaldwork.v1.UpdateTaskGroupResponse
-	27, // 58: codevaldwork.v1.TaskService.DeleteTaskGroup:output_type -> codevaldwork.v1.DeleteTaskGroupResponse
-	29, // 59: codevaldwork.v1.TaskService.ListTaskGroups:output_type -> codevaldwork.v1.ListTaskGroupsResponse
-	31, // 60: codevaldwork.v1.TaskService.AddTaskToGroup:output_type -> codevaldwork.v1.AddTaskToGroupResponse
-	33, // 61: codevaldwork.v1.TaskService.RemoveTaskFromGroup:output_type -> codevaldwork.v1.RemoveTaskFromGroupResponse
-	35, // 62: codevaldwork.v1.TaskService.ListTasksInGroup:output_type -> codevaldwork.v1.ListTasksInGroupResponse
-	37, // 63: codevaldwork.v1.TaskService.ListGroupsForTask:output_type -> codevaldwork.v1.ListGroupsForTaskResponse
+	21, // 55: codevaldwork.v1.TaskService.CreateProject:output_type -> codevaldwork.v1.CreateProjectResponse
+	23, // 56: codevaldwork.v1.TaskService.GetProject:output_type -> codevaldwork.v1.GetProjectResponse
+	25, // 57: codevaldwork.v1.TaskService.UpdateProject:output_type -> codevaldwork.v1.UpdateProjectResponse
+	27, // 58: codevaldwork.v1.TaskService.DeleteProject:output_type -> codevaldwork.v1.DeleteProjectResponse
+	29, // 59: codevaldwork.v1.TaskService.ListProjects:output_type -> codevaldwork.v1.ListProjectsResponse
+	31, // 60: codevaldwork.v1.TaskService.AddTaskToProject:output_type -> codevaldwork.v1.AddTaskToProjectResponse
+	33, // 61: codevaldwork.v1.TaskService.RemoveTaskFromProject:output_type -> codevaldwork.v1.RemoveTaskFromProjectResponse
+	35, // 62: codevaldwork.v1.TaskService.ListTasksInProject:output_type -> codevaldwork.v1.ListTasksInProjectResponse
+	37, // 63: codevaldwork.v1.TaskService.ListProjectsForTask:output_type -> codevaldwork.v1.ListProjectsForTaskResponse
 	39, // 64: codevaldwork.v1.TaskService.CreateRelationship:output_type -> codevaldwork.v1.CreateRelationshipResponse
 	41, // 65: codevaldwork.v1.TaskService.DeleteRelationship:output_type -> codevaldwork.v1.DeleteRelationshipResponse
 	43, // 66: codevaldwork.v1.TaskService.TraverseRelationships:output_type -> codevaldwork.v1.TraverseRelationshipsResponse

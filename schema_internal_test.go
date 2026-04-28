@@ -20,7 +20,7 @@ func TestDefaultWorkSchema_TypeNames(t *testing.T) {
 	for _, td := range s.Types {
 		got[td.Name] = true
 	}
-	for _, want := range []string{"Task", "TaskGroup", "Agent"} {
+	for _, want := range []string{"Task", "Project", "Agent"} {
 		if !got[want] {
 			t.Errorf("missing TypeDefinition %q", want)
 		}
@@ -59,24 +59,25 @@ func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 	}
 }
 
-func TestDefaultWorkSchema_TaskGroupShape(t *testing.T) {
-	td := findType(t, DefaultWorkSchema(), "TaskGroup")
-	if td.StorageCollection != "work_groups" {
-		t.Errorf("TaskGroup.StorageCollection = %q, want %q", td.StorageCollection, "work_groups")
+func TestDefaultWorkSchema_ProjectShape(t *testing.T) {
+	td := findType(t, DefaultWorkSchema(), "Project")
+	if td.StorageCollection != "work_projects" {
+		t.Errorf("Project.StorageCollection = %q, want %q", td.StorageCollection, "work_projects")
 	}
-	if td.PathSegment != "task-groups" {
-		t.Errorf("TaskGroup.PathSegment = %q, want %q", td.PathSegment, "task-groups")
+	if td.PathSegment != "projects" {
+		t.Errorf("Project.PathSegment = %q, want %q", td.PathSegment, "projects")
 	}
 	want := map[string]types.PropertyType{
 		"name":        types.PropertyTypeString,
 		"description": types.PropertyTypeString,
+		"githubRepo":  types.PropertyTypeString,
 		"dueAt":       types.PropertyTypeDatetime,
 	}
 	if got := propTypes(td); !reflect.DeepEqual(got, want) {
-		t.Errorf("TaskGroup property types mismatch:\n got=%v\nwant=%v", got, want)
+		t.Errorf("Project property types mismatch:\n got=%v\nwant=%v", got, want)
 	}
 	if !findProp(t, td, "name").Required {
-		t.Errorf("TaskGroup.name must be Required")
+		t.Errorf("Project.name must be Required")
 	}
 }
 
@@ -203,15 +204,16 @@ func TestTaskFromEntity_AcceptsJSONDecodedTagsAndNumber(t *testing.T) {
 	}
 }
 
-// ── taskGroupToProperties / agentToProperties ────────────────────────────────
+// ── projectToProperties / agentToProperties ──────────────────────────────────
 
-func TestTaskGroupToProperties_RoundTrip(t *testing.T) {
+func TestProjectToProperties_RoundTrip(t *testing.T) {
 	due := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
-	in := TaskGroup{
-		ID:          "tg-1",
+	in := Project{
+		ID:          "proj-1",
 		AgencyID:    "agency-1",
 		Name:        "Sprint 14",
 		Description: "Push X out the door",
+		GithubRepo:  "aosanya/CodeValdWork",
 		DueAt:       &due,
 		CreatedAt:   time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
 		UpdatedAt:   time.Date(2026, 4, 2, 0, 0, 0, 0, time.UTC),
@@ -219,14 +221,14 @@ func TestTaskGroupToProperties_RoundTrip(t *testing.T) {
 	e := entitygraph.Entity{
 		ID:         in.ID,
 		AgencyID:   in.AgencyID,
-		TypeID:     "TaskGroup",
-		Properties: taskGroupToProperties(in),
+		TypeID:     "Project",
+		Properties: projectToProperties(in),
 		CreatedAt:  in.CreatedAt,
 		UpdatedAt:  in.UpdatedAt,
 	}
-	out := taskGroupFromEntity(e)
+	out := projectFromEntity(e)
 	if !reflect.DeepEqual(out, in) {
-		t.Errorf("TaskGroup round-trip mismatch:\n in=%+v\nout=%+v", in, out)
+		t.Errorf("Project round-trip mismatch:\n in=%+v\nout=%+v", in, out)
 	}
 }
 
