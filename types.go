@@ -1,6 +1,10 @@
 package codevaldwork
 
-import "time"
+import (
+	"time"
+
+	"github.com/aosanya/CodeValdSharedLib/entitygraph"
+)
 
 // TaskStatus represents the lifecycle state of a [Task].
 type TaskStatus string
@@ -97,8 +101,30 @@ type Task struct {
 	Priority TaskPriority
 
 	// AssignedTo holds the ID of the agent currently responsible for
-	// this task. Empty when the task is unassigned (status: pending).
+	// this task. Empty when the task is unassigned.
+	//
+	// Deprecated: Phase 2 moves task assignment to an `assigned_to` graph
+	// edge between Task and Agent vertices. The field is retained until
+	// MVP-WORK-010 lands so the gRPC surface keeps compiling, but the
+	// storage layer no longer persists it — round-tripping a non-empty
+	// value through CreateTask/GetTask returns "".
 	AssignedTo string
+
+	// DueAt is the deadline by which the task should be completed.
+	// Nil when no deadline is set.
+	DueAt *time.Time
+
+	// Tags are free-form labels associated with the task.
+	// Empty slice when the task has no tags.
+	Tags []string
+
+	// EstimatedHours is the planned effort to complete the task, in hours.
+	// Zero when not estimated.
+	EstimatedHours float64
+
+	// Context is the AI agent's working memory blob — long-lived state
+	// preserved across turns. Optional.
+	Context string
 
 	// CreatedAt is the UTC timestamp when the task was first created.
 	// Set by the backend; immutable after creation.
@@ -124,5 +150,133 @@ type TaskFilter struct {
 
 	// AssignedTo filters tasks assigned to a specific agent ID.
 	// Empty string matches all (including unassigned tasks).
+	//
+	// Deprecated: assignment moves to a graph edge in MVP-WORK-010; this
+	// filter becomes inert once the property is no longer persisted. The
+	// field is retained here so callers still compile.
 	AssignedTo string
+}
+
+// TaskGroup is an optional container that groups related tasks (e.g. a sprint,
+// a project milestone, or an epic). Tasks become members via the `member_of`
+// graph edge added in MVP-WORK-012.
+type TaskGroup struct {
+	// ID is the unique identifier for this group within the agency.
+	// Set by the backend on creation.
+	ID string
+
+	// AgencyID is the agency that owns this group.
+	AgencyID string
+
+	// Name is the short human-readable label. Required.
+	Name string
+
+	// Description provides additional context for the group. Optional.
+	Description string
+
+	// DueAt is the target completion date for the group. Optional.
+	DueAt *time.Time
+
+	// CreatedAt is the UTC timestamp when the group was first created.
+	CreatedAt time.Time
+
+	// UpdatedAt is the UTC timestamp of the most recent mutation.
+	UpdatedAt time.Time
+}
+
+// Agent is the Work-domain projection of an AI agent. Each Agent becomes a
+// graph vertex so that `assigned_to` edges (added in MVP-WORK-010) are
+// first-class graph relationships rather than string fields on the Task
+// document.
+//
+// Uniqueness — at most one Agent per (AgencyID, AgentID) — is enforced by
+// [TaskManager.UpsertAgent] (added in MVP-WORK-010).
+type Agent struct {
+	// ID is the entity-graph storage key — opaque to callers.
+	ID string
+
+	// AgencyID is the agency this agent serves.
+	AgencyID string
+
+	// AgentID is the external agent identifier (e.g. a CodeValdAI agent ID).
+	// Required and unique within an agency.
+	AgentID string
+
+	// DisplayName is a human-readable label for the agent. Optional.
+	DisplayName string
+
+	// Capability is the agent's primary capability (e.g. "code", "research",
+	// "review"). Optional.
+	Capability string
+
+	// CreatedAt is the UTC timestamp when the agent was first registered.
+	CreatedAt time.Time
+
+	// UpdatedAt is the UTC timestamp of the most recent upsert.
+	UpdatedAt time.Time
+}
+
+// taskGroupToProperties serialises a TaskGroup into the property map stored on
+// its entitygraph Entity. Time fields are encoded as RFC 3339 strings.
+func taskGroupToProperties(g TaskGroup) map[string]any {
+	props := map[string]any{
+		"name":        g.Name,
+		"description": g.Description,
+	}
+	if g.DueAt != nil && !g.DueAt.IsZero() {
+		props["dueAt"] = g.DueAt.UTC().Format(time.RFC3339Nano)
+	}
+	return props
+}
+
+// taskGroupFromEntity reconstructs a TaskGroup from an entitygraph Entity.
+func taskGroupFromEntity(e entitygraph.Entity) TaskGroup {
+	g := TaskGroup{
+		ID:        e.ID,
+		AgencyID:  e.AgencyID,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
+	if v, ok := e.Properties["name"].(string); ok {
+		g.Name = v
+	}
+	if v, ok := e.Properties["description"].(string); ok {
+		g.Description = v
+	}
+	if v, ok := e.Properties["dueAt"].(string); ok && v != "" {
+		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
+			g.DueAt = &ts
+		}
+	}
+	return g
+}
+
+// agentToProperties serialises an Agent into the property map stored on its
+// entitygraph Entity.
+func agentToProperties(a Agent) map[string]any {
+	return map[string]any{
+		"agentID":     a.AgentID,
+		"displayName": a.DisplayName,
+		"capability":  a.Capability,
+	}
+}
+
+// agentFromEntity reconstructs an Agent from an entitygraph Entity.
+func agentFromEntity(e entitygraph.Entity) Agent {
+	a := Agent{
+		ID:        e.ID,
+		AgencyID:  e.AgencyID,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
+	if v, ok := e.Properties["agentID"].(string); ok {
+		a.AgentID = v
+	}
+	if v, ok := e.Properties["displayName"].(string); ok {
+		a.DisplayName = v
+	}
+	if v, ok := e.Properties["capability"].(string); ok {
+		a.Capability = v
+	}
+	return a
 }

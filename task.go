@@ -238,29 +238,44 @@ func isTerminalStatus(s TaskStatus) bool {
 }
 
 // taskToProperties serialises a Task into the property map stored on its
-// entitygraph Entity. Time fields are encoded as RFC 3339 strings to match
-// the schema's PropertyTypeString declarations.
+// entitygraph Entity. The schema declares datetime fields as
+// PropertyTypeDatetime; this layer encodes them as RFC 3339 strings — the
+// canonical wire form for ISO 8601 datetimes. Entity-level timestamps
+// (CreatedAt / UpdatedAt) are not written as properties — they are tracked
+// by entitygraph natively.
+//
+// The legacy `assigned_to` property is intentionally not written:
+// MVP-WORK-009/010 replace it with an `assigned_to` graph edge between Task
+// and Agent vertices.
 func taskToProperties(t Task) map[string]any {
 	props := map[string]any{
 		"title":       t.Title,
 		"description": t.Description,
 		"status":      string(t.Status),
 		"priority":    string(t.Priority),
-		"assigned_to": t.AssignedTo,
+		"context":     t.Context,
 	}
-	if !t.CreatedAt.IsZero() {
-		props["created_at"] = t.CreatedAt.UTC().Format(time.RFC3339Nano)
+	if t.DueAt != nil && !t.DueAt.IsZero() {
+		props["dueAt"] = t.DueAt.UTC().Format(time.RFC3339Nano)
 	}
-	if !t.UpdatedAt.IsZero() {
-		props["updated_at"] = t.UpdatedAt.UTC().Format(time.RFC3339Nano)
+	if len(t.Tags) > 0 {
+		tags := make([]string, len(t.Tags))
+		copy(tags, t.Tags)
+		props["tags"] = tags
+	}
+	if t.EstimatedHours != 0 {
+		props["estimatedHours"] = t.EstimatedHours
 	}
 	if t.CompletedAt != nil && !t.CompletedAt.IsZero() {
-		props["completed_at"] = t.CompletedAt.UTC().Format(time.RFC3339Nano)
+		props["completedAt"] = t.CompletedAt.UTC().Format(time.RFC3339Nano)
 	}
 	return props
 }
 
 // taskFromEntity reconstructs a Task from an entitygraph Entity.
+// Tags and estimatedHours accept both the native Go type (used by the unit
+// fakeDataManager) and the JSON-decoded form ([]any / float64) the ArangoDB
+// backend returns.
 func taskFromEntity(e entitygraph.Entity) Task {
 	t := Task{
 		ID:        e.ID,
@@ -280,20 +295,41 @@ func taskFromEntity(e entitygraph.Entity) Task {
 	if v, ok := e.Properties["priority"].(string); ok {
 		t.Priority = TaskPriority(v)
 	}
-	if v, ok := e.Properties["assigned_to"].(string); ok {
-		t.AssignedTo = v
+	if v, ok := e.Properties["context"].(string); ok {
+		t.Context = v
 	}
-	if v, ok := e.Properties["created_at"].(string); ok {
+	if v, ok := e.Properties["dueAt"].(string); ok && v != "" {
 		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
-			t.CreatedAt = ts
+			t.DueAt = &ts
 		}
 	}
-	if v, ok := e.Properties["updated_at"].(string); ok {
-		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
-			t.UpdatedAt = ts
+	if v, ok := e.Properties["tags"]; ok {
+		switch tags := v.(type) {
+		case []string:
+			t.Tags = append([]string(nil), tags...)
+		case []any:
+			out := make([]string, 0, len(tags))
+			for _, x := range tags {
+				if s, ok := x.(string); ok {
+					out = append(out, s)
+				}
+			}
+			t.Tags = out
 		}
 	}
-	if v, ok := e.Properties["completed_at"].(string); ok && v != "" {
+	if v, ok := e.Properties["estimatedHours"]; ok {
+		switch n := v.(type) {
+		case float64:
+			t.EstimatedHours = n
+		case float32:
+			t.EstimatedHours = float64(n)
+		case int:
+			t.EstimatedHours = float64(n)
+		case int64:
+			t.EstimatedHours = float64(n)
+		}
+	}
+	if v, ok := e.Properties["completedAt"].(string); ok && v != "" {
 		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
 			t.CompletedAt = &ts
 		}
