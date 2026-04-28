@@ -35,6 +35,11 @@ func DefaultWorkSchema() types.Schema {
 
 // taskTypeDefinition declares the Task entity class. Status transitions and the
 // blocker gate are enforced by [TaskManager], not by the schema.
+//
+// The Relationships block declares the Work edge-label whitelist. Only the
+// (label, fromType, toType) triples listed here may be created on a Task —
+// anything else is rejected with [ErrInvalidRelationship] by the underlying
+// entitygraph.DataManager.CreateRelationship.
 func taskTypeDefinition() types.TypeDefinition {
 	return types.TypeDefinition{
 		Name:              "Task",
@@ -61,6 +66,61 @@ func taskTypeDefinition() types.TypeDefinition {
 			{Name: "context", Type: types.PropertyTypeString},
 			// completedAt is set by [TaskManager] when status reaches a terminal state.
 			{Name: "completedAt", Type: types.PropertyTypeDatetime},
+		},
+		Relationships: []types.RelationshipDefinition{
+			{
+				Name:        RelLabelAssignedTo,
+				Label:       "Assigned to",
+				ToType:      "Agent",
+				ToMany:      false,
+				PathSegment: "agent",
+				Properties: []types.PropertyDefinition{
+					{Name: "assignedAt", Type: types.PropertyTypeDatetime},
+					{Name: "assignedBy", Type: types.PropertyTypeString},
+				},
+			},
+			{
+				Name:        RelLabelBlocks,
+				Label:       "Blocks",
+				ToType:      "Task",
+				ToMany:      true,
+				PathSegment: "blocks",
+				Properties: []types.PropertyDefinition{
+					{Name: "createdAt", Type: types.PropertyTypeDatetime},
+					{Name: "reason", Type: types.PropertyTypeString},
+				},
+			},
+			{
+				Name:        RelLabelSubtaskOf,
+				Label:       "Subtask of",
+				ToType:      "Task",
+				ToMany:      false,
+				PathSegment: "parent",
+				Properties: []types.PropertyDefinition{
+					{Name: "createdAt", Type: types.PropertyTypeDatetime},
+				},
+			},
+			{
+				Name:        RelLabelDependsOn,
+				Label:       "Depends on",
+				ToType:      "Task",
+				ToMany:      true,
+				PathSegment: "depends-on",
+				Properties: []types.PropertyDefinition{
+					{Name: "createdAt", Type: types.PropertyTypeDatetime},
+					{Name: "reason", Type: types.PropertyTypeString},
+				},
+			},
+			{
+				Name:        RelLabelMemberOf,
+				Label:       "Member of",
+				ToType:      "TaskGroup",
+				ToMany:      true,
+				PathSegment: "groups",
+				Properties: []types.PropertyDefinition{
+					{Name: "addedAt", Type: types.PropertyTypeDatetime},
+				},
+			},
 		},
 	}
 }
