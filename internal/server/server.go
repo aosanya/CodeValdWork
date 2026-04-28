@@ -77,21 +77,24 @@ func (s *Server) ListTasks(ctx context.Context, req *pb.ListTasksRequest) (*pb.L
 // ── Conversion helpers ────────────────────────────────────────────────────────
 
 func taskToProto(t codevaldwork.Task) *pb.Task {
-	// Note: pb.Task.AssignedTo is left empty here. The string field will be
-	// removed from the proto in MVP-WORK-013; the assignee is now represented
-	// by an `assigned_to` graph edge, callers fetch it via TraverseRelationships.
 	pt := &pb.Task{
-		Id:          t.ID,
-		AgencyId:    t.AgencyID,
-		Title:       t.Title,
-		Description: t.Description,
-		Status:      statusToProto(t.Status),
-		Priority:    priorityToProto(t.Priority),
-		CreatedAt:   timestamppb.New(t.CreatedAt),
-		UpdatedAt:   timestamppb.New(t.UpdatedAt),
+		Id:             t.ID,
+		AgencyId:       t.AgencyID,
+		Title:          t.Title,
+		Description:    t.Description,
+		Status:         statusToProto(t.Status),
+		Priority:       priorityToProto(t.Priority),
+		Tags:           append([]string(nil), t.Tags...),
+		EstimatedHours: t.EstimatedHours,
+		Context:        t.Context,
+		CreatedAt:      timestamppb.New(t.CreatedAt),
+		UpdatedAt:      timestamppb.New(t.UpdatedAt),
 	}
 	if t.CompletedAt != nil {
 		pt.CompletedAt = timestamppb.New(*t.CompletedAt)
+	}
+	if t.DueAt != nil {
+		pt.DueAt = timestamppb.New(*t.DueAt)
 	}
 	return pt
 }
@@ -101,12 +104,15 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 		return codevaldwork.Task{}
 	}
 	t := codevaldwork.Task{
-		ID:          pt.Id,
-		AgencyID:    pt.AgencyId,
-		Title:       pt.Title,
-		Description: pt.Description,
-		Status:      protoToStatus(pt.Status),
-		Priority:    protoToPriority(pt.Priority),
+		ID:             pt.Id,
+		AgencyID:       pt.AgencyId,
+		Title:          pt.Title,
+		Description:    pt.Description,
+		Status:         protoToStatus(pt.Status),
+		Priority:       protoToPriority(pt.Priority),
+		Tags:           append([]string(nil), pt.Tags...),
+		EstimatedHours: pt.EstimatedHours,
+		Context:        pt.Context,
 	}
 	if pt.CreatedAt != nil {
 		t.CreatedAt = pt.CreatedAt.AsTime()
@@ -118,6 +124,10 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 		ts := pt.CompletedAt.AsTime()
 		t.CompletedAt = &ts
 	}
+	if pt.DueAt != nil {
+		ts := pt.DueAt.AsTime()
+		t.DueAt = &ts
+	}
 	return t
 }
 
@@ -125,10 +135,6 @@ func protoToFilter(pf *pb.TaskFilter) codevaldwork.TaskFilter {
 	if pf == nil {
 		return codevaldwork.TaskFilter{}
 	}
-	// pb.TaskFilter.AssignedTo is intentionally not propagated — the field
-	// is removed from the Go domain in WORK-010 and from the proto in
-	// WORK-013. Callers needing tasks-for-agent should traverse inbound
-	// `assigned_to` from the Agent vertex.
 	return codevaldwork.TaskFilter{
 		Status:   protoToStatus(pf.Status),
 		Priority: protoToPriority(pf.Priority),

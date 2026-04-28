@@ -9,6 +9,7 @@ package codevaldworkv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -137,21 +138,78 @@ func (TaskPriority) EnumDescriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{1}
 }
 
+// Direction selects edge orientation for relationship traversal RPCs.
+type Direction int32
+
+const (
+	Direction_DIRECTION_UNSPECIFIED Direction = 0
+	Direction_DIRECTION_OUTBOUND    Direction = 1
+	Direction_DIRECTION_INBOUND     Direction = 2
+)
+
+// Enum value maps for Direction.
+var (
+	Direction_name = map[int32]string{
+		0: "DIRECTION_UNSPECIFIED",
+		1: "DIRECTION_OUTBOUND",
+		2: "DIRECTION_INBOUND",
+	}
+	Direction_value = map[string]int32{
+		"DIRECTION_UNSPECIFIED": 0,
+		"DIRECTION_OUTBOUND":    1,
+		"DIRECTION_INBOUND":     2,
+	}
+)
+
+func (x Direction) Enum() *Direction {
+	p := new(Direction)
+	*p = x
+	return p
+}
+
+func (x Direction) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Direction) Descriptor() protoreflect.EnumDescriptor {
+	return file_codevaldwork_v1_codevaldwork_proto_enumTypes[2].Descriptor()
+}
+
+func (Direction) Type() protoreflect.EnumType {
+	return &file_codevaldwork_v1_codevaldwork_proto_enumTypes[2]
+}
+
+func (x Direction) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Direction.Descriptor instead.
+func (Direction) EnumDescriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{2}
+}
+
 // Task is the core domain entity managed by the TaskService.
+//
+// assigned_to (string, field 7) was removed in MVP-WORK-010 — task assignment
+// is now an `assigned_to` graph edge from Task to Agent, set via AssignTask.
+// The field number is reserved to prevent silent reuse.
 type Task struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	AgencyId      string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Status        TaskStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=codevaldwork.v1.TaskStatus" json:"status,omitempty"`
-	Priority      TaskPriority           `protobuf:"varint,6,opt,name=priority,proto3,enum=codevaldwork.v1.TaskPriority" json:"priority,omitempty"`
-	AssignedTo    string                 `protobuf:"bytes,7,opt,name=assigned_to,json=assignedTo,proto3" json:"assigned_to,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	CompletedAt   *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AgencyId       string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Description    string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Status         TaskStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=codevaldwork.v1.TaskStatus" json:"status,omitempty"`
+	Priority       TaskPriority           `protobuf:"varint,6,opt,name=priority,proto3,enum=codevaldwork.v1.TaskPriority" json:"priority,omitempty"`
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	CompletedAt    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	DueAt          *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=due_at,json=dueAt,proto3" json:"due_at,omitempty"`
+	Tags           []string               `protobuf:"bytes,12,rep,name=tags,proto3" json:"tags,omitempty"`
+	EstimatedHours float64                `protobuf:"fixed64,13,opt,name=estimated_hours,json=estimatedHours,proto3" json:"estimated_hours,omitempty"`
+	Context        string                 `protobuf:"bytes,14,opt,name=context,proto3" json:"context,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Task) Reset() {
@@ -226,13 +284,6 @@ func (x *Task) GetPriority() TaskPriority {
 	return TaskPriority_TASK_PRIORITY_UNSPECIFIED
 }
 
-func (x *Task) GetAssignedTo() string {
-	if x != nil {
-		return x.AssignedTo
-	}
-	return ""
-}
-
 func (x *Task) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
@@ -254,13 +305,43 @@ func (x *Task) GetCompletedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Task) GetDueAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DueAt
+	}
+	return nil
+}
+
+func (x *Task) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *Task) GetEstimatedHours() float64 {
+	if x != nil {
+		return x.EstimatedHours
+	}
+	return 0
+}
+
+func (x *Task) GetContext() string {
+	if x != nil {
+		return x.Context
+	}
+	return ""
+}
+
 // TaskFilter is used in ListTasks to constrain results.
 // Unset fields (zero values) match all.
+//
+// assigned_to (string, field 3) was removed in MVP-WORK-010 — to find tasks
+// for an agent, traverse inbound `assigned_to` edges from the Agent vertex.
 type TaskFilter struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        TaskStatus             `protobuf:"varint,1,opt,name=status,proto3,enum=codevaldwork.v1.TaskStatus" json:"status,omitempty"`
 	Priority      TaskPriority           `protobuf:"varint,2,opt,name=priority,proto3,enum=codevaldwork.v1.TaskPriority" json:"priority,omitempty"`
-	AssignedTo    string                 `protobuf:"bytes,3,opt,name=assigned_to,json=assignedTo,proto3" json:"assigned_to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -309,39 +390,351 @@ func (x *TaskFilter) GetPriority() TaskPriority {
 	return TaskPriority_TASK_PRIORITY_UNSPECIFIED
 }
 
-func (x *TaskFilter) GetAssignedTo() string {
+// Agent is the Work-domain projection of an AI agent. Each Agent is a graph
+// vertex; tasks point to it via the `assigned_to` edge.
+type Agent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // entity-graph storage key (server-assigned)
+	AgencyId      string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	AgentId       string                 `protobuf:"bytes,3,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"` // external natural key, unique within agency
+	DisplayName   string                 `protobuf:"bytes,4,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Capability    string                 `protobuf:"bytes,5,opt,name=capability,proto3" json:"capability,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Agent) Reset() {
+	*x = Agent{}
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Agent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Agent) ProtoMessage() {}
+
+func (x *Agent) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[2]
 	if x != nil {
-		return x.AssignedTo
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Agent.ProtoReflect.Descriptor instead.
+func (*Agent) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Agent) GetId() string {
+	if x != nil {
+		return x.Id
 	}
 	return ""
+}
+
+func (x *Agent) GetAgencyId() string {
+	if x != nil {
+		return x.AgencyId
+	}
+	return ""
+}
+
+func (x *Agent) GetAgentId() string {
+	if x != nil {
+		return x.AgentId
+	}
+	return ""
+}
+
+func (x *Agent) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *Agent) GetCapability() string {
+	if x != nil {
+		return x.Capability
+	}
+	return ""
+}
+
+func (x *Agent) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Agent) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+// TaskGroup is an optional container that groups related tasks (sprints,
+// milestones, epics). Tasks become members via `member_of` edges.
+type TaskGroup struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AgencyId      string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	DueAt         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=due_at,json=dueAt,proto3" json:"due_at,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TaskGroup) Reset() {
+	*x = TaskGroup{}
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TaskGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaskGroup) ProtoMessage() {}
+
+func (x *TaskGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaskGroup.ProtoReflect.Descriptor instead.
+func (*TaskGroup) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *TaskGroup) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TaskGroup) GetAgencyId() string {
+	if x != nil {
+		return x.AgencyId
+	}
+	return ""
+}
+
+func (x *TaskGroup) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TaskGroup) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *TaskGroup) GetDueAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DueAt
+	}
+	return nil
+}
+
+func (x *TaskGroup) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *TaskGroup) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+// Relationship is the Work-domain projection of a directed graph edge.
+// label must be one of the whitelist values: assigned_to, blocks, subtask_of,
+// depends_on, member_of.
+type Relationship struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Id       string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // server-assigned edge key
+	AgencyId string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	Label    string                 `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+	FromId   string                 `protobuf:"bytes,4,opt,name=from_id,json=fromId,proto3" json:"from_id,omitempty"`
+	ToId     string                 `protobuf:"bytes,5,opt,name=to_id,json=toId,proto3" json:"to_id,omitempty"`
+	// Edge metadata. Struct preserves type fidelity (numbers, bools, lists)
+	// so timestamps (e.g. assignedAt) round-trip correctly under the
+	// schema-declared key.
+	Properties    *structpb.Struct       `protobuf:"bytes,6,opt,name=properties,proto3" json:"properties,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Relationship) Reset() {
+	*x = Relationship{}
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Relationship) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Relationship) ProtoMessage() {}
+
+func (x *Relationship) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Relationship.ProtoReflect.Descriptor instead.
+func (*Relationship) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Relationship) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Relationship) GetAgencyId() string {
+	if x != nil {
+		return x.AgencyId
+	}
+	return ""
+}
+
+func (x *Relationship) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *Relationship) GetFromId() string {
+	if x != nil {
+		return x.FromId
+	}
+	return ""
+}
+
+func (x *Relationship) GetToId() string {
+	if x != nil {
+		return x.ToId
+	}
+	return ""
+}
+
+func (x *Relationship) GetProperties() *structpb.Struct {
+	if x != nil {
+		return x.Properties
+	}
+	return nil
+}
+
+func (x *Relationship) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
 }
 
 var File_codevaldwork_v1_codevaldwork_proto protoreflect.FileDescriptor
 
 const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
-	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb1\x03\n" +
+	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xad\x04\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x123\n" +
 	"\x06status\x18\x05 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +
-	"\bpriority\x18\x06 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriority\x12\x1f\n" +
-	"\vassigned_to\x18\a \x01(\tR\n" +
-	"assignedTo\x129\n" +
+	"\bpriority\x18\x06 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriority\x129\n" +
 	"\n" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12=\n" +
 	"\fcompleted_at\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\"\x9d\x01\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x121\n" +
+	"\x06due_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x05dueAt\x12\x12\n" +
+	"\x04tags\x18\f \x03(\tR\x04tags\x12'\n" +
+	"\x0festimated_hours\x18\r \x01(\x01R\x0eestimatedHours\x12\x18\n" +
+	"\acontext\x18\x0e \x01(\tR\acontextJ\x04\b\a\x10\bR\vassigned_to\"\x8f\x01\n" +
 	"\n" +
 	"TaskFilter\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +
-	"\bpriority\x18\x02 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriority\x12\x1f\n" +
-	"\vassigned_to\x18\x03 \x01(\tR\n" +
-	"assignedTo*\xad\x01\n" +
+	"\bpriority\x18\x02 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriorityJ\x04\b\x03\x10\x04R\vassigned_to\"\x88\x02\n" +
+	"\x05Agent\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
+	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x19\n" +
+	"\bagent_id\x18\x03 \x01(\tR\aagentId\x12!\n" +
+	"\fdisplay_name\x18\x04 \x01(\tR\vdisplayName\x12\x1e\n" +
+	"\n" +
+	"capability\x18\x05 \x01(\tR\n" +
+	"capability\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x97\x02\n" +
+	"\tTaskGroup\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
+	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x121\n" +
+	"\x06due_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x05dueAt\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xf3\x01\n" +
+	"\fRelationship\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
+	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\x12\x17\n" +
+	"\afrom_id\x18\x04 \x01(\tR\x06fromId\x12\x13\n" +
+	"\x05to_id\x18\x05 \x01(\tR\x04toId\x127\n" +
+	"\n" +
+	"properties\x18\x06 \x01(\v2\x17.google.protobuf.StructR\n" +
+	"properties\x129\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt*\xad\x01\n" +
 	"\n" +
 	"TaskStatus\x12\x1b\n" +
 	"\x17TASK_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
@@ -355,7 +748,11 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x11TASK_PRIORITY_LOW\x10\x01\x12\x18\n" +
 	"\x14TASK_PRIORITY_MEDIUM\x10\x02\x12\x16\n" +
 	"\x12TASK_PRIORITY_HIGH\x10\x03\x12\x1a\n" +
-	"\x16TASK_PRIORITY_CRITICAL\x10\x04BGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
+	"\x16TASK_PRIORITY_CRITICAL\x10\x04*U\n" +
+	"\tDirection\x12\x19\n" +
+	"\x15DIRECTION_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12DIRECTION_OUTBOUND\x10\x01\x12\x15\n" +
+	"\x11DIRECTION_INBOUND\x10\x02BGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
 
 var (
 	file_codevaldwork_v1_codevaldwork_proto_rawDescOnce sync.Once
@@ -369,28 +766,41 @@ func file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP() []byte {
 	return file_codevaldwork_v1_codevaldwork_proto_rawDescData
 }
 
-var file_codevaldwork_v1_codevaldwork_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_codevaldwork_v1_codevaldwork_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_codevaldwork_v1_codevaldwork_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_codevaldwork_v1_codevaldwork_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_codevaldwork_v1_codevaldwork_proto_goTypes = []any{
 	(TaskStatus)(0),               // 0: codevaldwork.v1.TaskStatus
 	(TaskPriority)(0),             // 1: codevaldwork.v1.TaskPriority
-	(*Task)(nil),                  // 2: codevaldwork.v1.Task
-	(*TaskFilter)(nil),            // 3: codevaldwork.v1.TaskFilter
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(Direction)(0),                // 2: codevaldwork.v1.Direction
+	(*Task)(nil),                  // 3: codevaldwork.v1.Task
+	(*TaskFilter)(nil),            // 4: codevaldwork.v1.TaskFilter
+	(*Agent)(nil),                 // 5: codevaldwork.v1.Agent
+	(*TaskGroup)(nil),             // 6: codevaldwork.v1.TaskGroup
+	(*Relationship)(nil),          // 7: codevaldwork.v1.Relationship
+	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 9: google.protobuf.Struct
 }
 var file_codevaldwork_v1_codevaldwork_proto_depIdxs = []int32{
-	0, // 0: codevaldwork.v1.Task.status:type_name -> codevaldwork.v1.TaskStatus
-	1, // 1: codevaldwork.v1.Task.priority:type_name -> codevaldwork.v1.TaskPriority
-	4, // 2: codevaldwork.v1.Task.created_at:type_name -> google.protobuf.Timestamp
-	4, // 3: codevaldwork.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
-	4, // 4: codevaldwork.v1.Task.completed_at:type_name -> google.protobuf.Timestamp
-	0, // 5: codevaldwork.v1.TaskFilter.status:type_name -> codevaldwork.v1.TaskStatus
-	1, // 6: codevaldwork.v1.TaskFilter.priority:type_name -> codevaldwork.v1.TaskPriority
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	0,  // 0: codevaldwork.v1.Task.status:type_name -> codevaldwork.v1.TaskStatus
+	1,  // 1: codevaldwork.v1.Task.priority:type_name -> codevaldwork.v1.TaskPriority
+	8,  // 2: codevaldwork.v1.Task.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 3: codevaldwork.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
+	8,  // 4: codevaldwork.v1.Task.completed_at:type_name -> google.protobuf.Timestamp
+	8,  // 5: codevaldwork.v1.Task.due_at:type_name -> google.protobuf.Timestamp
+	0,  // 6: codevaldwork.v1.TaskFilter.status:type_name -> codevaldwork.v1.TaskStatus
+	1,  // 7: codevaldwork.v1.TaskFilter.priority:type_name -> codevaldwork.v1.TaskPriority
+	8,  // 8: codevaldwork.v1.Agent.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 9: codevaldwork.v1.Agent.updated_at:type_name -> google.protobuf.Timestamp
+	8,  // 10: codevaldwork.v1.TaskGroup.due_at:type_name -> google.protobuf.Timestamp
+	8,  // 11: codevaldwork.v1.TaskGroup.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 12: codevaldwork.v1.TaskGroup.updated_at:type_name -> google.protobuf.Timestamp
+	9,  // 13: codevaldwork.v1.Relationship.properties:type_name -> google.protobuf.Struct
+	8,  // 14: codevaldwork.v1.Relationship.created_at:type_name -> google.protobuf.Timestamp
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_codevaldwork_v1_codevaldwork_proto_init() }
@@ -403,8 +813,8 @@ func file_codevaldwork_v1_codevaldwork_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codevaldwork_v1_codevaldwork_proto_rawDesc), len(file_codevaldwork_v1_codevaldwork_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   2,
+			NumEnums:      3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

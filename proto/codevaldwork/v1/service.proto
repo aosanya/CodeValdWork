@@ -5,12 +5,13 @@ package codevaldwork.v1;
 option go_package = "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1";
 
 import "codevaldwork/v1/codevaldwork.proto";
+import "google/protobuf/struct.proto";
 
 // TaskService is the single gRPC service exposed by CodeValdWork.
 // All operations are scoped to an agency via agency_id.
 service TaskService {
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
+  // ── Task lifecycle ─────────────────────────────────────────────────────────
 
   // CreateTask creates a new task for the agency in PENDING status.
   // Error: ALREADY_EXISTS if a task with the same ID exists.
@@ -24,7 +25,9 @@ service TaskService {
   // UpdateTask replaces mutable task fields.
   // Status transitions are validated server-side.
   // Error: NOT_FOUND if the task does not exist.
-  // Error: FAILED_PRECONDITION if the status transition is invalid.
+  // Error: FAILED_PRECONDITION if the status transition is invalid OR
+  // if the pending → in_progress transition is gated by non-terminal
+  // blocker tasks (carries a BlockedByInfo detail).
   rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
 
   // DeleteTask permanently removes a task.
@@ -34,9 +37,87 @@ service TaskService {
   // ListTasks returns all tasks for the agency matching the filter.
   // Returns an empty list (not an error) when no tasks match.
   rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+
+  // ── Agent + assignment ─────────────────────────────────────────────────────
+
+  // AssignTask sets the agent currently responsible for a task by writing
+  // the `assigned_to` graph edge. Replaces any prior assignee.
+  // Error: NOT_FOUND if the task or agent does not exist.
+  rpc AssignTask(AssignTaskRequest) returns (AssignTaskResponse);
+
+  // UnassignTask removes any outbound `assigned_to` edge from the task.
+  // Idempotent. Error: NOT_FOUND only if the task itself is missing.
+  rpc UnassignTask(UnassignTaskRequest) returns (UnassignTaskResponse);
+
+  // UpsertAgent creates or merges an Agent vertex keyed by the natural key
+  // (agency_id, agent.agent_id).
+  rpc UpsertAgent(UpsertAgentRequest) returns (UpsertAgentResponse);
+
+  // GetAgent reads an Agent by entity ID.
+  // Error: NOT_FOUND if the agent does not exist.
+  rpc GetAgent(GetAgentRequest) returns (GetAgentResponse);
+
+  // ListAgents returns every Agent in the agency.
+  rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse);
+
+  // ── TaskGroup CRUD + membership ────────────────────────────────────────────
+
+  // CreateTaskGroup creates a new TaskGroup vertex.
+  // Error: ALREADY_EXISTS if the group ID is already taken.
+  // Error: INVALID_ARGUMENT if name is empty.
+  rpc CreateTaskGroup(CreateTaskGroupRequest) returns (CreateTaskGroupResponse);
+
+  // GetTaskGroup retrieves a single TaskGroup.
+  // Error: NOT_FOUND if the group does not exist.
+  rpc GetTaskGroup(GetTaskGroupRequest) returns (GetTaskGroupResponse);
+
+  // UpdateTaskGroup patches the mutable fields of an existing TaskGroup.
+  rpc UpdateTaskGroup(UpdateTaskGroupRequest) returns (UpdateTaskGroupResponse);
+
+  // DeleteTaskGroup removes the group AND all inbound `member_of` edges.
+  // Member tasks themselves are preserved.
+  rpc DeleteTaskGroup(DeleteTaskGroupRequest) returns (DeleteTaskGroupResponse);
+
+  // ListTaskGroups returns every TaskGroup in the agency.
+  rpc ListTaskGroups(ListTaskGroupsRequest) returns (ListTaskGroupsResponse);
+
+  // AddTaskToGroup writes the `member_of` edge from task to group.
+  // Idempotent — re-adding an existing membership succeeds without
+  // creating a duplicate edge.
+  rpc AddTaskToGroup(AddTaskToGroupRequest) returns (AddTaskToGroupResponse);
+
+  // RemoveTaskFromGroup removes the `member_of` edge from task to group.
+  // Error: NOT_FOUND if no membership existed.
+  rpc RemoveTaskFromGroup(RemoveTaskFromGroupRequest) returns (RemoveTaskFromGroupResponse);
+
+  // ListTasksInGroup returns the tasks belonging to the given group via
+  // inbound `member_of` edges.
+  rpc ListTasksInGroup(ListTasksInGroupRequest) returns (ListTasksInGroupResponse);
+
+  // ListGroupsForTask returns the groups a task belongs to via outbound
+  // `member_of` edges.
+  rpc ListGroupsForTask(ListGroupsForTaskRequest) returns (ListGroupsForTaskResponse);
+
+  // ── Generic graph relationships ────────────────────────────────────────────
+
+  // CreateRelationship validates the (label, from_id, to_id) triple against
+  // the Work edge-label whitelist and creates the edge. Idempotent — a
+  // matching pre-existing edge is returned without creating a duplicate.
+  // Error: INVALID_ARGUMENT (with InvalidRelationshipInfo detail) if the
+  // triple is rejected; NOT_FOUND if an endpoint is missing.
+  rpc CreateRelationship(CreateRelationshipRequest) returns (CreateRelationshipResponse);
+
+  // DeleteRelationship removes the edge identified by (from_id, to_id, label).
+  // Error: NOT_FOUND if no such edge exists.
+  rpc DeleteRelationship(DeleteRelationshipRequest) returns (DeleteRelationshipResponse);
+
+  // TraverseRelationships returns the single-hop edges incident on vertex_id
+  // matching the given label and direction. Returns an empty list (not an
+  // error) when no edges match.
+  rpc TraverseRelationships(TraverseRelationshipsRequest) returns (TraverseRelationshipsResponse);
 }
 
-// ── Request / Response Messages ───────────────────────────────────────────────
+// ── Task lifecycle messages ───────────────────────────────────────────────────
 
 message CreateTaskRequest {
   string agency_id = 1;
@@ -74,4 +155,142 @@ message ListTasksRequest {
 }
 message ListTasksResponse {
   repeated Task tasks = 1;
+}
+
+// ── Agent assignment messages ─────────────────────────────────────────────────
+
+message AssignTaskRequest {
+  string agency_id = 1;
+  string task_id   = 2;
+  string agent_id  = 3;  // entity ID of the Agent vertex
+}
+message AssignTaskResponse {}
+
+message UnassignTaskRequest {
+  string agency_id = 1;
+  string task_id   = 2;
+}
+message UnassignTaskResponse {}
+
+message UpsertAgentRequest {
+  string agency_id = 1;
+  Agent  agent     = 2;
+}
+message UpsertAgentResponse {
+  Agent agent = 1;
+}
+
+message GetAgentRequest {
+  string agency_id = 1;
+  string agent_id  = 2;  // entity ID
+}
+message GetAgentResponse {
+  Agent agent = 1;
+}
+
+message ListAgentsRequest {
+  string agency_id = 1;
+}
+message ListAgentsResponse {
+  repeated Agent agents = 1;
+}
+
+// ── TaskGroup messages ────────────────────────────────────────────────────────
+
+message CreateTaskGroupRequest {
+  string    agency_id = 1;
+  TaskGroup group     = 2;
+}
+message CreateTaskGroupResponse {
+  TaskGroup group = 1;
+}
+
+message GetTaskGroupRequest {
+  string agency_id     = 1;
+  string task_group_id = 2;
+}
+message GetTaskGroupResponse {
+  TaskGroup group = 1;
+}
+
+message UpdateTaskGroupRequest {
+  string    agency_id = 1;
+  TaskGroup group     = 2;
+}
+message UpdateTaskGroupResponse {
+  TaskGroup group = 1;
+}
+
+message DeleteTaskGroupRequest {
+  string agency_id     = 1;
+  string task_group_id = 2;
+}
+message DeleteTaskGroupResponse {}
+
+message ListTaskGroupsRequest {
+  string agency_id = 1;
+}
+message ListTaskGroupsResponse {
+  repeated TaskGroup groups = 1;
+}
+
+message AddTaskToGroupRequest {
+  string agency_id     = 1;
+  string task_id       = 2;
+  string task_group_id = 3;
+}
+message AddTaskToGroupResponse {}
+
+message RemoveTaskFromGroupRequest {
+  string agency_id     = 1;
+  string task_id       = 2;
+  string task_group_id = 3;
+}
+message RemoveTaskFromGroupResponse {}
+
+message ListTasksInGroupRequest {
+  string agency_id     = 1;
+  string task_group_id = 2;
+}
+message ListTasksInGroupResponse {
+  repeated Task tasks = 1;
+}
+
+message ListGroupsForTaskRequest {
+  string agency_id = 1;
+  string task_id   = 2;
+}
+message ListGroupsForTaskResponse {
+  repeated TaskGroup groups = 1;
+}
+
+// ── Relationship messages ─────────────────────────────────────────────────────
+
+message CreateRelationshipRequest {
+  string                 agency_id  = 1;
+  string                 label      = 2;
+  string                 from_id    = 3;
+  string                 to_id      = 4;
+  google.protobuf.Struct properties = 5;
+}
+message CreateRelationshipResponse {
+  Relationship relationship = 1;
+}
+
+message DeleteRelationshipRequest {
+  string agency_id = 1;
+  string label     = 2;
+  string from_id   = 3;
+  string to_id     = 4;
+}
+message DeleteRelationshipResponse {}
+
+message TraverseRelationshipsRequest {
+  string    agency_id = 1;
+  string    vertex_id = 2;
+  string    label     = 3;
+  Direction direction = 4;
+}
+message TraverseRelationshipsResponse {
+  repeated Relationship relationships = 1;
 }

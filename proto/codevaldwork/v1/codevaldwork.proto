@@ -5,6 +5,7 @@ package codevaldwork.v1;
 option go_package = "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
 
 // TaskStatus mirrors the Go [TaskStatus] enumeration.
 enum TaskStatus {
@@ -25,24 +26,84 @@ enum TaskPriority {
   TASK_PRIORITY_CRITICAL    = 4;
 }
 
+// Direction selects edge orientation for relationship traversal RPCs.
+enum Direction {
+  DIRECTION_UNSPECIFIED = 0;
+  DIRECTION_OUTBOUND    = 1;
+  DIRECTION_INBOUND     = 2;
+}
+
 // Task is the core domain entity managed by the TaskService.
+//
+// assigned_to (string, field 7) was removed in MVP-WORK-010 — task assignment
+// is now an `assigned_to` graph edge from Task to Agent, set via AssignTask.
+// The field number is reserved to prevent silent reuse.
 message Task {
-  string        id           = 1;
-  string        agency_id    = 2;
-  string        title        = 3;
-  string        description  = 4;
-  TaskStatus    status       = 5;
-  TaskPriority  priority     = 6;
-  string        assigned_to  = 7;
-  google.protobuf.Timestamp created_at   = 8;
-  google.protobuf.Timestamp updated_at   = 9;
-  google.protobuf.Timestamp completed_at = 10;
+  string        id              = 1;
+  string        agency_id       = 2;
+  string        title           = 3;
+  string        description     = 4;
+  TaskStatus    status          = 5;
+  TaskPriority  priority        = 6;
+  reserved 7;
+  reserved "assigned_to";
+  google.protobuf.Timestamp created_at      = 8;
+  google.protobuf.Timestamp updated_at      = 9;
+  google.protobuf.Timestamp completed_at    = 10;
+  google.protobuf.Timestamp due_at          = 11;
+  repeated string           tags            = 12;
+  double                    estimated_hours = 13;
+  string                    context         = 14;
 }
 
 // TaskFilter is used in ListTasks to constrain results.
 // Unset fields (zero values) match all.
+//
+// assigned_to (string, field 3) was removed in MVP-WORK-010 — to find tasks
+// for an agent, traverse inbound `assigned_to` edges from the Agent vertex.
 message TaskFilter {
-  TaskStatus   status      = 1;
-  TaskPriority priority    = 2;
-  string       assigned_to = 3;
+  TaskStatus   status   = 1;
+  TaskPriority priority = 2;
+  reserved 3;
+  reserved "assigned_to";
+}
+
+// Agent is the Work-domain projection of an AI agent. Each Agent is a graph
+// vertex; tasks point to it via the `assigned_to` edge.
+message Agent {
+  string id           = 1;  // entity-graph storage key (server-assigned)
+  string agency_id    = 2;
+  string agent_id     = 3;  // external natural key, unique within agency
+  string display_name = 4;
+  string capability   = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// TaskGroup is an optional container that groups related tasks (sprints,
+// milestones, epics). Tasks become members via `member_of` edges.
+message TaskGroup {
+  string id          = 1;
+  string agency_id   = 2;
+  string name        = 3;
+  string description = 4;
+  google.protobuf.Timestamp due_at     = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Relationship is the Work-domain projection of a directed graph edge.
+// label must be one of the whitelist values: assigned_to, blocks, subtask_of,
+// depends_on, member_of.
+message Relationship {
+  string id        = 1;  // server-assigned edge key
+  string agency_id = 2;
+  string label     = 3;
+  string from_id   = 4;
+  string to_id     = 5;
+  // Edge metadata. Struct preserves type fidelity (numbers, bools, lists)
+  // so timestamps (e.g. assignedAt) round-trip correctly under the
+  // schema-declared key.
+  google.protobuf.Struct    properties = 6;
+  google.protobuf.Timestamp created_at = 7;
 }

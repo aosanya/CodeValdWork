@@ -25,3 +25,20 @@ message InvalidStatusTransitionInfo {
 message BlockedByInfo {
   repeated string blocker_task_ids = 1;
 }
+
+// InvalidRelationshipInfo is packed into a google.rpc.Status detail field
+// when CreateRelationship / DeleteRelationship returns
+// codes.InvalidArgument due to a label, type, or cross-agency violation.
+//
+// Fields populated on a best-effort basis — `reason` is always set; the
+// remaining fields carry the offending values when known.
+message InvalidRelationshipInfo {
+  // reason is a stable machine token: "unknown_label", "wrong_from_type",
+  // "wrong_to_type", "missing_endpoint", "cross_agency", or "missing_ids".
+  string reason    = 1;
+  string label     = 2;
+  string from_id   = 3;
+  string to_id     = 4;
+  string from_type = 5;
+  string to_type   = 6;
+}
