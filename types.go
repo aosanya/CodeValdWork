@@ -1,10 +1,6 @@
 package codevaldwork
 
-import (
-	"time"
-
-	"github.com/aosanya/CodeValdSharedLib/entitygraph"
-)
+import "time"
 
 // TaskStatus represents the lifecycle state of a [Task].
 type TaskStatus string
@@ -142,67 +138,5 @@ type TaskFilter struct {
 
 	// Priority filters tasks to the given priority. Empty string matches all.
 	Priority TaskPriority
-}
-
-// TaskGroup is an optional container that groups related tasks (e.g. a sprint,
-// a project milestone, or an epic). Tasks become members via the `member_of`
-// graph edge added in MVP-WORK-012.
-type TaskGroup struct {
-	// ID is the unique identifier for this group within the agency.
-	// Set by the backend on creation.
-	ID string
-
-	// AgencyID is the agency that owns this group.
-	AgencyID string
-
-	// Name is the short human-readable label. Required.
-	Name string
-
-	// Description provides additional context for the group. Optional.
-	Description string
-
-	// DueAt is the target completion date for the group. Optional.
-	DueAt *time.Time
-
-	// CreatedAt is the UTC timestamp when the group was first created.
-	CreatedAt time.Time
-
-	// UpdatedAt is the UTC timestamp of the most recent mutation.
-	UpdatedAt time.Time
-}
-
-// taskGroupToProperties serialises a TaskGroup into the property map stored on
-// its entitygraph Entity. Time fields are encoded as RFC 3339 strings.
-func taskGroupToProperties(g TaskGroup) map[string]any {
-	props := map[string]any{
-		"name":        g.Name,
-		"description": g.Description,
-	}
-	if g.DueAt != nil && !g.DueAt.IsZero() {
-		props["dueAt"] = g.DueAt.UTC().Format(time.RFC3339Nano)
-	}
-	return props
-}
-
-// taskGroupFromEntity reconstructs a TaskGroup from an entitygraph Entity.
-func taskGroupFromEntity(e entitygraph.Entity) TaskGroup {
-	g := TaskGroup{
-		ID:        e.ID,
-		AgencyID:  e.AgencyID,
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-	}
-	if v, ok := e.Properties["name"].(string); ok {
-		g.Name = v
-	}
-	if v, ok := e.Properties["description"].(string); ok {
-		g.Description = v
-	}
-	if v, ok := e.Properties["dueAt"].(string); ok && v != "" {
-		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
-			g.DueAt = &ts
-		}
-	}
-	return g
 }
 

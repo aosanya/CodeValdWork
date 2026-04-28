@@ -105,6 +105,43 @@ type TaskManager interface {
 	// UnassignTask removes any outbound `assigned_to` edge from the Task.
 	// Idempotent — returns nil whether or not an edge was present.
 	UnassignTask(ctx context.Context, agencyID, taskID string) error
+
+	// CreateTaskGroup creates a new TaskGroup vertex. Returns
+	// [ErrInvalidTask] when Name is empty and [ErrTaskGroupAlreadyExists]
+	// when the underlying store reports a duplicate.
+	CreateTaskGroup(ctx context.Context, agencyID string, g TaskGroup) (TaskGroup, error)
+
+	// GetTaskGroup retrieves a single TaskGroup by entity ID. Returns
+	// [ErrTaskGroupNotFound] if no matching group exists.
+	GetTaskGroup(ctx context.Context, agencyID, groupID string) (TaskGroup, error)
+
+	// UpdateTaskGroup replaces the mutable fields of an existing TaskGroup.
+	// Returns [ErrTaskGroupNotFound] if the group does not exist.
+	UpdateTaskGroup(ctx context.Context, agencyID string, g TaskGroup) (TaskGroup, error)
+
+	// DeleteTaskGroup soft-deletes the TaskGroup vertex AND removes every
+	// inbound `member_of` edge so member Tasks lose the membership.
+	// Member Tasks themselves are not deleted.
+	DeleteTaskGroup(ctx context.Context, agencyID, groupID string) error
+
+	// ListTaskGroups returns all non-deleted TaskGroups in the agency.
+	ListTaskGroups(ctx context.Context, agencyID string) ([]TaskGroup, error)
+
+	// AddTaskToGroup writes the `member_of` edge from taskID to groupID.
+	// Idempotent — returns nil whether or not the edge already existed.
+	AddTaskToGroup(ctx context.Context, agencyID, taskID, groupID string) error
+
+	// RemoveTaskFromGroup removes the `member_of` edge from taskID to
+	// groupID. Returns [ErrRelationshipNotFound] if no membership existed.
+	RemoveTaskFromGroup(ctx context.Context, agencyID, taskID, groupID string) error
+
+	// ListTasksInGroup returns the Tasks belonging to the given group via
+	// inbound `member_of` edges.
+	ListTasksInGroup(ctx context.Context, agencyID, groupID string) ([]Task, error)
+
+	// ListGroupsForTask returns the TaskGroups the given Task belongs to
+	// via outbound `member_of` edges.
+	ListGroupsForTask(ctx context.Context, agencyID, taskID string) ([]TaskGroup, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].
