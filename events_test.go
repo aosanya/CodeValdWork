@@ -181,6 +181,121 @@ func TestFailedValidation_DoesNotPublish(t *testing.T) {
 	}
 }
 
+// TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics drives the
+// canonical Phase 2 lifecycle (create → update → assign → status changes
+// to completed → create blocks edge) past a recordingPublisher and asserts
+// the *exact* list of topics emitted, in order. Single-event tests above
+// cover payload shape; this test pins the cross-event ordering — in
+// particular, that status.changed precedes completed on a terminal
+// transition, and that an update with no status change does not surface
+// a status.changed event.
+func TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics(t *testing.T) {
+	pub := &recordingPublisher{}
+	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
+	ctx := context.Background()
+	const agency = "ag"
+
+	// Step 1 — create a Task.
+	task, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{
+		Title: "x", Priority: codevaldwork.TaskPriorityHigh,
+	})
+	if err != nil {
+		t.Fatalf("CreateTask: %v", err)
+	}
+
+	// Step 2 — non-status update (description only).
+	task.Description = "patched"
+	if _, err := mgr.UpdateTask(ctx, agency, task); err != nil {
+		t.Fatalf("UpdateTask description: %v", err)
+	}
+
+	// Step 3 — assign to a fresh agent.
+	agent, err := mgr.UpsertAgent(ctx, agency, codevaldwork.Agent{AgentID: "a1"})
+	if err != nil {
+		t.Fatalf("UpsertAgent: %v", err)
+	}
+	if err := mgr.AssignTask(ctx, agency, task.ID, agent.ID); err != nil {
+		t.Fatalf("AssignTask: %v", err)
+	}
+
+	// Step 4 — drive task to completed via in_progress.
+	cur, err := mgr.GetTask(ctx, agency, task.ID)
+	if err != nil {
+		t.Fatalf("GetTask: %v", err)
+	}
+	cur.Status = codevaldwork.TaskStatusInProgress
+	if _, err := mgr.UpdateTask(ctx, agency, cur); err != nil {
+		t.Fatalf("→ in_progress: %v", err)
+	}
+	cur.Status = codevaldwork.TaskStatusCompleted
+	if _, err := mgr.UpdateTask(ctx, agency, cur); err != nil {
+		t.Fatalf("→ completed: %v", err)
+	}
+
+	// Step 5 — create a blocks edge to a sibling Task.
+	other, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "other"})
+	if err != nil {
+		t.Fatalf("CreateTask other: %v", err)
+	}
+	if _, err := mgr.CreateRelationship(ctx, agency, codevaldwork.Relationship{
+		Label: codevaldwork.RelLabelBlocks, FromID: task.ID, ToID: other.ID,
+	}); err != nil {
+		t.Fatalf("CreateRelationship: %v", err)
+	}
+
+	wantTopics := []string{
+		codevaldwork.TopicTaskCreated,         // step 1
+		codevaldwork.TopicTaskUpdated,         // step 2 (no status change)
+		codevaldwork.TopicTaskAssigned,        // step 3
+		codevaldwork.TopicTaskStatusChanged,   // step 4a pending → in_progress
+		codevaldwork.TopicTaskStatusChanged,   // step 4b in_progress → completed
+		codevaldwork.TopicTaskCompleted,       // step 4b terminal hook
+		codevaldwork.TopicTaskCreated,         // step 5 sibling
+		codevaldwork.TopicRelationshipCreated, // step 5 edge
+	}
+	gotTopics := make([]string, len(pub.full))
+	for i, e := range pub.full {
+		gotTopics[i] = e.Topic
+	}
+	if len(gotTopics) != len(wantTopics) {
+		t.Fatalf("event count: got %d, want %d\n got=%v\nwant=%v",
+			len(gotTopics), len(wantTopics), gotTopics, wantTopics)
+	}
+	for i := range wantTopics {
+		if gotTopics[i] != wantTopics[i] {
+			t.Errorf("event[%d] topic: got %q, want %q (full sequence: %v)",
+				i, gotTopics[i], wantTopics[i], gotTopics)
+		}
+	}
+
+	// Spot-check key payloads — the full sequence is locked above; here we
+	// confirm the typed payloads are intact at the load-bearing positions.
+	if p, ok := pub.full[0].Payload.(codevaldwork.TaskCreatedPayload); !ok ||
+		p.TaskID != task.ID || p.Title != "x" || p.Priority != codevaldwork.TaskPriorityHigh {
+		t.Errorf("event[0] TaskCreatedPayload = %+v", pub.full[0].Payload)
+	}
+	if p, ok := pub.full[2].Payload.(codevaldwork.TaskAssignedPayload); !ok ||
+		p.TaskID != task.ID || p.AgentID != agent.ID {
+		t.Errorf("event[2] TaskAssignedPayload = %+v", pub.full[2].Payload)
+	}
+	if p, ok := pub.full[3].Payload.(codevaldwork.TaskStatusChangedPayload); !ok ||
+		p.From != codevaldwork.TaskStatusPending || p.To != codevaldwork.TaskStatusInProgress {
+		t.Errorf("event[3] TaskStatusChangedPayload = %+v", pub.full[3].Payload)
+	}
+	if p, ok := pub.full[4].Payload.(codevaldwork.TaskStatusChangedPayload); !ok ||
+		p.From != codevaldwork.TaskStatusInProgress || p.To != codevaldwork.TaskStatusCompleted {
+		t.Errorf("event[4] TaskStatusChangedPayload = %+v", pub.full[4].Payload)
+	}
+	if p, ok := pub.full[5].Payload.(codevaldwork.TaskCompletedPayload); !ok ||
+		p.TaskID != task.ID || p.TerminalStatus != codevaldwork.TaskStatusCompleted {
+		t.Errorf("event[5] TaskCompletedPayload = %+v", pub.full[5].Payload)
+	}
+	if p, ok := pub.full[7].Payload.(codevaldwork.RelationshipCreatedPayload); !ok ||
+		p.FromID != task.ID || p.ToID != other.ID || p.Label != codevaldwork.RelLabelBlocks {
+		t.Errorf("event[7] RelationshipCreatedPayload = %+v", pub.full[7].Payload)
+	}
+}
+
 // AllTopics must list every topic constant exactly once. The registrar's
 // produces declaration depends on this — drift here silently breaks
 // subscriber discovery.

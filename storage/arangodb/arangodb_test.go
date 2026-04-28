@@ -27,11 +27,13 @@ import (
 	"github.com/aosanya/CodeValdWork/storage/arangodb"
 )
 
-// openTestManager connects to the ArangoDB instance at WORK_ARANGO_ENDPOINT
-// (default http://localhost:8529), opens WORK_ARANGO_DATABASE_TEST (default
-// codevald_tests), constructs an entitygraph-backed Backend, and wraps it in
-// a TaskManager. Skips the test if the server is unreachable.
-func openTestManager(t *testing.T) codevaldwork.TaskManager {
+// openTestDB connects to the ArangoDB instance at WORK_ARANGO_ENDPOINT
+// (default http://localhost:8529), opens or creates WORK_ARANGO_DATABASE_TEST
+// (default codevald_tests), and returns the open driver.Database. Skips the
+// test if the server is unreachable. Tests that need direct collection /
+// graph inspection use this helper; tests that only need a TaskManager can
+// call openTestManager.
+func openTestDB(t *testing.T) driver.Database {
 	t.Helper()
 	endpoint := os.Getenv("WORK_ARANGO_ENDPOINT")
 	if endpoint == "" {
@@ -77,7 +79,14 @@ func openTestManager(t *testing.T) codevaldwork.TaskManager {
 	if err != nil {
 		t.Fatalf("open/create test database %q: %v", dbName, err)
 	}
+	return db
+}
 
+// openTestManager opens the test database (via openTestDB), constructs an
+// entitygraph-backed Backend, and wraps it in a TaskManager.
+func openTestManager(t *testing.T) codevaldwork.TaskManager {
+	t.Helper()
+	db := openTestDB(t)
 	backend, err := arangodb.NewBackendFromDB(db, codevaldwork.DefaultWorkSchema())
 	if err != nil {
 		t.Fatalf("NewBackendFromDB: %v", err)
