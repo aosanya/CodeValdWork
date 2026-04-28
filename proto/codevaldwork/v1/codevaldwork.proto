@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package codevaldwork.v1;
+
+option go_package = "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1";
+
+import "google/protobuf/timestamp.proto";
+
+// TaskStatus mirrors the Go [TaskStatus] enumeration.
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_PENDING     = 1;
+  TASK_STATUS_IN_PROGRESS = 2;
+  TASK_STATUS_COMPLETED   = 3;
+  TASK_STATUS_FAILED      = 4;
+  TASK_STATUS_CANCELLED   = 5;
+}
+
+// TaskPriority mirrors the Go [TaskPriority] enumeration.
+enum TaskPriority {
+  TASK_PRIORITY_UNSPECIFIED = 0;
+  TASK_PRIORITY_LOW         = 1;
+  TASK_PRIORITY_MEDIUM      = 2;
+  TASK_PRIORITY_HIGH        = 3;
+  TASK_PRIORITY_CRITICAL    = 4;
+}
+
+// Task is the core domain entity managed by the TaskService.
+message Task {
+  string        id           = 1;
+  string        agency_id    = 2;
+  string        title        = 3;
+  string        description  = 4;
+  TaskStatus    status       = 5;
+  TaskPriority  priority     = 6;
+  string        assigned_to  = 7;
+  google.protobuf.Timestamp created_at   = 8;
+  google.protobuf.Timestamp updated_at   = 9;
+  google.protobuf.Timestamp completed_at = 10;
+}
+
+// TaskFilter is used in ListTasks to constrain results.
+// Unset fields (zero values) match all.
+message TaskFilter {
+  TaskStatus   status      = 1;
+  TaskPriority priority    = 2;
+  string       assigned_to = 3;
+}

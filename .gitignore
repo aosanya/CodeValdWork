@@ -1,7 +1,5 @@
 # Binaries
 /bin/
-/main
-codevaldwork
 
 # Environment — never commit real credentials
 .env

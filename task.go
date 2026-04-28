@@ -191,6 +191,12 @@ func (m *taskManager) GetTask(ctx context.Context, agencyID, taskID string) (Tas
 
 // UpdateTask validates the requested status transition then patches the
 // stored entity properties.
+//
+// The pending → in_progress transition is additionally gated by the blocker
+// rule: any inbound `blocks` edge whose source task has not reached a
+// terminal status (completed / failed / cancelled) returns a *BlockedError
+// (which wraps [ErrBlocked]) listing the offending blocker task IDs.
+// Other transitions — including pending → cancelled — bypass the gate.
 func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task) (Task, error) {
 	current, err := m.GetTask(ctx, agencyID, task.ID)
 	if err != nil {
@@ -198,6 +204,13 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 	}
 	if !current.Status.CanTransitionTo(task.Status) {
 		return Task{}, ErrInvalidStatusTransition
+	}
+	if current.Status == TaskStatusPending && task.Status == TaskStatusInProgress {
+		if blockers, err := m.findActiveBlockers(ctx, agencyID, task.ID); err != nil {
+			return Task{}, err
+		} else if len(blockers) > 0 {
+			return Task{}, &BlockedError{BlockerTaskIDs: blockers}
+		}
 	}
 
 	now := time.Now().UTC()
@@ -291,6 +304,32 @@ func isTerminalStatus(s TaskStatus) bool {
 	default:
 		return false
 	}
+}
+
+// findActiveBlockers returns the IDs of tasks that block taskID via inbound
+// `blocks` edges and are themselves still non-terminal. An empty slice
+// (paired with nil error) means the gate is open.
+func (m *taskManager) findActiveBlockers(ctx context.Context, agencyID, taskID string) ([]string, error) {
+	edges, err := m.TraverseRelationships(ctx, agencyID, taskID, RelLabelBlocks, DirectionInbound)
+	if err != nil {
+		return nil, fmt.Errorf("findActiveBlockers: %w", err)
+	}
+	var nonTerminal []string
+	for _, e := range edges {
+		blocker, err := m.GetTask(ctx, agencyID, e.FromID)
+		if err != nil {
+			// A missing or non-Task source vertex cannot constrain
+			// progress — skip it rather than fail the whole transition.
+			if errors.Is(err, ErrTaskNotFound) {
+				continue
+			}
+			return nil, fmt.Errorf("findActiveBlockers: get %s: %w", e.FromID, err)
+		}
+		if !isTerminalStatus(blocker.Status) {
+			nonTerminal = append(nonTerminal, blocker.ID)
+		}
+	}
+	return nonTerminal, nil
 }
 
 // taskToProperties serialises a Task into the property map stored on its

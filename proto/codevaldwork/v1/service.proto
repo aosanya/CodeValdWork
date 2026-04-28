@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package codevaldwork.v1;
+
+option go_package = "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1";
+
+import "codevaldwork/v1/codevaldwork.proto";
+
+// TaskService is the single gRPC service exposed by CodeValdWork.
+// All operations are scoped to an agency via agency_id.
+service TaskService {
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
+
+  // CreateTask creates a new task for the agency in PENDING status.
+  // Error: ALREADY_EXISTS if a task with the same ID exists.
+  // Error: INVALID_ARGUMENT if required fields (title) are missing.
+  rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
+
+  // GetTask retrieves a single task by ID within the agency.
+  // Error: NOT_FOUND if the task does not exist.
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+
+  // UpdateTask replaces mutable task fields.
+  // Status transitions are validated server-side.
+  // Error: NOT_FOUND if the task does not exist.
+  // Error: FAILED_PRECONDITION if the status transition is invalid.
+  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
+
+  // DeleteTask permanently removes a task.
+  // Error: NOT_FOUND if the task does not exist.
+  rpc DeleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
+
+  // ListTasks returns all tasks for the agency matching the filter.
+  // Returns an empty list (not an error) when no tasks match.
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+}
+
+// ── Request / Response Messages ───────────────────────────────────────────────
+
+message CreateTaskRequest {
+  string agency_id = 1;
+  Task   task      = 2;
+}
+message CreateTaskResponse {
+  Task task = 1;
+}
+
+message GetTaskRequest {
+  string agency_id = 1;
+  string task_id   = 2;
+}
+message GetTaskResponse {
+  Task task = 1;
+}
+
+message UpdateTaskRequest {
+  string agency_id = 1;
+  Task   task      = 2;
+}
+message UpdateTaskResponse {
+  Task task = 1;
+}
+
+message DeleteTaskRequest {
+  string agency_id = 1;
+  string task_id   = 2;
+}
+message DeleteTaskResponse {}
+
+message ListTasksRequest {
+  string     agency_id = 1;
+  TaskFilter filter    = 2;
+}
+message ListTasksResponse {
+  repeated Task tasks = 1;
+}

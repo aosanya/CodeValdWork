@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package codevaldwork.v1;
+
+option go_package = "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1";
+
+// InvalidStatusTransitionInfo is packed into a google.rpc.Status detail field
+// when UpdateTask returns codes.FailedPrecondition due to an invalid status
+// transition. Clients unpack this from status.Details() for structured handling.
+message InvalidStatusTransitionInfo {
+  string current_status = 1;
+  string requested_status = 2;
+  string task_id = 3;
+}
+
+// BlockedByInfo is packed into a google.rpc.Status detail field when
+// UpdateTask returns codes.FailedPrecondition because the requested
+// pending → in_progress transition is gated by one or more non-terminal
+// blocker tasks (a `blocks`-inbound edge whose source task has not reached
+// completed / failed / cancelled).
+//
+// blocker_task_ids lists the IDs of the still-non-terminal blockers — the
+// tasks that must finish (or be cancelled) before the requested transition
+// can succeed.
+message BlockedByInfo {
+  repeated string blocker_task_ids = 1;
+}
