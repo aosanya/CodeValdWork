@@ -38,6 +38,14 @@ kill:
 	-@pkill -9 -f "bin/codevaldwork-" 2>/dev/null || true
 	@sleep 1
 
+## Stop any running instance, rebuild, and run.
+restart: kill build-server
+	@echo "Running codevaldwork..."
+	@if [ -f .env ]; then \
+		set -a && . ./.env && set +a; \
+	fi; \
+	./bin/codevaldwork-server
+	
 # ── Proto Codegen ─────────────────────────────────────────────────────────────
 
 ## Regenerate Go stubs from proto/codevaldwork/v1/*.proto.

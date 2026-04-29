@@ -132,6 +132,13 @@ func taskRoutes() []types.RouteInfo {
 			PathBindings: []types.PathBinding{agencyBinding},
 		},
 		{
+			Method:       "POST",
+			Pattern:      "/work/{agencyId}/tasks/search",
+			Capability:   "search_tasks",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/ListTasks",
+			PathBindings: []types.PathBinding{agencyBinding},
+		},
+		{
 			Method:     "GET",
 			Pattern:    "/work/{agencyId}/tasks/{taskId}",
 			Capability: "get_task",
