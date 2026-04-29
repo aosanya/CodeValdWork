@@ -115,6 +115,19 @@ service TaskService {
   // matching the given label and direction. Returns an empty list (not an
   // error) when no edges match.
   rpc TraverseRelationships(TraverseRelationshipsRequest) returns (TraverseRelationshipsResponse);
+
+  // ── Markdown import ────────────────────────────────────────────────────────
+
+  // ImportProject parses a Markdown document in the CodeValdWork MVP
+  // task-table format and creates a Project vertex, a Task vertex for each
+  // table row, member_of edges from every Task to the Project, and
+  // depends_on edges derived from the "Depends On" column.
+  // All imported tasks start in PENDING status regardless of the status
+  // shown in the document; the original task ID (e.g. "MVP-SF-001") is
+  // stored as a tag on each Task for traceability.
+  // Error: INVALID_ARGUMENT if the markdown cannot be parsed (no project
+  // heading or no task rows found).
+  rpc ImportProject(ImportProjectRequest) returns (ImportProjectResponse);
 }
 
 // ── Task lifecycle messages ───────────────────────────────────────────────────
@@ -293,4 +306,19 @@ message TraverseRelationshipsRequest {
 }
 message TraverseRelationshipsResponse {
   repeated Relationship relationships = 1;
+}
+
+// ── Markdown import messages ──────────────────────────────────────────────────
+
+message ImportProjectRequest {
+  string agency_id = 1;
+  // markdown is the raw Markdown document content. Must contain a
+  // "# MVP — <name>" heading and at least one task table.
+  string markdown = 2;
+}
+message ImportProjectResponse {
+  Project        project      = 1;
+  repeated Task  tasks        = 2;
+  // deps_created is the number of depends_on edges created between tasks.
+  int32          deps_created = 3;
 }
