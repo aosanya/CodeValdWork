@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -28,10 +29,10 @@ type importDoc struct {
 }
 
 type importTask struct {
-	ID          string   `json:"id"`          // short identifier, e.g. "001"
+	Name        string   `json:"name"`        // full prefixed name, e.g. "MVP-SF-001"
 	Title       string   `json:"title"`
 	Priority    string   `json:"priority"`    // "low"|"medium"|"high"|"critical"; default medium
-	DependsOn   []string `json:"depends_on"`  // short IDs of prerequisite tasks in this document
+	DependsOn   []string `json:"depends_on"`  // short IDs of prerequisite tasks, e.g. "001"
 	Description string   `json:"description"`
 }
 
@@ -42,8 +43,9 @@ type importTask struct {
 //   - depends_on edges for each entry in a task's "depends_on" array whose
 //     referenced ID is present in the same document
 //
-// When "task_prefix" is set, the stored tag on each Task is
-// "{task_prefix}-{id}" (e.g. "MVP-SF-001"); otherwise just the raw id.
+// The task "name" field carries the full prefixed name (e.g. "MVP-SF-001").
+// The "task_prefix" is stripped from each name to derive the short key used
+// by "depends_on" entries (e.g. "001").
 //
 // Returns [ErrInvalidImport] when the document is malformed or empty.
 func (m *taskManager) ImportProject(ctx context.Context, agencyID, document string) (ImportResult, error) {
@@ -58,48 +60,46 @@ func (m *taskManager) ImportProject(ctx context.Context, agencyID, document stri
 		return ImportResult{}, fmt.Errorf("%w: \"tasks\" array must not be empty", ErrInvalidImport)
 	}
 	for i, t := range doc.Tasks {
-		if t.ID == "" {
-			return ImportResult{}, fmt.Errorf("%w: task[%d] missing \"id\"", ErrInvalidImport, i)
+		if t.Name == "" {
+			return ImportResult{}, fmt.Errorf("%w: task[%d] missing \"name\"", ErrInvalidImport, i)
 		}
 		if t.Title == "" {
-			return ImportResult{}, fmt.Errorf("%w: task[%d] (%s) missing \"title\"", ErrInvalidImport, i, t.ID)
+			return ImportResult{}, fmt.Errorf("%w: task[%d] (%s) missing \"title\"", ErrInvalidImport, i, t.Name)
 		}
 	}
 
-	proj, err := m.CreateProject(ctx, agencyID, Project{Name: doc.Project})
+	proj, err := m.CreateProject(ctx, agencyID, Project{Name: doc.Project, TaskPrefix: doc.TaskPrefix})
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("ImportProject: create project: %w", err)
 	}
 
-	// short id → entity ID assigned by the graph
+	// shortKey (e.g. "001") → entity ID assigned by the graph
 	idMap := make(map[string]string, len(doc.Tasks))
 	tasks := make([]Task, 0, len(doc.Tasks))
 
 	for _, it := range doc.Tasks {
-		tag := it.ID
-		if doc.TaskPrefix != "" {
-			tag = doc.TaskPrefix + it.ID
-		}
 		t, err := m.CreateTask(ctx, agencyID, Task{
 			Title:       it.Title,
 			Priority:    parsePriority(it.Priority),
 			Description: it.Description,
-			Tags:        []string{tag},
+			Tags:        []string{it.Name},
 		})
 		if err != nil {
-			return ImportResult{}, fmt.Errorf("ImportProject: create task %s: %w", tag, err)
+			return ImportResult{}, fmt.Errorf("ImportProject: create task %s: %w", it.Name, err)
 		}
-		idMap[it.ID] = t.ID
+		shortKey := strings.TrimPrefix(it.Name, doc.TaskPrefix)
+		idMap[shortKey] = t.ID
 		tasks = append(tasks, t)
 
 		if err := m.AddTaskToProject(ctx, agencyID, t.ID, proj.ID); err != nil {
-			return ImportResult{}, fmt.Errorf("ImportProject: add task %s to project: %w", tag, err)
+			return ImportResult{}, fmt.Errorf("ImportProject: add task %s to project: %w", it.Name, err)
 		}
 	}
 
 	depsCreated := 0
 	for _, it := range doc.Tasks {
-		fromID := idMap[it.ID]
+		shortKey := strings.TrimPrefix(it.Name, doc.TaskPrefix)
+		fromID := idMap[shortKey]
 		for _, depShortID := range it.DependsOn {
 			toID, ok := idMap[depShortID]
 			if !ok {
@@ -114,7 +114,7 @@ func (m *taskManager) ImportProject(ctx context.Context, agencyID, document stri
 				},
 			})
 			if err != nil {
-				return ImportResult{}, fmt.Errorf("ImportProject: depends_on %s→%s: %w", it.ID, depShortID, err)
+				return ImportResult{}, fmt.Errorf("ImportProject: depends_on %s→%s: %w", it.Name, depShortID, err)
 			}
 			depsCreated++
 		}

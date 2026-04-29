@@ -73,6 +73,7 @@ func TestDefaultWorkSchema_ProjectShape(t *testing.T) {
 		"projectName": types.PropertyTypeString,
 		"description": types.PropertyTypeString,
 		"githubRepo":  types.PropertyTypeString,
+		"taskPrefix":  types.PropertyTypeString,
 	}
 	if got := propTypes(td); !reflect.DeepEqual(got, want) {
 		t.Errorf("Project property types mismatch:\n got=%v\nwant=%v", got, want)
