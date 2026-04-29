@@ -37,7 +37,7 @@ func TestCreateTask_PublishesTypedTaskCreatedPayload(t *testing.T) {
 	if !ok {
 		t.Fatalf("payload type = %T, want TaskCreatedPayload", ev.Payload)
 	}
-	if p.TaskID != created.ID || p.Title != "build it" || p.Priority != codevaldwork.TaskPriorityHigh {
+	if p.TaskID != created.ID || p.Priority != codevaldwork.TaskPriorityHigh {
 		t.Errorf("payload = %+v", p)
 	}
 	if ev.Timestamp.IsZero() {
@@ -168,17 +168,6 @@ func TestCreateRelationship_PublishesTypedRelationshipCreatedPayload(t *testing.
 	}
 }
 
-func TestFailedValidation_DoesNotPublish(t *testing.T) {
-	pub := &recordingPublisher{}
-	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
-	// Empty title fails validation; no event must fire.
-	if _, err := mgr.CreateTask(context.Background(), "ag", codevaldwork.Task{}); err == nil {
-		t.Fatal("want error on empty title, got nil")
-	}
-	if len(pub.full) != 0 {
-		t.Errorf("validation failure published events: %v", pub.full)
-	}
-}
 
 // TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics drives the
 // canonical Phase 2 lifecycle (create → update → assign → status changes
@@ -196,6 +185,7 @@ func TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics(t *testing.T) {
 
 	// Step 1 — create a Task.
 	task, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{
+		Priority: codevaldwork.TaskPriorityHigh,
 	})
 	if err != nil {
 		t.Fatalf("CreateTask: %v", err)
@@ -269,7 +259,7 @@ func TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics(t *testing.T) {
 	// Spot-check key payloads — the full sequence is locked above; here we
 	// confirm the typed payloads are intact at the load-bearing positions.
 	if p, ok := pub.full[0].Payload.(codevaldwork.TaskCreatedPayload); !ok ||
-		p.TaskID != task.ID || p.Title != "x" || p.Priority != codevaldwork.TaskPriorityHigh {
+		p.TaskID != task.ID || p.Priority != codevaldwork.TaskPriorityHigh {
 		t.Errorf("event[0] TaskCreatedPayload = %+v", pub.full[0].Payload)
 	}
 	if p, ok := pub.full[2].Payload.(codevaldwork.TaskAssignedPayload); !ok ||

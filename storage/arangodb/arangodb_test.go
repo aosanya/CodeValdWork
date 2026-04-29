@@ -15,7 +15,6 @@ package arangodb_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -133,8 +132,8 @@ func TestArangoDB_CreateGet_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTask: %v", err)
 	}
-	if got.Title != created.Title {
-		t.Errorf("title mismatch: want %q, got %q", created.Title, got.Title)
+	if got.ID != created.ID {
+		t.Errorf("id mismatch: want %q, got %q", created.ID, got.ID)
 	}
 	if got.Priority != codevaldwork.TaskPriorityHigh {
 		t.Errorf("priority mismatch: want high, got %s", got.Priority)

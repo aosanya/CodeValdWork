@@ -82,8 +82,8 @@ func TestGetTask_Found(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if got.Title != "Find me" {
-		t.Errorf("want title %q, got %q", "Find me", got.Title)
+	if got.ID != created.ID {
+		t.Errorf("want ID %q, got %q", created.ID, got.ID)
 	}
 }
 
@@ -92,7 +92,7 @@ func TestGetTask_Found(t *testing.T) {
 func TestUpdateTask_NotFound(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	_, err := mgr.UpdateTask(context.Background(), "agency-1", codevaldwork.Task{
-		ID: "nonexistent", Title: "x", Status: codevaldwork.TaskStatusInProgress,
+		ID: "nonexistent", Status: codevaldwork.TaskStatusInProgress,
 	})
 	if !errors.Is(err, codevaldwork.ErrTaskNotFound) {
 		t.Fatalf("want ErrTaskNotFound, got %v", err)
