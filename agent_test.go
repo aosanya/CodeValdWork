@@ -112,7 +112,7 @@ func TestListAgents_AgencyIsolation(t *testing.T) {
 func TestAssignTask_UnknownAgent_ReturnsErrAgentNotFound(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "t"})
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 
 	err := mgr.AssignTask(ctx, "ag", task.ID, "no-such-agent")
 	if !errors.Is(err, codevaldwork.ErrAgentNotFound) {
@@ -134,7 +134,7 @@ func TestAssignTask_UnknownTask_ReturnsErrTaskNotFound(t *testing.T) {
 func TestAssignTask_HappyPath_CreatesEdge(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "t"})
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a"})
 
 	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID); err != nil {
@@ -152,7 +152,7 @@ func TestAssignTask_HappyPath_CreatesEdge(t *testing.T) {
 func TestAssignTask_Reassign_ReplacesEdge(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "t"})
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	a1, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a1"})
 	a2, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a2"})
 
@@ -176,7 +176,7 @@ func TestAssignTask_PublishesEvent(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
 	ctx := context.Background()
-	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "t"})
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a"})
 
 	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID); err != nil {
@@ -199,7 +199,7 @@ func TestAssignTask_PublishesEvent(t *testing.T) {
 func TestUnassignTask_OnAssignedTask_RemovesEdge(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "t"})
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a"})
 	_ = mgr.AssignTask(ctx, "ag", task.ID, agent.ID)
 
@@ -215,7 +215,7 @@ func TestUnassignTask_OnAssignedTask_RemovesEdge(t *testing.T) {
 func TestUnassignTask_OnUnassignedTask_IsIdempotent(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "t"})
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 
 	if err := mgr.UnassignTask(ctx, "ag", task.ID); err != nil {
 		t.Errorf("UnassignTask on unassigned task: got %v, want nil", err)
@@ -241,7 +241,6 @@ func TestTask_HasNoAssignedToField(t *testing.T) {
 	task = codevaldwork.Task{
 		ID:             "",
 		AgencyID:       "",
-		Title:          "",
 		Description:    "",
 		Status:         "",
 		Priority:       "",

@@ -36,7 +36,7 @@ func createProtoTask(t *testing.T, srv pb.TaskServiceServer, agencyID, title str
 	t.Helper()
 	res, err := srv.CreateTask(context.Background(), &pb.CreateTaskRequest{
 		AgencyId: agencyID,
-		Task:     &pb.Task{Title: title},
+		Task:     &pb.Task{},
 	})
 	if err != nil {
 		t.Fatalf("CreateTask: %v", err)

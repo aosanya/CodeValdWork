@@ -80,10 +80,6 @@ type Task struct {
 	// from the agencyID parameter; callers do not need to set it.
 	AgencyID string
 
-	// Title is a short human-readable summary of the task.
-	// Required — CreateTask returns [ErrInvalidTask] when empty.
-	Title string
-
 	// Description provides additional context for the agent assigned
 	// to this task. Optional.
 	Description string
@@ -127,6 +123,10 @@ type Task struct {
 	// TaskName is the project-scoped human-readable identifier auto-generated
 	// by CreateTaskInProject (e.g. "MVP-001"). Empty for tasks not in a project.
 	TaskName string
+
+	// ProjectName is the URL-safe slug of the project this task belongs to.
+	// Empty for tasks not in a project.
+	ProjectName string
 }
 
 // TaskFilter constrains the results returned by [TaskManager.ListTasks].

@@ -30,7 +30,6 @@ func TestDefaultWorkSchema_TypeNames(t *testing.T) {
 func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 	td := findType(t, DefaultWorkSchema(), "Task")
 	want := map[string]types.PropertyType{
-		"title":          types.PropertyTypeString,
 		"description":    types.PropertyTypeString,
 		"status":         types.PropertyTypeOption,
 		"priority":       types.PropertyTypeOption,
@@ -40,6 +39,7 @@ func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 		"context":        types.PropertyTypeString,
 		"completedAt":    types.PropertyTypeDatetime,
 		"taskName":       types.PropertyTypeString,
+		"projectName":    types.PropertyTypeString,
 	}
 	got := propTypes(td)
 	if !reflect.DeepEqual(got, want) {
@@ -48,10 +48,6 @@ func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 	tagsProp := findProp(t, td, "tags")
 	if tagsProp.ElementType != types.PropertyTypeString {
 		t.Errorf("tags ElementType = %v, want %v", tagsProp.ElementType, types.PropertyTypeString)
-	}
-	titleProp := findProp(t, td, "title")
-	if !titleProp.Required {
-		t.Errorf("title must be Required")
 	}
 	// Regression guard — `assigned_to` moves to a graph edge in MVP-WORK-010
 	// and must no longer appear as a Task property.
@@ -138,7 +134,6 @@ func TestDefaultWorkSchema_PriorityOptionsMatchConstants(t *testing.T) {
 func TestTaskToProperties_DropsEntityTimestampKeys(t *testing.T) {
 	now := time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC)
 	props := taskToProperties(Task{
-		Title:     "x",
 		CreatedAt: now,
 		UpdatedAt: now,
 	})
@@ -155,7 +150,6 @@ func TestTaskToProperties_RoundTrip_RichFields(t *testing.T) {
 	in := Task{
 		ID:             "task-1",
 		AgencyID:       "agency-1",
-		Title:          "Hello",
 		Description:    "World",
 		Status:         TaskStatusInProgress,
 		Priority:       TaskPriorityHigh,
@@ -188,7 +182,6 @@ func TestTaskFromEntity_AcceptsJSONDecodedTagsAndNumber(t *testing.T) {
 		AgencyID: "agency-1",
 		TypeID:   taskTypeID,
 		Properties: map[string]any{
-			"title":          "x",
 			"description":    "",
 			"status":         "pending",
 			"priority":       "medium",

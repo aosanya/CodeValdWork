@@ -341,6 +341,7 @@ func (m *taskManager) CreateTaskInProject(ctx context.Context, agencyID, project
 		return Task{}, fmt.Errorf("CreateTaskInProject: count existing: %w", err)
 	}
 	task.TaskName = fmt.Sprintf("%s%03d", project.effectiveTaskPrefix(), len(existing)+1)
+	task.ProjectName = projectName
 
 	created, err := m.CreateTask(ctx, agencyID, task)
 	if err != nil {

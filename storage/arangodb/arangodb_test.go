@@ -116,7 +116,6 @@ func TestArangoDB_CreateGet_RoundTrip(t *testing.T) {
 	agency := uniqueAgency("roundtrip")
 
 	created, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{
-		Title:       "Integration test task",
 		Description: "Created by TestArangoDB_CreateGet_RoundTrip",
 		Priority:    codevaldwork.TaskPriorityHigh,
 	})
@@ -151,7 +150,6 @@ func TestArangoDB_CreateUpdate_ValidTransition(t *testing.T) {
 	agency := uniqueAgency("update")
 
 	created, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{
-		Title: "Task to update",
 	})
 	if err != nil {
 		t.Fatalf("CreateTask: %v", err)
@@ -182,7 +180,6 @@ func TestArangoDB_DeleteThenGet_NotFound(t *testing.T) {
 	agency := uniqueAgency("delete")
 
 	created, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{
-		Title: "Soon deleted",
 	})
 	if err != nil {
 		t.Fatalf("CreateTask: %v", err)
@@ -216,7 +213,6 @@ func TestArangoDB_ListTasks_SameAgency(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		_, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{
-			Title: fmt.Sprintf("Task %d", i),
 		})
 		if err != nil {
 			t.Fatalf("CreateTask %d: %v", i, err)
@@ -238,13 +234,13 @@ func TestArangoDB_ListTasks_AgencyIsolation(t *testing.T) {
 	agencyA := uniqueAgency("isolA")
 	agencyB := uniqueAgency("isolB")
 
-	if _, err := mgr.CreateTask(ctx, agencyA, codevaldwork.Task{Title: "A1"}); err != nil {
+	if _, err := mgr.CreateTask(ctx, agencyA, codevaldwork.Task{}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := mgr.CreateTask(ctx, agencyA, codevaldwork.Task{Title: "A2"}); err != nil {
+	if _, err := mgr.CreateTask(ctx, agencyA, codevaldwork.Task{}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := mgr.CreateTask(ctx, agencyB, codevaldwork.Task{Title: "B1"}); err != nil {
+	if _, err := mgr.CreateTask(ctx, agencyB, codevaldwork.Task{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -278,7 +274,6 @@ func TestArangoDB_ListTasks_FilterByStatus(t *testing.T) {
 	var taskIDs []string
 	for i := 0; i < 3; i++ {
 		created, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{
-			Title: fmt.Sprintf("Task %d", i),
 		})
 		if err != nil {
 			t.Fatalf("CreateTask %d: %v", i, err)

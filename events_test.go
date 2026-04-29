@@ -23,7 +23,6 @@ func TestCreateTask_PublishesTypedTaskCreatedPayload(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
 	created, _ := mgr.CreateTask(context.Background(), "ag", codevaldwork.Task{
-		Title:    "build it",
 		Priority: codevaldwork.TaskPriorityHigh,
 	})
 
@@ -49,7 +48,7 @@ func TestCreateTask_PublishesTypedTaskCreatedPayload(t *testing.T) {
 func TestUpdateTask_NoStatusChange_PublishesUpdatedNotStatusChanged(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
-	created, _ := mgr.CreateTask(context.Background(), "ag", codevaldwork.Task{Title: "x"})
+	created, _ := mgr.CreateTask(context.Background(), "ag", codevaldwork.Task{})
 
 	created.Description = "patched"
 	if _, err := mgr.UpdateTask(context.Background(), "ag", created); err != nil {
@@ -72,7 +71,7 @@ func TestUpdateTask_NoStatusChange_PublishesUpdatedNotStatusChanged(t *testing.T
 func TestUpdateTask_StatusChange_FiresStatusChangedWithFromTo(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
-	created, _ := mgr.CreateTask(context.Background(), "ag", codevaldwork.Task{Title: "x"})
+	created, _ := mgr.CreateTask(context.Background(), "ag", codevaldwork.Task{})
 
 	created.Status = codevaldwork.TaskStatusInProgress
 	if _, err := mgr.UpdateTask(context.Background(), "ag", created); err != nil {
@@ -96,7 +95,7 @@ func TestUpdateTask_StatusChange_FiresStatusChangedWithFromTo(t *testing.T) {
 func TestUpdateTask_StatusChangeOnly_DoesNotFireUpdated(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
-	created, _ := mgr.CreateTask(context.Background(), "ag", codevaldwork.Task{Title: "x"})
+	created, _ := mgr.CreateTask(context.Background(), "ag", codevaldwork.Task{})
 
 	// Only the status field differs.
 	created.Status = codevaldwork.TaskStatusInProgress
@@ -112,7 +111,7 @@ func TestAssignTask_Replacement_FiresAssignedOnce(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
 	ctx := context.Background()
-	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "t"})
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	a1, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a1"})
 	a2, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a2"})
 
@@ -147,8 +146,8 @@ func TestCreateRelationship_PublishesTypedRelationshipCreatedPayload(t *testing.
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
 	ctx := context.Background()
-	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "a"})
-	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "b"})
+	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 
 	if _, err := mgr.CreateRelationship(ctx, "ag", codevaldwork.Relationship{
 		Label: codevaldwork.RelLabelBlocks, FromID: a.ID, ToID: b.ID,
@@ -197,7 +196,6 @@ func TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics(t *testing.T) {
 
 	// Step 1 — create a Task.
 	task, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{
-		Title: "x", Priority: codevaldwork.TaskPriorityHigh,
 	})
 	if err != nil {
 		t.Fatalf("CreateTask: %v", err)
@@ -233,7 +231,7 @@ func TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics(t *testing.T) {
 	}
 
 	// Step 5 — create a blocks edge to a sibling Task.
-	other, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "other"})
+	other, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask other: %v", err)
 	}

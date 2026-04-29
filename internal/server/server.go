@@ -125,7 +125,6 @@ func taskToProto(t codevaldwork.Task) *pb.Task {
 	pt := &pb.Task{
 		Id:             t.ID,
 		AgencyId:       t.AgencyID,
-		Title:          t.Title,
 		Description:    t.Description,
 		Status:         statusToProto(t.Status),
 		Priority:       priorityToProto(t.Priority),
@@ -133,6 +132,7 @@ func taskToProto(t codevaldwork.Task) *pb.Task {
 		EstimatedHours: t.EstimatedHours,
 		Context:        t.Context,
 		TaskName:       t.TaskName,
+		ProjectName:    t.ProjectName,
 		CreatedAt:      timestamppb.New(t.CreatedAt),
 		UpdatedAt:      timestamppb.New(t.UpdatedAt),
 	}
@@ -152,7 +152,6 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 	t := codevaldwork.Task{
 		ID:             pt.Id,
 		AgencyID:       pt.AgencyId,
-		Title:          pt.Title,
 		Description:    pt.Description,
 		Status:         protoToStatus(pt.Status),
 		Priority:       protoToPriority(pt.Priority),
@@ -160,6 +159,7 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 		EstimatedHours: pt.EstimatedHours,
 		Context:        pt.Context,
 		TaskName:       pt.TaskName,
+		ProjectName:    pt.ProjectName,
 	}
 	if pt.CreatedAt != nil {
 		t.CreatedAt = pt.CreatedAt.AsTime()

@@ -53,8 +53,8 @@ func cancelTask(t *testing.T, mgr codevaldwork.TaskManager, agencyID string, tas
 func TestUpdateTask_Blocked_PendingBlockerPreventsStart(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "blocker"})
-	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "blocked"})
+	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	setBlocks(t, mgr, "ag", a.ID, b.ID)
 
 	err := startTask(mgr, "ag", b)
@@ -73,8 +73,8 @@ func TestUpdateTask_Blocked_PendingBlockerPreventsStart(t *testing.T) {
 func TestUpdateTask_Blocked_CompletedBlockerOpensGate(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "blocker"})
-	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "blocked"})
+	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	setBlocks(t, mgr, "ag", a.ID, b.ID)
 
 	completeBlocker(t, mgr, "ag", a)
@@ -86,8 +86,8 @@ func TestUpdateTask_Blocked_CompletedBlockerOpensGate(t *testing.T) {
 func TestUpdateTask_Blocked_CancelledBlockerOpensGate(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "blocker"})
-	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "blocked"})
+	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	setBlocks(t, mgr, "ag", a.ID, b.ID)
 
 	cancelTask(t, mgr, "ag", a)
@@ -99,9 +99,9 @@ func TestUpdateTask_Blocked_CancelledBlockerOpensGate(t *testing.T) {
 func TestUpdateTask_Blocked_MultipleBlockers_OnlyNonTerminalReported(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	a1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "done blocker"})
-	a2, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "still active"})
-	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "target"})
+	a1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	a2, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	setBlocks(t, mgr, "ag", a1.ID, b.ID)
 	setBlocks(t, mgr, "ag", a2.ID, b.ID)
 
@@ -123,8 +123,8 @@ func TestUpdateTask_Blocked_MultipleBlockers_OnlyNonTerminalReported(t *testing.
 func TestUpdateTask_Blocked_PendingToCancelledBypassesGate(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "blocker"})
-	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "target"})
+	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	setBlocks(t, mgr, "ag", a.ID, b.ID)
 
 	// pending → cancelled must succeed even when the blocker is still pending.
@@ -137,8 +137,8 @@ func TestUpdateTask_Blocked_PendingToCancelledBypassesGate(t *testing.T) {
 func TestUpdateTask_Blocked_DependsOnIsNotGated(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "soft dep"})
-	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "target"})
+	a, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	b, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 
 	// depends_on is informational — it must not block the transition.
 	if _, err := mgr.CreateRelationship(ctx, "ag", codevaldwork.Relationship{

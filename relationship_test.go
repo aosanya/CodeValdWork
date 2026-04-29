@@ -15,7 +15,7 @@ import (
 // ID for use as a relationship endpoint.
 func seedTask(t *testing.T, mgr codevaldwork.TaskManager, agencyID, title string) string {
 	t.Helper()
-	task, err := mgr.CreateTask(context.Background(), agencyID, codevaldwork.Task{Title: title})
+	task, err := mgr.CreateTask(context.Background(), agencyID, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("seedTask(%q): %v", title, err)
 	}

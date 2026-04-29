@@ -41,7 +41,8 @@ enum Direction {
 message Task {
   string        id              = 1;
   string        agency_id       = 2;
-  string        title           = 3;
+  reserved 3;
+  reserved "title";
   string        description     = 4;
   TaskStatus    status          = 5;
   TaskPriority  priority        = 6;
@@ -57,6 +58,9 @@ message Task {
   // task_name is the project-scoped human-readable name auto-generated on
   // CreateTaskInProject (e.g. "MVP-001"). Empty for tasks not in a project.
   string                    task_name       = 15;
+  // project_name is the URL-safe slug of the project this task belongs to.
+  // Empty for tasks not in a project.
+  string                    project_name    = 16;
 }
 
 // TaskFilter is used in ListTasks to constrain results.

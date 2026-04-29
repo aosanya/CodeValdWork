@@ -48,8 +48,6 @@ func taskTypeDefinition() types.TypeDefinition {
 		EntityIDParam:     "taskId",
 		StorageCollection: "work_tasks",
 		Properties: []types.PropertyDefinition{
-			// title is the short human-readable summary of the task. Required.
-			{Name: "title", Type: types.PropertyTypeString, Required: true},
 			// description provides additional context for the assigned agent.
 			{Name: "description", Type: types.PropertyTypeString},
 			// status is the current lifecycle state — see [TaskStatus].
@@ -68,6 +66,8 @@ func taskTypeDefinition() types.TypeDefinition {
 			{Name: "completedAt", Type: types.PropertyTypeDatetime},
 			// taskName is the project-scoped auto-generated name (e.g. "MVP-001").
 			{Name: "taskName", Type: types.PropertyTypeString},
+			// projectName is the URL-safe slug of the project this task belongs to.
+			{Name: "projectName", Type: types.PropertyTypeString},
 		},
 		Relationships: []types.RelationshipDefinition{
 			{

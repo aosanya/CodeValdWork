@@ -104,7 +104,7 @@ func TestAddTaskToProject_ListTasksInProject_RoundTrip(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
 	p, _ := mgr.CreateProject(ctx, "ag", codevaldwork.Project{Name: "Sprint"})
-	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "task-1"})
+	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 
 	if err := mgr.AddTaskToProject(ctx, "ag", t1.ID, p.ID); err != nil {
 		t.Fatalf("AddTaskToProject: %v", err)
@@ -123,7 +123,7 @@ func TestAddTaskToProject_Twice_IsIdempotent(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(fake, nil)
 	ctx := context.Background()
 	p, _ := mgr.CreateProject(ctx, "ag", codevaldwork.Project{Name: "Sprint"})
-	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "task-1"})
+	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 
 	if err := mgr.AddTaskToProject(ctx, "ag", t1.ID, p.ID); err != nil {
 		t.Fatalf("first add: %v", err)
@@ -146,7 +146,7 @@ func TestRemoveTaskFromProject_RemovesMembership(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
 	p, _ := mgr.CreateProject(ctx, "ag", codevaldwork.Project{Name: "Sprint"})
-	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "task-1"})
+	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	_ = mgr.AddTaskToProject(ctx, "ag", t1.ID, p.ID)
 
 	if err := mgr.RemoveTaskFromProject(ctx, "ag", t1.ID, p.ID); err != nil {
@@ -165,8 +165,8 @@ func TestDeleteProject_RemovesProjectAndAllMemberOfEdges_TasksRemain(t *testing.
 	mgr, _ := codevaldwork.NewTaskManager(fake, nil)
 	ctx := context.Background()
 	p, _ := mgr.CreateProject(ctx, "ag", codevaldwork.Project{Name: "Sprint"})
-	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "task-1"})
-	t2, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "task-2"})
+	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	t2, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	_ = mgr.AddTaskToProject(ctx, "ag", t1.ID, p.ID)
 	_ = mgr.AddTaskToProject(ctx, "ag", t2.ID, p.ID)
 
@@ -210,7 +210,7 @@ func TestListProjectsForTask_TaskInMultipleProjects(t *testing.T) {
 	ctx := context.Background()
 	p1, _ := mgr.CreateProject(ctx, "ag", codevaldwork.Project{Name: "Sprint"})
 	p2, _ := mgr.CreateProject(ctx, "ag", codevaldwork.Project{Name: "Epic"})
-	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "shared"})
+	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	_ = mgr.AddTaskToProject(ctx, "ag", t1.ID, p1.ID)
 	_ = mgr.AddTaskToProject(ctx, "ag", t1.ID, p2.ID)
 
@@ -231,8 +231,8 @@ func TestListProjectsForTask_TaskInMultipleProjects(t *testing.T) {
 func TestMemberOf_NonProjectTarget_Rejected(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
-	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "a"})
-	t2, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{Title: "b"})
+	t1, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	t2, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 
 	_, err := mgr.CreateRelationship(ctx, "ag", codevaldwork.Relationship{
 		Label: codevaldwork.RelLabelMemberOf, FromID: t1.ID, ToID: t2.ID,

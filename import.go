@@ -30,7 +30,6 @@ type importDoc struct {
 
 type importTask struct {
 	Name        string   `json:"name"`        // full prefixed name, e.g. "MVP-SF-001"
-	Title       string   `json:"title"`
 	Priority    string   `json:"priority"`    // "low"|"medium"|"high"|"critical"; default medium
 	DependsOn   []string `json:"depends_on"`  // short IDs of prerequisite tasks, e.g. "001"
 	Description string   `json:"description"`
@@ -63,9 +62,6 @@ func (m *taskManager) ImportProject(ctx context.Context, agencyID, document stri
 		if t.Name == "" {
 			return ImportResult{}, fmt.Errorf("%w: task[%d] missing \"name\"", ErrInvalidImport, i)
 		}
-		if t.Title == "" {
-			return ImportResult{}, fmt.Errorf("%w: task[%d] (%s) missing \"title\"", ErrInvalidImport, i, t.Name)
-		}
 	}
 
 	proj, err := m.CreateProject(ctx, agencyID, Project{Name: doc.Project, TaskPrefix: doc.TaskPrefix})
@@ -79,7 +75,6 @@ func (m *taskManager) ImportProject(ctx context.Context, agencyID, document stri
 
 	for _, it := range doc.Tasks {
 		t, err := m.CreateTask(ctx, agencyID, Task{
-			Title:       it.Title,
 			Priority:    parsePriority(it.Priority),
 			Description: it.Description,
 			Tags:        []string{it.Name},

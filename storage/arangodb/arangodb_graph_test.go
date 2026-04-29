@@ -18,11 +18,11 @@ func TestArangoDB_Relationship_RoundTrip(t *testing.T) {
 	ctx := context.Background()
 	agency := uniqueAgency("rel")
 
-	taskA, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "A"})
+	taskA, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask A: %v", err)
 	}
-	taskB, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "B"})
+	taskB, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask B: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestArangoDB_AgentAssignment_RoundTrip(t *testing.T) {
 		t.Fatalf("UpsertAgent a2: %v", err)
 	}
 
-	task, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "assign me"})
+	task, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask: %v", err)
 	}
@@ -198,8 +198,8 @@ func TestArangoDB_Project_RoundTrip(t *testing.T) {
 		t.Fatalf("CreateProject: %v", err)
 	}
 
-	t1, _ := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "task-1"})
-	t2, _ := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "task-2"})
+	t1, _ := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
+	t2, _ := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 
 	if err := mgr.AddTaskToProject(ctx, agency, t1.ID, p.ID); err != nil {
 		t.Fatalf("AddTaskToProject t1: %v", err)

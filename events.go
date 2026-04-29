@@ -50,7 +50,6 @@ func AllTopics() []string {
 // TaskCreatedPayload is the [Event.Payload] for [TopicTaskCreated].
 type TaskCreatedPayload struct {
 	TaskID   string
-	Title    string
 	Priority TaskPriority
 }
 

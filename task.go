@@ -34,7 +34,6 @@ const agentTypeID = "Agent"
 type TaskManager interface {
 	// CreateTask creates a new task for the agency.
 	// The task is assigned a server-generated ID and starts in [TaskStatusPending].
-	// Returns [ErrInvalidTask] if required fields (Title) are missing.
 	CreateTask(ctx context.Context, agencyID string, task Task) (Task, error)
 
 	// GetTask retrieves a single task by its ID within the given agency.
@@ -156,7 +155,6 @@ type TaskManager interface {
 	// CreateTaskInProject creates a task, auto-generates its taskName from the
 	// project's task_prefix, and writes the member_of edge in one atomic sequence.
 	// Returns [ErrProjectNotFound] if the project does not exist.
-	// Returns [ErrInvalidTask] if the task title is empty.
 	CreateTaskInProject(ctx context.Context, agencyID, projectName string, task Task) (Task, error)
 
 	// ImportProject parses a JSON import document and creates a Project,
@@ -202,9 +200,6 @@ func NewTaskManager(dm entitygraph.DataManager, pub eventbus.Publisher) (TaskMan
 // The entity ID is assigned by the underlying DataManager; any ID supplied on
 // the request is ignored.
 func (m *taskManager) CreateTask(ctx context.Context, agencyID string, task Task) (Task, error) {
-	if task.Title == "" {
-		return Task{}, ErrInvalidTask
-	}
 	now := time.Now().UTC()
 	task.AgencyID = agencyID
 	task.Status = TaskStatusPending
@@ -230,7 +225,6 @@ func (m *taskManager) CreateTask(ctx context.Context, agencyID string, task Task
 	out := taskFromEntity(created)
 	m.publish(ctx, TopicTaskCreated, agencyID, TaskCreatedPayload{
 		TaskID:   out.ID,
-		Title:    out.Title,
 		Priority: out.Priority,
 	})
 	return out, nil
@@ -402,9 +396,6 @@ func isTerminalStatus(s TaskStatus) bool {
 // non-status differs.
 func nonStatusChangedFields(before, after Task) []string {
 	var out []string
-	if before.Title != after.Title {
-		out = append(out, "title")
-	}
 	if before.Description != after.Description {
 		out = append(out, "description")
 	}
@@ -491,12 +482,12 @@ func (m *taskManager) findActiveBlockers(ctx context.Context, agencyID, taskID s
 // and Agent vertices.
 func taskToProperties(t Task) map[string]any {
 	props := map[string]any{
-		"title":       t.Title,
 		"description": t.Description,
 		"status":      string(t.Status),
 		"priority":    string(t.Priority),
 		"context":     t.Context,
 		"taskName":    t.TaskName,
+		"projectName": t.ProjectName,
 	}
 	if t.DueAt != nil && !t.DueAt.IsZero() {
 		props["dueAt"] = t.DueAt.UTC().Format(time.RFC3339Nano)
@@ -525,9 +516,6 @@ func taskFromEntity(e entitygraph.Entity) Task {
 		AgencyID:  e.AgencyID,
 		CreatedAt: e.CreatedAt,
 		UpdatedAt: e.UpdatedAt,
-	}
-	if v, ok := e.Properties["title"].(string); ok {
-		t.Title = v
 	}
 	if v, ok := e.Properties["description"].(string); ok {
 		t.Description = v
@@ -579,6 +567,9 @@ func taskFromEntity(e entitygraph.Entity) Task {
 	}
 	if v, ok := e.Properties["taskName"].(string); ok {
 		t.TaskName = v
+	}
+	if v, ok := e.Properties["projectName"].(string); ok {
+		t.ProjectName = v
 	}
 	return t
 }

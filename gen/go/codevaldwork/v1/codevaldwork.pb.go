@@ -197,7 +197,6 @@ type Task struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	AgencyId       string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Description    string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Status         TaskStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=codevaldwork.v1.TaskStatus" json:"status,omitempty"`
 	Priority       TaskPriority           `protobuf:"varint,6,opt,name=priority,proto3,enum=codevaldwork.v1.TaskPriority" json:"priority,omitempty"`
@@ -210,7 +209,10 @@ type Task struct {
 	Context        string                 `protobuf:"bytes,14,opt,name=context,proto3" json:"context,omitempty"`
 	// task_name is the project-scoped human-readable name auto-generated on
 	// CreateTaskInProject (e.g. "MVP-001"). Empty for tasks not in a project.
-	TaskName      string `protobuf:"bytes,15,opt,name=task_name,json=taskName,proto3" json:"task_name,omitempty"`
+	TaskName string `protobuf:"bytes,15,opt,name=task_name,json=taskName,proto3" json:"task_name,omitempty"`
+	// project_name is the URL-safe slug of the project this task belongs to.
+	// Empty for tasks not in a project.
+	ProjectName   string `protobuf:"bytes,16,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -255,13 +257,6 @@ func (x *Task) GetId() string {
 func (x *Task) GetAgencyId() string {
 	if x != nil {
 		return x.AgencyId
-	}
-	return ""
-}
-
-func (x *Task) GetTitle() string {
-	if x != nil {
-		return x.Title
 	}
 	return ""
 }
@@ -339,6 +334,13 @@ func (x *Task) GetContext() string {
 func (x *Task) GetTaskName() string {
 	if x != nil {
 		return x.TaskName
+	}
+	return ""
+}
+
+func (x *Task) GetProjectName() string {
+	if x != nil {
+		return x.ProjectName
 	}
 	return ""
 }
@@ -714,11 +716,10 @@ var File_codevaldwork_v1_codevaldwork_proto protoreflect.FileDescriptor
 
 const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
-	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xca\x04\n" +
+	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xe4\x04\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
-	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
+	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x123\n" +
 	"\x06status\x18\x05 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +
 	"\bpriority\x18\x06 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriority\x129\n" +
@@ -732,7 +733,8 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x04tags\x18\f \x03(\tR\x04tags\x12'\n" +
 	"\x0festimated_hours\x18\r \x01(\x01R\x0eestimatedHours\x12\x18\n" +
 	"\acontext\x18\x0e \x01(\tR\acontext\x12\x1b\n" +
-	"\ttask_name\x18\x0f \x01(\tR\btaskNameJ\x04\b\a\x10\bR\vassigned_to\"\x8f\x01\n" +
+	"\ttask_name\x18\x0f \x01(\tR\btaskName\x12!\n" +
+	"\fproject_name\x18\x10 \x01(\tR\vprojectNameJ\x04\b\x03\x10\x04J\x04\b\a\x10\bR\x05titleR\vassigned_to\"\x8f\x01\n" +
 	"\n" +
 	"TaskFilter\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +

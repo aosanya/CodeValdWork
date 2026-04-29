@@ -73,15 +73,15 @@ func TestArangoDB_SubtaskHierarchy_TraverseInboundReturnsChildren(t *testing.T) 
 	ctx := context.Background()
 	agency := uniqueAgency("subtask")
 
-	parent, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "parent"})
+	parent, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask parent: %v", err)
 	}
-	c1, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "c1"})
+	c1, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask c1: %v", err)
 	}
-	c2, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "c2"})
+	c2, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask c2: %v", err)
 	}
@@ -126,11 +126,11 @@ func TestArangoDB_BlockerGate_BlocksThenOpens(t *testing.T) {
 	ctx := context.Background()
 	agency := uniqueAgency("blocker")
 
-	a, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "blocker"})
+	a, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask a: %v", err)
 	}
-	b, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{Title: "blocked"})
+	b, err := mgr.CreateTask(ctx, agency, codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("CreateTask b: %v", err)
 	}

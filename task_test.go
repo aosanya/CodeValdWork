@@ -29,27 +29,14 @@ func TestNewTaskManager_ValidDataManager(t *testing.T) {
 
 // ── CreateTask ───────────────────────────────────────────────────────────────
 
-func TestCreateTask_EmptyTitle(t *testing.T) {
-	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
-	_, err := mgr.CreateTask(context.Background(), "agency-1", codevaldwork.Task{})
-	if !errors.Is(err, codevaldwork.ErrInvalidTask) {
-		t.Fatalf("want ErrInvalidTask, got %v", err)
-	}
-}
-
 func TestCreateTask_Success(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
-	task, err := mgr.CreateTask(context.Background(), "agency-1", codevaldwork.Task{
-		Title: "Research topic",
-	})
+	task, err := mgr.CreateTask(context.Background(), "agency-1", codevaldwork.Task{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if task.ID == "" {
 		t.Errorf("expected server-generated ID, got empty")
-	}
-	if task.Title != "Research topic" {
-		t.Errorf("want title %q, got %q", "Research topic", task.Title)
 	}
 	if task.Status != codevaldwork.TaskStatusPending {
 		t.Errorf("want status pending, got %s", task.Status)
@@ -66,7 +53,6 @@ func TestCreateTask_PublishesEvent(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
 	if _, err := mgr.CreateTask(context.Background(), "agency-1", codevaldwork.Task{
-		Title: "Hello",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +74,6 @@ func TestGetTask_NotFound(t *testing.T) {
 func TestGetTask_Found(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	created, err := mgr.CreateTask(context.Background(), "agency-1", codevaldwork.Task{
-		Title: "Find me",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -116,7 +101,7 @@ func TestUpdateTask_NotFound(t *testing.T) {
 
 func TestUpdateTask_InvalidTransition_PendingToCompleted(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
-	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{Title: "x"})
+	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +114,7 @@ func TestUpdateTask_InvalidTransition_PendingToCompleted(t *testing.T) {
 
 func TestUpdateTask_ValidTransition_PendingToInProgress(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
-	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{Title: "x"})
+	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +131,7 @@ func TestUpdateTask_ValidTransition_PendingToInProgress(t *testing.T) {
 func TestUpdateTask_ValidTransition_InProgressToCompleted(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
-	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{Title: "x"})
+	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,7 +169,7 @@ func TestUpdateTask_ValidTransition_InProgressToCompleted(t *testing.T) {
 
 func TestUpdateTask_InvalidTransition_CompletedToPending(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
-	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{Title: "x"})
+	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +200,7 @@ func TestDeleteTask_NotFound(t *testing.T) {
 
 func TestDeleteTask_Success(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
-	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{Title: "Delete me"})
+	created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +230,7 @@ func TestListTasks_FilterByStatus(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	var ids []string
 	for range 3 {
-		created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{Title: "x"})
+		created, err := mgr.CreateTask(context.Background(), "a", codevaldwork.Task{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -283,10 +268,10 @@ func TestListTasks_FilterByStatus(t *testing.T) {
 
 func TestListTasks_AgencyIsolation(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
-	if _, err := mgr.CreateTask(context.Background(), "agency-A", codevaldwork.Task{Title: "Agency A task"}); err != nil {
+	if _, err := mgr.CreateTask(context.Background(), "agency-A", codevaldwork.Task{}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := mgr.CreateTask(context.Background(), "agency-B", codevaldwork.Task{Title: "Agency B task"}); err != nil {
+	if _, err := mgr.CreateTask(context.Background(), "agency-B", codevaldwork.Task{}); err != nil {
 		t.Fatal(err)
 	}
 
