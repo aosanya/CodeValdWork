@@ -3,14 +3,14 @@
   "task_prefix": "MVP-SF-",
   "tasks": [
     {
-      "id": "001",
+      "name": "MVP-SF-001",
       "title": "Project Scaffolding",
       "priority": "critical",
       "depends_on": [],
       "description": "flutter create sharedfarms; pubspec.yaml with flutter_riverpod, go_router, http, hive_flutter, firebase_messaging, connectivity_plus; analysis_options.yaml with flutter_lints; folder structure: lib/core/, lib/features/, lib/models/, lib/shared/; core/network/api_client.dart — single HTTP client, no raw http.get in widget code; core/config/config.dart; core/errors/errors.dart; initial commit on feature/SF-001_scaffolding"
     },
     {
-      "id": "002",
+      "name": "MVP-SF-002",
       "title": "Auth — Registration and Login",
       "priority": "critical",
       "depends_on": [
@@ -19,7 +19,7 @@
       "description": "features/auth/ — registration screen (name, phone/email, password), login screen, AuthNotifier (Riverpod AsyncNotifier), ApiClient.register + ApiClient.login; JWT token stored in secure storage; GoRouter redirect guard (/login if unauthenticated); farm profile creation on first login (farm name, location, size, primary crops grown); support for multiple farms per user"
     },
     {
-      "id": "003",
+      "name": "MVP-SF-003",
       "title": "Farm Dashboard",
       "priority": "high",
       "depends_on": [
@@ -28,7 +28,7 @@
       "description": "features/dashboard/ — home screen after login; active crops summary (name, stage, days since planting); upcoming tasks due within 7 days; weather widget (temperature and rain forecast via third-party only — no custom forecasting); shortcut to nearby shared resources; DashboardNotifier; pull-to-refresh; stale data shown during refresh; overdue tasks highlighted"
     },
     {
-      "id": "004",
+      "name": "MVP-SF-004",
       "title": "Crop Tracking",
       "priority": "high",
       "depends_on": [
@@ -37,7 +37,7 @@
       "description": "features/crops/ — create crop entry (type, variety, plot/area, planting date); log milestones (germination, flowering, pest/disease, irrigation, fertilisation); record harvest (date, quantity, unit: kg/bags/tonnes); chronological crop history per entry; statuses: active, harvested, failed; CropNotifier; table-driven widget and provider tests"
     },
     {
-      "id": "005",
+      "name": "MVP-SF-005",
       "title": "Shared Resource Management",
       "priority": "high",
       "depends_on": [
@@ -46,7 +46,7 @@
       "description": "features/resources/ — list owned resource (name, category: tractor/pump/storage/etc., availability window, fee notes); browse nearby resources filtered by category; send / accept / decline resource requests with date range; active loans view (borrower, duration, return status); mark loan as returned to close cycle; ResourceNotifier (AsyncNotifier)"
     },
     {
-      "id": "006",
+      "name": "MVP-SF-006",
       "title": "Task Scheduling",
       "priority": "high",
       "depends_on": [
@@ -55,7 +55,7 @@
       "description": "features/tasks/ — create task (title, description, assignee, due date, priority: low/medium/high); statuses: pending, in_progress, completed, cancelled; validate status transitions; 24-hour local push notification reminder via flutter_local_notifications; overdue task highlighting surfaced to dashboard; TaskNotifier"
     },
     {
-      "id": "007",
+      "name": "MVP-SF-007",
       "title": "Marketplace",
       "priority": "high",
       "depends_on": [
@@ -64,7 +64,7 @@
       "description": "features/marketplace/ — create produce listing (crop type, quantity, unit, asking price, location, available-from date); browse all listings filtered by crop type and distance; express buyer interest; seller confirms buyer; statuses: active, sold, archived; client-side auto-archive filter past available-from date; MarketplaceNotifier"
     },
     {
-      "id": "008",
+      "name": "MVP-SF-008",
       "title": "Community Feed",
       "priority": "high",
       "depends_on": [
@@ -73,7 +73,7 @@
       "description": "features/feed/ — post text update, photo, or tip scoped to region or platform-wide; like and comment on posts; delete own posts and comments; FeedNotifier; paginated list with infinite scroll; image picker for photo posts; empty and error states"
     },
     {
-      "id": "009",
+      "name": "MVP-SF-009",
       "title": "Notifications",
       "priority": "medium",
       "depends_on": [
@@ -82,7 +82,7 @@
       "description": "core/notifications/ — FCM push integration (Android v1; iOS deferred); in-app notification centre with read/unread state; per-type preference settings; push event types: resource request received/accepted/declined, task due reminder (24 h before), marketplace interest received on listing, new comment on farmer's post; NotificationNotifier"
     },
     {
-      "id": "010",
+      "name": "MVP-SF-010",
       "title": "Offline Support",
       "priority": "medium",
       "depends_on": [
@@ -94,7 +94,7 @@
       "description": "Hive/Isar local cache for dashboard, crops, tasks, and resource listings; offline banner widget when connectivity unavailable (connectivity_plus); write queue: mutations recorded locally and synced on reconnect; OfflineSyncService runs in background on reconnect; all providers fall back to cached data gracefully; offline banner dismissed automatically on reconnect"
     },
     {
-      "id": "011",
+      "name": "MVP-SF-011",
       "title": "Polish and Testing",
       "priority": "medium",
       "depends_on": [

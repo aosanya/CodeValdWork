@@ -78,7 +78,7 @@ func (m *taskManager) ImportProject(ctx context.Context, agencyID, document stri
 	for _, it := range doc.Tasks {
 		tag := it.ID
 		if doc.TaskPrefix != "" {
-			tag = doc.TaskPrefix + "-" + it.ID
+			tag = doc.TaskPrefix + it.ID
 		}
 		t, err := m.CreateTask(ctx, agencyID, Task{
 			Title:       it.Title,

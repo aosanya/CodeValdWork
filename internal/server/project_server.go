@@ -157,17 +157,17 @@ func (s *Server) ListProjectsForTask(ctx context.Context, req *pb.ListProjectsFo
 // ── Conversion helpers ────────────────────────────────────────────────────────
 
 func projectToProto(p codevaldwork.Project) *pb.Project {
-	pp := &pb.Project{
+	return &pb.Project{
 		Id:          p.ID,
 		AgencyId:    p.AgencyID,
 		Name:        p.Name,
 		ProjectName: p.ProjectName,
 		Description: p.Description,
 		GithubRepo:  p.GithubRepo,
+		TaskPrefix:  p.TaskPrefix,
 		CreatedAt:   timestamppb.New(p.CreatedAt),
 		UpdatedAt:   timestamppb.New(p.UpdatedAt),
 	}
-	return pp
 }
 
 func protoToProject(pp *pb.Project) codevaldwork.Project {
@@ -181,6 +181,7 @@ func protoToProject(pp *pb.Project) codevaldwork.Project {
 		ProjectName: pp.ProjectName,
 		Description: pp.Description,
 		GithubRepo:  pp.GithubRepo,
+		TaskPrefix:  pp.TaskPrefix,
 	}
 	if pp.CreatedAt != nil {
 		p.CreatedAt = pp.CreatedAt.AsTime()

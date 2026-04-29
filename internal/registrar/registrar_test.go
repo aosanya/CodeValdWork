@@ -37,6 +37,14 @@ func TestWorkRoutes_StaticCapabilitySnapshot(t *testing.T) {
 		"remove_task_from_project",
 		"list_tasks_in_project",
 		"list_projects_for_task",
+		// Project-scoped task routes (branch pattern)
+		"create_task_in_project",
+		"get_task_by_name",
+		"get_task_by_id_in_project",
+		"update_task_in_project",
+		"delete_task_in_project",
+		"assign_task_in_project",
+		"unassign_task_in_project",
 		// JSON import
 		"import_project",
 		// Generic graph relationships (WORK-009)
@@ -93,6 +101,11 @@ func TestWorkRoutes_IsWriteFlags(t *testing.T) {
 		"add_task_to_project":      true,
 		"remove_task_from_project": true,
 		"import_project":           true,
+		"create_task_in_project":   true,
+		"update_task_in_project":   true,
+		"delete_task_in_project":   true,
+		"assign_task_in_project":   true,
+		"unassign_task_in_project": true,
 		"create_relationship":    true,
 		"delete_relationship":    true,
 	}
@@ -155,6 +168,31 @@ func TestWorkRoutes_PathBindingSpotChecks(t *testing.T) {
 				{URLParam: "agencyId", Field: "agency_id"},
 				{URLParam: "vertexId", Field: "vertex_id"},
 				{URLParam: "label", Field: "label"},
+			},
+		},
+		{
+			capability: "get_task_by_name",
+			want: []types.PathBinding{
+				{URLParam: "agencyId", Field: "agency_id"},
+				{URLParam: "projectName", Field: "project_name"},
+				{URLParam: "taskName", Field: "task_name"},
+			},
+		},
+		{
+			capability: "update_task_in_project",
+			want: []types.PathBinding{
+				{URLParam: "agencyId", Field: "agency_id"},
+				{URLParam: "projectName", Field: "project_name"},
+				{URLParam: "taskName", Field: "task.task_name"},
+			},
+		},
+		{
+			capability: "assign_task_in_project",
+			want: []types.PathBinding{
+				{URLParam: "agencyId", Field: "agency_id"},
+				{URLParam: "projectName", Field: "project_name"},
+				{URLParam: "taskName", Field: "task_name"},
+				{URLParam: "agentId", Field: "agent_id"},
 			},
 		},
 	}

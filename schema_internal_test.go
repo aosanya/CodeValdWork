@@ -39,6 +39,7 @@ func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 		"estimatedHours": types.PropertyTypeNumber,
 		"context":        types.PropertyTypeString,
 		"completedAt":    types.PropertyTypeDatetime,
+		"taskName":       types.PropertyTypeString,
 	}
 	got := propTypes(td)
 	if !reflect.DeepEqual(got, want) {

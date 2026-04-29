@@ -300,7 +300,7 @@ func projectRoutes() []types.RouteInfo {
 		},
 		{
 			Method:     "PUT",
-			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskId}",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/members/{taskId}",
 			Capability: "add_task_to_project",
 			GrpcMethod: "/codevaldwork.v1.TaskService/AddTaskToProject",
 			IsWrite:    true,
@@ -312,7 +312,7 @@ func projectRoutes() []types.RouteInfo {
 		},
 		{
 			Method:     "DELETE",
-			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskId}",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/members/{taskId}",
 			Capability: "remove_task_from_project",
 			GrpcMethod: "/codevaldwork.v1.TaskService/RemoveTaskFromProject",
 			IsWrite:    true,
@@ -330,6 +330,88 @@ func projectRoutes() []types.RouteInfo {
 			PathBindings: []types.PathBinding{
 				agencyBinding,
 				projectNameBinding,
+			},
+		},
+		// ── Project-scoped task routes (branch_routes.go pattern) ──────────────
+		{
+			Method:     "POST",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks",
+			Capability: "create_task_in_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/CreateTaskInProject",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				projectNameBinding,
+			},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskName}",
+			Capability: "get_task_by_name",
+			GrpcMethod: "/codevaldwork.v1.TaskService/GetTaskByName",
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				projectNameBinding,
+				{URLParam: "taskName", Field: "task_name"},
+			},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/id/{taskId}",
+			Capability: "get_task_by_id_in_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/GetTask",
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskId", Field: "task_id"},
+			},
+		},
+		{
+			Method:     "PUT",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskName}",
+			Capability: "update_task_in_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/UpdateTask",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				projectNameBinding,
+				{URLParam: "taskName", Field: "task.task_name"},
+			},
+		},
+		{
+			Method:     "DELETE",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskName}",
+			Capability: "delete_task_in_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/DeleteTask",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				projectNameBinding,
+				{URLParam: "taskName", Field: "task_name"},
+			},
+		},
+		{
+			Method:     "PUT",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskName}/assignee/{agentId}",
+			Capability: "assign_task_in_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/AssignTask",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				projectNameBinding,
+				{URLParam: "taskName", Field: "task_name"},
+				{URLParam: "agentId", Field: "agent_id"},
+			},
+		},
+		{
+			Method:     "DELETE",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskName}/assignee",
+			Capability: "unassign_task_in_project",
+			GrpcMethod: "/codevaldwork.v1.TaskService/UnassignTask",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				projectNameBinding,
+				{URLParam: "taskName", Field: "task_name"},
 			},
 		},
 		{
