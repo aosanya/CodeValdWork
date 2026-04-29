@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	TaskService_CreateTask_FullMethodName            = "/codevaldwork.v1.TaskService/CreateTask"
 	TaskService_GetTask_FullMethodName               = "/codevaldwork.v1.TaskService/GetTask"
+	TaskService_GetTaskByName_FullMethodName         = "/codevaldwork.v1.TaskService/GetTaskByName"
 	TaskService_UpdateTask_FullMethodName            = "/codevaldwork.v1.TaskService/UpdateTask"
 	TaskService_DeleteTask_FullMethodName            = "/codevaldwork.v1.TaskService/DeleteTask"
 	TaskService_ListTasks_FullMethodName             = "/codevaldwork.v1.TaskService/ListTasks"
@@ -29,8 +30,10 @@ const (
 	TaskService_UpsertAgent_FullMethodName           = "/codevaldwork.v1.TaskService/UpsertAgent"
 	TaskService_GetAgent_FullMethodName              = "/codevaldwork.v1.TaskService/GetAgent"
 	TaskService_ListAgents_FullMethodName            = "/codevaldwork.v1.TaskService/ListAgents"
+	TaskService_CreateTaskInProject_FullMethodName   = "/codevaldwork.v1.TaskService/CreateTaskInProject"
 	TaskService_CreateProject_FullMethodName         = "/codevaldwork.v1.TaskService/CreateProject"
 	TaskService_GetProject_FullMethodName            = "/codevaldwork.v1.TaskService/GetProject"
+	TaskService_GetProjectByName_FullMethodName      = "/codevaldwork.v1.TaskService/GetProjectByName"
 	TaskService_UpdateProject_FullMethodName         = "/codevaldwork.v1.TaskService/UpdateProject"
 	TaskService_DeleteProject_FullMethodName         = "/codevaldwork.v1.TaskService/DeleteProject"
 	TaskService_ListProjects_FullMethodName          = "/codevaldwork.v1.TaskService/ListProjects"
@@ -41,6 +44,7 @@ const (
 	TaskService_CreateRelationship_FullMethodName    = "/codevaldwork.v1.TaskService/CreateRelationship"
 	TaskService_DeleteRelationship_FullMethodName    = "/codevaldwork.v1.TaskService/DeleteRelationship"
 	TaskService_TraverseRelationships_FullMethodName = "/codevaldwork.v1.TaskService/TraverseRelationships"
+	TaskService_ImportProject_FullMethodName         = "/codevaldwork.v1.TaskService/ImportProject"
 )
 
 // TaskServiceClient is the client API for TaskService service.
@@ -57,6 +61,11 @@ type TaskServiceClient interface {
 	// GetTask retrieves a single task by ID within the agency.
 	// Error: NOT_FOUND if the task does not exist.
 	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
+	// GetTaskByName retrieves a task by its project-scoped name (task_name)
+	// within a project (project_name). Falls back to ID lookup when task_name
+	// looks like a UUID.
+	// Error: NOT_FOUND if no task with that name exists in the project.
+	GetTaskByName(ctx context.Context, in *GetTaskByNameRequest, opts ...grpc.CallOption) (*GetTaskByNameResponse, error)
 	// UpdateTask replaces mutable task fields.
 	// Status transitions are validated server-side.
 	// Error: NOT_FOUND if the task does not exist.
@@ -85,13 +94,23 @@ type TaskServiceClient interface {
 	GetAgent(ctx context.Context, in *GetAgentRequest, opts ...grpc.CallOption) (*GetAgentResponse, error)
 	// ListAgents returns every Agent in the agency.
 	ListAgents(ctx context.Context, in *ListAgentsRequest, opts ...grpc.CallOption) (*ListAgentsResponse, error)
+	// CreateTaskInProject creates a task and immediately adds it as a member of
+	// the given project. The server auto-generates task_name using the project's
+	// task_prefix (e.g. "MVP-001", "MVP-002").
+	// Error: NOT_FOUND if the project does not exist.
+	// Error: INVALID_ARGUMENT if task title is empty.
+	CreateTaskInProject(ctx context.Context, in *CreateTaskInProjectRequest, opts ...grpc.CallOption) (*CreateTaskInProjectResponse, error)
 	// CreateProject creates a new Project vertex.
 	// Error: ALREADY_EXISTS if the project ID is already taken.
 	// Error: INVALID_ARGUMENT if name is empty.
 	CreateProject(ctx context.Context, in *CreateProjectRequest, opts ...grpc.CallOption) (*CreateProjectResponse, error)
-	// GetProject retrieves a single Project.
+	// GetProject retrieves a single Project by entity ID.
 	// Error: NOT_FOUND if the project does not exist.
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
+	// GetProjectByName retrieves a single Project by its slug (project_name).
+	// Falls back to ID lookup when the value looks like a UUID.
+	// Error: NOT_FOUND if no project with that name exists.
+	GetProjectByName(ctx context.Context, in *GetProjectByNameRequest, opts ...grpc.CallOption) (*GetProjectByNameResponse, error)
 	// UpdateProject patches the mutable fields of an existing Project.
 	UpdateProject(ctx context.Context, in *UpdateProjectRequest, opts ...grpc.CallOption) (*UpdateProjectResponse, error)
 	// DeleteProject removes the project AND all inbound `member_of` edges.
@@ -125,6 +144,15 @@ type TaskServiceClient interface {
 	// matching the given label and direction. Returns an empty list (not an
 	// error) when no edges match.
 	TraverseRelationships(ctx context.Context, in *TraverseRelationshipsRequest, opts ...grpc.CallOption) (*TraverseRelationshipsResponse, error)
+	// ImportProject parses a JSON document describing a project and creates a
+	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
+	// from every Task to the Project, and depends_on edges for each entry in a
+	// task's "depends_on" array.
+	// All imported tasks start in PENDING status; the original task ID
+	// (e.g. "MVP-SF-001") is stored as a tag on each Task for traceability.
+	// Error: INVALID_ARGUMENT if the document is malformed or missing required
+	// fields ("project", non-empty "tasks", each task needs "id" and "title").
+	ImportProject(ctx context.Context, in *ImportProjectRequest, opts ...grpc.CallOption) (*ImportProjectResponse, error)
 }
 
 type taskServiceClient struct {
@@ -149,6 +177,16 @@ func (c *taskServiceClient) GetTask(ctx context.Context, in *GetTaskRequest, opt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetTaskResponse)
 	err := c.cc.Invoke(ctx, TaskService_GetTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) GetTaskByName(ctx context.Context, in *GetTaskByNameRequest, opts ...grpc.CallOption) (*GetTaskByNameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTaskByNameResponse)
+	err := c.cc.Invoke(ctx, TaskService_GetTaskByName_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -235,6 +273,16 @@ func (c *taskServiceClient) ListAgents(ctx context.Context, in *ListAgentsReques
 	return out, nil
 }
 
+func (c *taskServiceClient) CreateTaskInProject(ctx context.Context, in *CreateTaskInProjectRequest, opts ...grpc.CallOption) (*CreateTaskInProjectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateTaskInProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_CreateTaskInProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *taskServiceClient) CreateProject(ctx context.Context, in *CreateProjectRequest, opts ...grpc.CallOption) (*CreateProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateProjectResponse)
@@ -249,6 +297,16 @@ func (c *taskServiceClient) GetProject(ctx context.Context, in *GetProjectReques
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetProjectResponse)
 	err := c.cc.Invoke(ctx, TaskService_GetProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) GetProjectByName(ctx context.Context, in *GetProjectByNameRequest, opts ...grpc.CallOption) (*GetProjectByNameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProjectByNameResponse)
+	err := c.cc.Invoke(ctx, TaskService_GetProjectByName_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -355,6 +413,16 @@ func (c *taskServiceClient) TraverseRelationships(ctx context.Context, in *Trave
 	return out, nil
 }
 
+func (c *taskServiceClient) ImportProject(ctx context.Context, in *ImportProjectRequest, opts ...grpc.CallOption) (*ImportProjectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportProjectResponse)
+	err := c.cc.Invoke(ctx, TaskService_ImportProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TaskServiceServer is the server API for TaskService service.
 // All implementations must embed UnimplementedTaskServiceServer
 // for forward compatibility.
@@ -369,6 +437,11 @@ type TaskServiceServer interface {
 	// GetTask retrieves a single task by ID within the agency.
 	// Error: NOT_FOUND if the task does not exist.
 	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
+	// GetTaskByName retrieves a task by its project-scoped name (task_name)
+	// within a project (project_name). Falls back to ID lookup when task_name
+	// looks like a UUID.
+	// Error: NOT_FOUND if no task with that name exists in the project.
+	GetTaskByName(context.Context, *GetTaskByNameRequest) (*GetTaskByNameResponse, error)
 	// UpdateTask replaces mutable task fields.
 	// Status transitions are validated server-side.
 	// Error: NOT_FOUND if the task does not exist.
@@ -397,13 +470,23 @@ type TaskServiceServer interface {
 	GetAgent(context.Context, *GetAgentRequest) (*GetAgentResponse, error)
 	// ListAgents returns every Agent in the agency.
 	ListAgents(context.Context, *ListAgentsRequest) (*ListAgentsResponse, error)
+	// CreateTaskInProject creates a task and immediately adds it as a member of
+	// the given project. The server auto-generates task_name using the project's
+	// task_prefix (e.g. "MVP-001", "MVP-002").
+	// Error: NOT_FOUND if the project does not exist.
+	// Error: INVALID_ARGUMENT if task title is empty.
+	CreateTaskInProject(context.Context, *CreateTaskInProjectRequest) (*CreateTaskInProjectResponse, error)
 	// CreateProject creates a new Project vertex.
 	// Error: ALREADY_EXISTS if the project ID is already taken.
 	// Error: INVALID_ARGUMENT if name is empty.
 	CreateProject(context.Context, *CreateProjectRequest) (*CreateProjectResponse, error)
-	// GetProject retrieves a single Project.
+	// GetProject retrieves a single Project by entity ID.
 	// Error: NOT_FOUND if the project does not exist.
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
+	// GetProjectByName retrieves a single Project by its slug (project_name).
+	// Falls back to ID lookup when the value looks like a UUID.
+	// Error: NOT_FOUND if no project with that name exists.
+	GetProjectByName(context.Context, *GetProjectByNameRequest) (*GetProjectByNameResponse, error)
 	// UpdateProject patches the mutable fields of an existing Project.
 	UpdateProject(context.Context, *UpdateProjectRequest) (*UpdateProjectResponse, error)
 	// DeleteProject removes the project AND all inbound `member_of` edges.
@@ -437,6 +520,15 @@ type TaskServiceServer interface {
 	// matching the given label and direction. Returns an empty list (not an
 	// error) when no edges match.
 	TraverseRelationships(context.Context, *TraverseRelationshipsRequest) (*TraverseRelationshipsResponse, error)
+	// ImportProject parses a JSON document describing a project and creates a
+	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
+	// from every Task to the Project, and depends_on edges for each entry in a
+	// task's "depends_on" array.
+	// All imported tasks start in PENDING status; the original task ID
+	// (e.g. "MVP-SF-001") is stored as a tag on each Task for traceability.
+	// Error: INVALID_ARGUMENT if the document is malformed or missing required
+	// fields ("project", non-empty "tasks", each task needs "id" and "title").
+	ImportProject(context.Context, *ImportProjectRequest) (*ImportProjectResponse, error)
 	mustEmbedUnimplementedTaskServiceServer()
 }
 
@@ -452,6 +544,9 @@ func (UnimplementedTaskServiceServer) CreateTask(context.Context, *CreateTaskReq
 }
 func (UnimplementedTaskServiceServer) GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTask not implemented")
+}
+func (UnimplementedTaskServiceServer) GetTaskByName(context.Context, *GetTaskByNameRequest) (*GetTaskByNameResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTaskByName not implemented")
 }
 func (UnimplementedTaskServiceServer) UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateTask not implemented")
@@ -477,11 +572,17 @@ func (UnimplementedTaskServiceServer) GetAgent(context.Context, *GetAgentRequest
 func (UnimplementedTaskServiceServer) ListAgents(context.Context, *ListAgentsRequest) (*ListAgentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListAgents not implemented")
 }
+func (UnimplementedTaskServiceServer) CreateTaskInProject(context.Context, *CreateTaskInProjectRequest) (*CreateTaskInProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateTaskInProject not implemented")
+}
 func (UnimplementedTaskServiceServer) CreateProject(context.Context, *CreateProjectRequest) (*CreateProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateProject not implemented")
 }
 func (UnimplementedTaskServiceServer) GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetProject not implemented")
+}
+func (UnimplementedTaskServiceServer) GetProjectByName(context.Context, *GetProjectByNameRequest) (*GetProjectByNameResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetProjectByName not implemented")
 }
 func (UnimplementedTaskServiceServer) UpdateProject(context.Context, *UpdateProjectRequest) (*UpdateProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateProject not implemented")
@@ -512,6 +613,9 @@ func (UnimplementedTaskServiceServer) DeleteRelationship(context.Context, *Delet
 }
 func (UnimplementedTaskServiceServer) TraverseRelationships(context.Context, *TraverseRelationshipsRequest) (*TraverseRelationshipsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TraverseRelationships not implemented")
+}
+func (UnimplementedTaskServiceServer) ImportProject(context.Context, *ImportProjectRequest) (*ImportProjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportProject not implemented")
 }
 func (UnimplementedTaskServiceServer) mustEmbedUnimplementedTaskServiceServer() {}
 func (UnimplementedTaskServiceServer) testEmbeddedByValue()                     {}
@@ -566,6 +670,24 @@ func _TaskService_GetTask_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskServiceServer).GetTask(ctx, req.(*GetTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_GetTaskByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTaskByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).GetTaskByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_GetTaskByName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).GetTaskByName(ctx, req.(*GetTaskByNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -714,6 +836,24 @@ func _TaskService_ListAgents_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaskService_CreateTaskInProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTaskInProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).CreateTaskInProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_CreateTaskInProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).CreateTaskInProject(ctx, req.(*CreateTaskInProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TaskService_CreateProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateProjectRequest)
 	if err := dec(in); err != nil {
@@ -746,6 +886,24 @@ func _TaskService_GetProject_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskServiceServer).GetProject(ctx, req.(*GetProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_GetProjectByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).GetProjectByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_GetProjectByName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).GetProjectByName(ctx, req.(*GetProjectByNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -930,6 +1088,24 @@ func _TaskService_TraverseRelationships_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaskService_ImportProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).ImportProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_ImportProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).ImportProject(ctx, req.(*ImportProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TaskService_ServiceDesc is the grpc.ServiceDesc for TaskService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -944,6 +1120,10 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTask",
 			Handler:    _TaskService_GetTask_Handler,
+		},
+		{
+			MethodName: "GetTaskByName",
+			Handler:    _TaskService_GetTaskByName_Handler,
 		},
 		{
 			MethodName: "UpdateTask",
@@ -978,12 +1158,20 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TaskService_ListAgents_Handler,
 		},
 		{
+			MethodName: "CreateTaskInProject",
+			Handler:    _TaskService_CreateTaskInProject_Handler,
+		},
+		{
 			MethodName: "CreateProject",
 			Handler:    _TaskService_CreateProject_Handler,
 		},
 		{
 			MethodName: "GetProject",
 			Handler:    _TaskService_GetProject_Handler,
+		},
+		{
+			MethodName: "GetProjectByName",
+			Handler:    _TaskService_GetProjectByName_Handler,
 		},
 		{
 			MethodName: "UpdateProject",
@@ -1024,6 +1212,10 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TraverseRelationships",
 			Handler:    _TaskService_TraverseRelationships_Handler,
+		},
+		{
+			MethodName: "ImportProject",
+			Handler:    _TaskService_ImportProject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

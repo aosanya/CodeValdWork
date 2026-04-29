@@ -44,9 +44,28 @@ func (s *Server) GetTask(ctx context.Context, req *pb.GetTaskRequest) (*pb.GetTa
 	return &pb.GetTaskResponse{Task: taskToProto(task)}, nil
 }
 
+// resolveTaskID returns the entity ID for a task, preferring a direct ID but
+// falling back to a project-scoped name lookup. Mirrors resolveProjectID.
+func (s *Server) resolveTaskID(ctx context.Context, agencyID, taskID, taskName, projectName string) (string, error) {
+	if taskID != "" {
+		return taskID, nil
+	}
+	t, err := s.mgr.GetTaskByName(ctx, agencyID, projectName, taskName)
+	if err != nil {
+		return "", err
+	}
+	return t.ID, nil
+}
+
 // UpdateTask implements pb.TaskServiceServer.
 func (s *Server) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*pb.UpdateTaskResponse, error) {
-	task, err := s.mgr.UpdateTask(ctx, req.AgencyId, protoToTask(req.Task))
+	t := protoToTask(req.Task)
+	taskID, err := s.resolveTaskID(ctx, req.AgencyId, t.ID, t.TaskName, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	t.ID = taskID
+	task, err := s.mgr.UpdateTask(ctx, req.AgencyId, t)
 	if err != nil {
 		return nil, mapError(err)
 	}
@@ -55,10 +74,36 @@ func (s *Server) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*pb
 
 // DeleteTask implements pb.TaskServiceServer.
 func (s *Server) DeleteTask(ctx context.Context, req *pb.DeleteTaskRequest) (*pb.DeleteTaskResponse, error) {
-	if err := s.mgr.DeleteTask(ctx, req.AgencyId, req.TaskId); err != nil {
+	taskID, err := s.resolveTaskID(ctx, req.AgencyId, req.TaskId, req.TaskName, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	if err := s.mgr.DeleteTask(ctx, req.AgencyId, taskID); err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.DeleteTaskResponse{}, nil
+}
+
+// GetTaskByName implements pb.TaskServiceServer.
+func (s *Server) GetTaskByName(ctx context.Context, req *pb.GetTaskByNameRequest) (*pb.GetTaskByNameResponse, error) {
+	task, err := s.mgr.GetTaskByName(ctx, req.AgencyId, req.ProjectName, req.TaskName)
+	if err != nil {
+		// Fallback: value might be a UUID from a pre-name caller.
+		task, err = s.mgr.GetTask(ctx, req.AgencyId, req.TaskName)
+		if err != nil {
+			return nil, mapError(err)
+		}
+	}
+	return &pb.GetTaskByNameResponse{Task: taskToProto(task)}, nil
+}
+
+// CreateTaskInProject implements pb.TaskServiceServer.
+func (s *Server) CreateTaskInProject(ctx context.Context, req *pb.CreateTaskInProjectRequest) (*pb.CreateTaskInProjectResponse, error) {
+	task, err := s.mgr.CreateTaskInProject(ctx, req.AgencyId, req.ProjectName, protoToTask(req.Task))
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return &pb.CreateTaskInProjectResponse{Task: taskToProto(task)}, nil
 }
 
 // ListTasks implements pb.TaskServiceServer.
@@ -87,6 +132,7 @@ func taskToProto(t codevaldwork.Task) *pb.Task {
 		Tags:           append([]string(nil), t.Tags...),
 		EstimatedHours: t.EstimatedHours,
 		Context:        t.Context,
+		TaskName:       t.TaskName,
 		CreatedAt:      timestamppb.New(t.CreatedAt),
 		UpdatedAt:      timestamppb.New(t.UpdatedAt),
 	}
@@ -113,6 +159,7 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 		Tags:           append([]string(nil), pt.Tags...),
 		EstimatedHours: pt.EstimatedHours,
 		Context:        pt.Context,
+		TaskName:       pt.TaskName,
 	}
 	if pt.CreatedAt != nil {
 		t.CreatedAt = pt.CreatedAt.AsTime()

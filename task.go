@@ -116,6 +116,10 @@ type TaskManager interface {
 	// [ErrProjectNotFound] if no matching project exists.
 	GetProject(ctx context.Context, agencyID, projectID string) (Project, error)
 
+	// GetProjectByName retrieves a single Project by its slug (projectName).
+	// Returns [ErrProjectNotFound] if no project with that slug exists.
+	GetProjectByName(ctx context.Context, agencyID, projectName string) (Project, error)
+
 	// UpdateProject replaces the mutable fields of an existing Project.
 	// Returns [ErrProjectNotFound] if the project does not exist.
 	UpdateProject(ctx context.Context, agencyID string, p Project) (Project, error)
@@ -143,6 +147,22 @@ type TaskManager interface {
 	// ListProjectsForTask returns the Projects the given Task belongs to
 	// via outbound `member_of` edges.
 	ListProjectsForTask(ctx context.Context, agencyID, taskID string) ([]Project, error)
+
+	// GetTaskByName retrieves a task by its project-scoped name (taskName)
+	// within a project (projectName). Returns [ErrTaskNotFound] if no task
+	// with that name exists in the project.
+	GetTaskByName(ctx context.Context, agencyID, projectName, taskName string) (Task, error)
+
+	// CreateTaskInProject creates a task, auto-generates its taskName from the
+	// project's task_prefix, and writes the member_of edge in one atomic sequence.
+	// Returns [ErrProjectNotFound] if the project does not exist.
+	// Returns [ErrInvalidTask] if the task title is empty.
+	CreateTaskInProject(ctx context.Context, agencyID, projectName string, task Task) (Task, error)
+
+	// ImportProject parses a JSON import document and creates a Project,
+	// Tasks, member_of edges, and depends_on edges in a single call.
+	// Returns [ErrInvalidImport] when the document is malformed.
+	ImportProject(ctx context.Context, agencyID, markdown string) (ImportResult, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].
@@ -476,6 +496,7 @@ func taskToProperties(t Task) map[string]any {
 		"status":      string(t.Status),
 		"priority":    string(t.Priority),
 		"context":     t.Context,
+		"taskName":    t.TaskName,
 	}
 	if t.DueAt != nil && !t.DueAt.IsZero() {
 		props["dueAt"] = t.DueAt.UTC().Format(time.RFC3339Nano)
@@ -555,6 +576,9 @@ func taskFromEntity(e entitygraph.Entity) Task {
 		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
 			t.CompletedAt = &ts
 		}
+	}
+	if v, ok := e.Properties["taskName"].(string); ok {
+		t.TaskName = v
 	}
 	return t
 }

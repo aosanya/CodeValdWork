@@ -242,9 +242,13 @@ func agentRoutes() []types.RouteInfo {
 	}
 }
 
+// projectNameBinding is the {projectName}→project_name binding shared by every
+// route under /work/{agencyId}/projects/{projectName}/...
+var projectNameBinding = types.PathBinding{URLParam: "projectName", Field: "project_name"}
+
 // projectRoutes covers Project CRUD plus the `member_of` membership edges.
-// UpdateProject binds {projectId} into the nested `project.id` because the
-// request carries the full Project proto rather than a top-level id field.
+// All per-project routes use {projectName} (the URL-safe slug) rather than a
+// raw UUID, mirroring the git service's {repoName} convention.
 func projectRoutes() []types.RouteInfo {
 	return []types.RouteInfo{
 		{
@@ -257,34 +261,34 @@ func projectRoutes() []types.RouteInfo {
 		},
 		{
 			Method:     "GET",
-			Pattern:    "/work/{agencyId}/projects/{projectId}",
+			Pattern:    "/work/{agencyId}/projects/{projectName}",
 			Capability: "get_project",
-			GrpcMethod: "/codevaldwork.v1.TaskService/GetProject",
+			GrpcMethod: "/codevaldwork.v1.TaskService/GetProjectByName",
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "projectId", Field: "project_id"},
+				projectNameBinding,
 			},
 		},
 		{
 			Method:     "PUT",
-			Pattern:    "/work/{agencyId}/projects/{projectId}",
+			Pattern:    "/work/{agencyId}/projects/{projectName}",
 			Capability: "update_project",
 			GrpcMethod: "/codevaldwork.v1.TaskService/UpdateProject",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "projectId", Field: "project.id"},
+				{URLParam: "projectName", Field: "project.project_name"},
 			},
 		},
 		{
 			Method:     "DELETE",
-			Pattern:    "/work/{agencyId}/projects/{projectId}",
+			Pattern:    "/work/{agencyId}/projects/{projectName}",
 			Capability: "delete_project",
 			GrpcMethod: "/codevaldwork.v1.TaskService/DeleteProject",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "projectId", Field: "project_id"},
+				projectNameBinding,
 			},
 		},
 		{
@@ -296,37 +300,45 @@ func projectRoutes() []types.RouteInfo {
 		},
 		{
 			Method:     "PUT",
-			Pattern:    "/work/{agencyId}/projects/{projectId}/tasks/{taskId}",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskId}",
 			Capability: "add_task_to_project",
 			GrpcMethod: "/codevaldwork.v1.TaskService/AddTaskToProject",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "projectId", Field: "project_id"},
+				projectNameBinding,
 				{URLParam: "taskId", Field: "task_id"},
 			},
 		},
 		{
 			Method:     "DELETE",
-			Pattern:    "/work/{agencyId}/projects/{projectId}/tasks/{taskId}",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks/{taskId}",
 			Capability: "remove_task_from_project",
 			GrpcMethod: "/codevaldwork.v1.TaskService/RemoveTaskFromProject",
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "projectId", Field: "project_id"},
+				projectNameBinding,
 				{URLParam: "taskId", Field: "task_id"},
 			},
 		},
 		{
 			Method:     "GET",
-			Pattern:    "/work/{agencyId}/projects/{projectId}/tasks",
+			Pattern:    "/work/{agencyId}/projects/{projectName}/tasks",
 			Capability: "list_tasks_in_project",
 			GrpcMethod: "/codevaldwork.v1.TaskService/ListTasksInProject",
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "projectId", Field: "project_id"},
+				projectNameBinding,
 			},
+		},
+		{
+			Method:       "POST",
+			Pattern:      "/work/{agencyId}/projects/import",
+			Capability:   "import_project",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/ImportProject",
+			IsWrite:      true,
+			PathBindings: []types.PathBinding{agencyBinding},
 		},
 	}
 }

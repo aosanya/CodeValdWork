@@ -9,6 +9,20 @@ import (
 	pb "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1"
 )
 
+// resolveProjectID returns the entity ID for a project, preferring a direct
+// ID but falling back to a name-based lookup (matching the git resolveRepoID
+// pattern). Returns [ErrProjectNotFound] (via mapError) if neither resolves.
+func (s *Server) resolveProjectID(ctx context.Context, agencyID, projectID, projectName string) (string, error) {
+	if projectID != "" {
+		return projectID, nil
+	}
+	p, err := s.mgr.GetProjectByName(ctx, agencyID, projectName)
+	if err != nil {
+		return "", err
+	}
+	return p.ID, nil
+}
+
 // CreateProject implements pb.TaskServiceServer.
 func (s *Server) CreateProject(ctx context.Context, req *pb.CreateProjectRequest) (*pb.CreateProjectResponse, error) {
 	p, err := s.mgr.CreateProject(ctx, req.AgencyId, protoToProject(req.Project))
@@ -20,16 +34,41 @@ func (s *Server) CreateProject(ctx context.Context, req *pb.CreateProjectRequest
 
 // GetProject implements pb.TaskServiceServer.
 func (s *Server) GetProject(ctx context.Context, req *pb.GetProjectRequest) (*pb.GetProjectResponse, error) {
-	p, err := s.mgr.GetProject(ctx, req.AgencyId, req.ProjectId)
+	projectID, err := s.resolveProjectID(ctx, req.AgencyId, req.ProjectId, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	p, err := s.mgr.GetProject(ctx, req.AgencyId, projectID)
 	if err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.GetProjectResponse{Project: projectToProto(p)}, nil
 }
 
+// GetProjectByName implements pb.TaskServiceServer.
+// It tries a name-based lookup first. If that fails it falls back to an
+// ID-based lookup so that callers still using UUIDs continue to work.
+func (s *Server) GetProjectByName(ctx context.Context, req *pb.GetProjectByNameRequest) (*pb.GetProjectByNameResponse, error) {
+	p, err := s.mgr.GetProjectByName(ctx, req.AgencyId, req.ProjectName)
+	if err != nil {
+		// Fallback: the value might be a UUID from a pre-slug caller.
+		p, err = s.mgr.GetProject(ctx, req.AgencyId, req.ProjectName)
+		if err != nil {
+			return nil, mapError(err)
+		}
+	}
+	return &pb.GetProjectByNameResponse{Project: projectToProto(p)}, nil
+}
+
 // UpdateProject implements pb.TaskServiceServer.
 func (s *Server) UpdateProject(ctx context.Context, req *pb.UpdateProjectRequest) (*pb.UpdateProjectResponse, error) {
-	p, err := s.mgr.UpdateProject(ctx, req.AgencyId, protoToProject(req.Project))
+	proj := protoToProject(req.Project)
+	projectID, err := s.resolveProjectID(ctx, req.AgencyId, proj.ID, proj.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	proj.ID = projectID
+	p, err := s.mgr.UpdateProject(ctx, req.AgencyId, proj)
 	if err != nil {
 		return nil, mapError(err)
 	}
@@ -38,7 +77,11 @@ func (s *Server) UpdateProject(ctx context.Context, req *pb.UpdateProjectRequest
 
 // DeleteProject implements pb.TaskServiceServer.
 func (s *Server) DeleteProject(ctx context.Context, req *pb.DeleteProjectRequest) (*pb.DeleteProjectResponse, error) {
-	if err := s.mgr.DeleteProject(ctx, req.AgencyId, req.ProjectId); err != nil {
+	projectID, err := s.resolveProjectID(ctx, req.AgencyId, req.ProjectId, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	if err := s.mgr.DeleteProject(ctx, req.AgencyId, projectID); err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.DeleteProjectResponse{}, nil
@@ -59,7 +102,11 @@ func (s *Server) ListProjects(ctx context.Context, req *pb.ListProjectsRequest) 
 
 // AddTaskToProject implements pb.TaskServiceServer.
 func (s *Server) AddTaskToProject(ctx context.Context, req *pb.AddTaskToProjectRequest) (*pb.AddTaskToProjectResponse, error) {
-	if err := s.mgr.AddTaskToProject(ctx, req.AgencyId, req.TaskId, req.ProjectId); err != nil {
+	projectID, err := s.resolveProjectID(ctx, req.AgencyId, req.ProjectId, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	if err := s.mgr.AddTaskToProject(ctx, req.AgencyId, req.TaskId, projectID); err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.AddTaskToProjectResponse{}, nil
@@ -67,7 +114,11 @@ func (s *Server) AddTaskToProject(ctx context.Context, req *pb.AddTaskToProjectR
 
 // RemoveTaskFromProject implements pb.TaskServiceServer.
 func (s *Server) RemoveTaskFromProject(ctx context.Context, req *pb.RemoveTaskFromProjectRequest) (*pb.RemoveTaskFromProjectResponse, error) {
-	if err := s.mgr.RemoveTaskFromProject(ctx, req.AgencyId, req.TaskId, req.ProjectId); err != nil {
+	projectID, err := s.resolveProjectID(ctx, req.AgencyId, req.ProjectId, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	if err := s.mgr.RemoveTaskFromProject(ctx, req.AgencyId, req.TaskId, projectID); err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.RemoveTaskFromProjectResponse{}, nil
@@ -75,7 +126,11 @@ func (s *Server) RemoveTaskFromProject(ctx context.Context, req *pb.RemoveTaskFr
 
 // ListTasksInProject implements pb.TaskServiceServer.
 func (s *Server) ListTasksInProject(ctx context.Context, req *pb.ListTasksInProjectRequest) (*pb.ListTasksInProjectResponse, error) {
-	tasks, err := s.mgr.ListTasksInProject(ctx, req.AgencyId, req.ProjectId)
+	projectID, err := s.resolveProjectID(ctx, req.AgencyId, req.ProjectId, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	tasks, err := s.mgr.ListTasksInProject(ctx, req.AgencyId, projectID)
 	if err != nil {
 		return nil, mapError(err)
 	}
@@ -106,13 +161,11 @@ func projectToProto(p codevaldwork.Project) *pb.Project {
 		Id:          p.ID,
 		AgencyId:    p.AgencyID,
 		Name:        p.Name,
+		ProjectName: p.ProjectName,
 		Description: p.Description,
 		GithubRepo:  p.GithubRepo,
 		CreatedAt:   timestamppb.New(p.CreatedAt),
 		UpdatedAt:   timestamppb.New(p.UpdatedAt),
-	}
-	if p.DueAt != nil {
-		pp.DueAt = timestamppb.New(*p.DueAt)
 	}
 	return pp
 }
@@ -125,6 +178,7 @@ func protoToProject(pp *pb.Project) codevaldwork.Project {
 		ID:          pp.Id,
 		AgencyID:    pp.AgencyId,
 		Name:        pp.Name,
+		ProjectName: pp.ProjectName,
 		Description: pp.Description,
 		GithubRepo:  pp.GithubRepo,
 	}
@@ -133,10 +187,6 @@ func protoToProject(pp *pb.Project) codevaldwork.Project {
 	}
 	if pp.UpdatedAt != nil {
 		p.UpdatedAt = pp.UpdatedAt.AsTime()
-	}
-	if pp.DueAt != nil {
-		ts := pp.DueAt.AsTime()
-		p.DueAt = &ts
 	}
 	return p
 }

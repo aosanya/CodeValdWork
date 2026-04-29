@@ -54,6 +54,9 @@ message Task {
   repeated string           tags            = 12;
   double                    estimated_hours = 13;
   string                    context         = 14;
+  // task_name is the project-scoped human-readable name auto-generated on
+  // CreateTaskInProject (e.g. "MVP-001"). Empty for tasks not in a project.
+  string                    task_name       = 15;
 }
 
 // TaskFilter is used in ListTasks to constrain results.
@@ -87,12 +90,21 @@ message Project {
   string agency_id   = 2;
   string name        = 3;
   string description = 4;
-  google.protobuf.Timestamp due_at     = 5;
+  reserved 5;
+  reserved "due_at";
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
   // github_repo is the canonical GitHub repository for the project, e.g.
   // "owner/name" or a full https URL. Optional.
-  string github_repo = 8;
+  string github_repo   = 8;
+  // project_name is the URL-safe slug derived from name: lowercase with
+  // spaces replaced by underscores (e.g. "my project" → "my_project").
+  // Set by the server on creation; immutable after that.
+  string project_name  = 9;
+  // task_prefix is prepended to the auto-generated task name counter when
+  // tasks are created via CreateTaskInProject (e.g. "MVP-" → "MVP-001").
+  // If empty, defaults to "<project_name>-".
+  string task_prefix   = 10;
 }
 
 // Relationship is the Work-domain projection of a directed graph edge.

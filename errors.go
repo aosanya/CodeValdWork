@@ -47,6 +47,11 @@ var ErrInvalidRelationship = errors.New("invalid relationship")
 // agency.
 var ErrRelationshipNotFound = errors.New("relationship not found")
 
+// ErrInvalidImport is returned by [TaskManager.ImportProject] when the
+// supplied Markdown document cannot be parsed — for example, when the
+// expected "# MVP — <name>" heading is absent or no task rows are found.
+var ErrInvalidImport = errors.New("invalid import: markdown document could not be parsed")
+
 // ErrBlocked is the sentinel returned by [TaskManager.UpdateTask] when a
 // pending → in_progress transition is rejected because the task has one or
 // more non-terminal `blocks`-inbound predecessors. Match it with

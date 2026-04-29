@@ -22,6 +22,12 @@ service TaskService {
   // Error: NOT_FOUND if the task does not exist.
   rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
 
+  // GetTaskByName retrieves a task by its project-scoped name (task_name)
+  // within a project (project_name). Falls back to ID lookup when task_name
+  // looks like a UUID.
+  // Error: NOT_FOUND if no task with that name exists in the project.
+  rpc GetTaskByName(GetTaskByNameRequest) returns (GetTaskByNameResponse);
+
   // UpdateTask replaces mutable task fields.
   // Status transitions are validated server-side.
   // Error: NOT_FOUND if the task does not exist.
@@ -62,14 +68,26 @@ service TaskService {
 
   // ── Project CRUD + membership ──────────────────────────────────────────────
 
+  // CreateTaskInProject creates a task and immediately adds it as a member of
+  // the given project. The server auto-generates task_name using the project's
+  // task_prefix (e.g. "MVP-001", "MVP-002").
+  // Error: NOT_FOUND if the project does not exist.
+  // Error: INVALID_ARGUMENT if task title is empty.
+  rpc CreateTaskInProject(CreateTaskInProjectRequest) returns (CreateTaskInProjectResponse);
+
   // CreateProject creates a new Project vertex.
   // Error: ALREADY_EXISTS if the project ID is already taken.
   // Error: INVALID_ARGUMENT if name is empty.
   rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
 
-  // GetProject retrieves a single Project.
+  // GetProject retrieves a single Project by entity ID.
   // Error: NOT_FOUND if the project does not exist.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+
+  // GetProjectByName retrieves a single Project by its slug (project_name).
+  // Falls back to ID lookup when the value looks like a UUID.
+  // Error: NOT_FOUND if no project with that name exists.
+  rpc GetProjectByName(GetProjectByNameRequest) returns (GetProjectByNameResponse);
 
   // UpdateProject patches the mutable fields of an existing Project.
   rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
@@ -118,15 +136,14 @@ service TaskService {
 
   // ── Markdown import ────────────────────────────────────────────────────────
 
-  // ImportProject parses a Markdown document in the CodeValdWork MVP
-  // task-table format and creates a Project vertex, a Task vertex for each
-  // table row, member_of edges from every Task to the Project, and
-  // depends_on edges derived from the "Depends On" column.
-  // All imported tasks start in PENDING status regardless of the status
-  // shown in the document; the original task ID (e.g. "MVP-SF-001") is
-  // stored as a tag on each Task for traceability.
-  // Error: INVALID_ARGUMENT if the markdown cannot be parsed (no project
-  // heading or no task rows found).
+  // ImportProject parses a JSON document describing a project and creates a
+  // Project vertex, a Task vertex for each entry in "tasks", member_of edges
+  // from every Task to the Project, and depends_on edges for each entry in a
+  // task's "depends_on" array.
+  // All imported tasks start in PENDING status; the original task ID
+  // (e.g. "MVP-SF-001") is stored as a tag on each Task for traceability.
+  // Error: INVALID_ARGUMENT if the document is malformed or missing required
+  // fields ("project", non-empty "tasks", each task needs "id" and "title").
   rpc ImportProject(ImportProjectRequest) returns (ImportProjectResponse);
 }
 
@@ -149,16 +166,19 @@ message GetTaskResponse {
 }
 
 message UpdateTaskRequest {
-  string agency_id = 1;
-  Task   task      = 2;
+  string agency_id    = 1;
+  Task   task         = 2;
+  string project_name = 3;    // required when resolving by task.task_name
 }
 message UpdateTaskResponse {
   Task task = 1;
 }
 
 message DeleteTaskRequest {
-  string agency_id = 1;
-  string task_id   = 2;
+  string agency_id    = 1;
+  string task_id      = 2;
+  string task_name    = 3;    // project-scoped name (e.g. "MVP-001"); used when task_id is empty
+  string project_name = 4;    // required when resolving by task_name
 }
 message DeleteTaskResponse {}
 
@@ -170,18 +190,40 @@ message ListTasksResponse {
   repeated Task tasks = 1;
 }
 
+message GetTaskByNameRequest {
+  string agency_id    = 1;
+  string project_name = 2;
+  string task_name    = 3;
+}
+message GetTaskByNameResponse {
+  Task task = 1;
+}
+
+message CreateTaskInProjectRequest {
+  string agency_id    = 1;
+  string project_name = 2;
+  Task   task         = 3;
+}
+message CreateTaskInProjectResponse {
+  Task task = 1;
+}
+
 // ── Agent assignment messages ─────────────────────────────────────────────────
 
 message AssignTaskRequest {
-  string agency_id = 1;
-  string task_id   = 2;
-  string agent_id  = 3;  // entity ID of the Agent vertex
+  string agency_id    = 1;
+  string task_id      = 2;
+  string agent_id     = 3;  // entity ID of the Agent vertex
+  string task_name    = 4;  // project-scoped name; used when task_id is empty
+  string project_name = 5;  // required when resolving by task_name
 }
 message AssignTaskResponse {}
 
 message UnassignTaskRequest {
-  string agency_id = 1;
-  string task_id   = 2;
+  string agency_id    = 1;
+  string task_id      = 2;
+  string task_name    = 3;  // project-scoped name; used when task_id is empty
+  string project_name = 4;  // required when resolving by task_name
 }
 message UnassignTaskResponse {}
 
@@ -219,10 +261,19 @@ message CreateProjectResponse {
 }
 
 message GetProjectRequest {
-  string agency_id  = 1;
-  string project_id = 2;
+  string agency_id    = 1;
+  string project_id   = 2;
+  string project_name = 3;
 }
 message GetProjectResponse {
+  Project project = 1;
+}
+
+message GetProjectByNameRequest {
+  string agency_id    = 1;
+  string project_name = 2;
+}
+message GetProjectByNameResponse {
   Project project = 1;
 }
 
@@ -235,8 +286,9 @@ message UpdateProjectResponse {
 }
 
 message DeleteProjectRequest {
-  string agency_id  = 1;
-  string project_id = 2;
+  string agency_id    = 1;
+  string project_id   = 2;
+  string project_name = 3;
 }
 message DeleteProjectResponse {}
 
@@ -248,22 +300,25 @@ message ListProjectsResponse {
 }
 
 message AddTaskToProjectRequest {
-  string agency_id  = 1;
-  string task_id    = 2;
-  string project_id = 3;
+  string agency_id    = 1;
+  string task_id      = 2;
+  string project_id   = 3;
+  string project_name = 4;
 }
 message AddTaskToProjectResponse {}
 
 message RemoveTaskFromProjectRequest {
-  string agency_id  = 1;
-  string task_id    = 2;
-  string project_id = 3;
+  string agency_id    = 1;
+  string task_id      = 2;
+  string project_id   = 3;
+  string project_name = 4;
 }
 message RemoveTaskFromProjectResponse {}
 
 message ListTasksInProjectRequest {
-  string agency_id  = 1;
-  string project_id = 2;
+  string agency_id    = 1;
+  string project_id   = 2;
+  string project_name = 3;
 }
 message ListTasksInProjectResponse {
   repeated Task tasks = 1;
@@ -312,9 +367,10 @@ message TraverseRelationshipsResponse {
 
 message ImportProjectRequest {
   string agency_id = 1;
-  // markdown is the raw Markdown document content. Must contain a
-  // "# MVP — <name>" heading and at least one task table.
-  string markdown = 2;
+  // document is the raw JSON import document. Must be a valid JSON object
+  // with a non-empty "project" string and a non-empty "tasks" array where
+  // each entry has at minimum "id" and "title" fields.
+  string document = 2;
 }
 message ImportProjectResponse {
   Project        project      = 1;

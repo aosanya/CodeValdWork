@@ -35,7 +35,8 @@ func mapError(err error) error {
 		return invalidRelationshipStatus(err)
 	case errors.Is(err, codevaldwork.ErrInvalidStatusTransition):
 		return status.Error(codes.FailedPrecondition, err.Error())
-	case errors.Is(err, codevaldwork.ErrInvalidTask):
+	case errors.Is(err, codevaldwork.ErrInvalidTask),
+		errors.Is(err, codevaldwork.ErrInvalidImport):
 		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return status.Error(codes.Internal, err.Error())

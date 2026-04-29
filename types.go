@@ -123,6 +123,10 @@ type Task struct {
 	// CompletedAt is the UTC timestamp when the task reached a terminal
 	// status (completed, failed, or cancelled). Nil until then.
 	CompletedAt *time.Time
+
+	// TaskName is the project-scoped human-readable identifier auto-generated
+	// by CreateTaskInProject (e.g. "MVP-001"). Empty for tasks not in a project.
+	TaskName string
 }
 
 // TaskFilter constrains the results returned by [TaskManager.ListTasks].

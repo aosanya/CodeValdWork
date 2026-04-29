@@ -208,8 +208,11 @@ type Task struct {
 	Tags           []string               `protobuf:"bytes,12,rep,name=tags,proto3" json:"tags,omitempty"`
 	EstimatedHours float64                `protobuf:"fixed64,13,opt,name=estimated_hours,json=estimatedHours,proto3" json:"estimated_hours,omitempty"`
 	Context        string                 `protobuf:"bytes,14,opt,name=context,proto3" json:"context,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// task_name is the project-scoped human-readable name auto-generated on
+	// CreateTaskInProject (e.g. "MVP-001"). Empty for tasks not in a project.
+	TaskName      string `protobuf:"bytes,15,opt,name=task_name,json=taskName,proto3" json:"task_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Task) Reset() {
@@ -329,6 +332,13 @@ func (x *Task) GetEstimatedHours() float64 {
 func (x *Task) GetContext() string {
 	if x != nil {
 		return x.Context
+	}
+	return ""
+}
+
+func (x *Task) GetTaskName() string {
+	if x != nil {
+		return x.TaskName
 	}
 	return ""
 }
@@ -492,12 +502,19 @@ type Project struct {
 	AgencyId    string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
 	Name        string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	DueAt       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=due_at,json=dueAt,proto3" json:"due_at,omitempty"`
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// github_repo is the canonical GitHub repository for the project, e.g.
 	// "owner/name" or a full https URL. Optional.
-	GithubRepo    string `protobuf:"bytes,8,opt,name=github_repo,json=githubRepo,proto3" json:"github_repo,omitempty"`
+	GithubRepo string `protobuf:"bytes,8,opt,name=github_repo,json=githubRepo,proto3" json:"github_repo,omitempty"`
+	// project_name is the URL-safe slug derived from name: lowercase with
+	// spaces replaced by underscores (e.g. "my project" → "my_project").
+	// Set by the server on creation; immutable after that.
+	ProjectName string `protobuf:"bytes,9,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
+	// task_prefix is prepended to the auto-generated task name counter when
+	// tasks are created via CreateTaskInProject (e.g. "MVP-" → "MVP-001").
+	// If empty, defaults to "<project_name>-".
+	TaskPrefix    string `protobuf:"bytes,10,opt,name=task_prefix,json=taskPrefix,proto3" json:"task_prefix,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -560,13 +577,6 @@ func (x *Project) GetDescription() string {
 	return ""
 }
 
-func (x *Project) GetDueAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.DueAt
-	}
-	return nil
-}
-
 func (x *Project) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
@@ -584,6 +594,20 @@ func (x *Project) GetUpdatedAt() *timestamppb.Timestamp {
 func (x *Project) GetGithubRepo() string {
 	if x != nil {
 		return x.GithubRepo
+	}
+	return ""
+}
+
+func (x *Project) GetProjectName() string {
+	if x != nil {
+		return x.ProjectName
+	}
+	return ""
+}
+
+func (x *Project) GetTaskPrefix() string {
+	if x != nil {
+		return x.TaskPrefix
 	}
 	return ""
 }
@@ -690,7 +714,7 @@ var File_codevaldwork_v1_codevaldwork_proto protoreflect.FileDescriptor
 
 const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
-	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xad\x04\n" +
+	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xca\x04\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
@@ -707,7 +731,8 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x06due_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x05dueAt\x12\x12\n" +
 	"\x04tags\x18\f \x03(\tR\x04tags\x12'\n" +
 	"\x0festimated_hours\x18\r \x01(\x01R\x0eestimatedHours\x12\x18\n" +
-	"\acontext\x18\x0e \x01(\tR\acontextJ\x04\b\a\x10\bR\vassigned_to\"\x8f\x01\n" +
+	"\acontext\x18\x0e \x01(\tR\acontext\x12\x1b\n" +
+	"\ttask_name\x18\x0f \x01(\tR\btaskNameJ\x04\b\a\x10\bR\vassigned_to\"\x8f\x01\n" +
 	"\n" +
 	"TaskFilter\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +
@@ -723,19 +748,22 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xb6\x02\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xd5\x02\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\x121\n" +
-	"\x06due_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x05dueAt\x129\n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x129\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1f\n" +
 	"\vgithub_repo\x18\b \x01(\tR\n" +
-	"githubRepo\"\xf3\x01\n" +
+	"githubRepo\x12!\n" +
+	"\fproject_name\x18\t \x01(\tR\vprojectName\x12\x1f\n" +
+	"\vtask_prefix\x18\n" +
+	" \x01(\tR\n" +
+	"taskPrefixJ\x04\b\x05\x10\x06R\x06due_at\"\xf3\x01\n" +
 	"\fRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
@@ -803,16 +831,15 @@ var file_codevaldwork_v1_codevaldwork_proto_depIdxs = []int32{
 	1,  // 7: codevaldwork.v1.TaskFilter.priority:type_name -> codevaldwork.v1.TaskPriority
 	8,  // 8: codevaldwork.v1.Agent.created_at:type_name -> google.protobuf.Timestamp
 	8,  // 9: codevaldwork.v1.Agent.updated_at:type_name -> google.protobuf.Timestamp
-	8,  // 10: codevaldwork.v1.Project.due_at:type_name -> google.protobuf.Timestamp
-	8,  // 11: codevaldwork.v1.Project.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 12: codevaldwork.v1.Project.updated_at:type_name -> google.protobuf.Timestamp
-	9,  // 13: codevaldwork.v1.Relationship.properties:type_name -> google.protobuf.Struct
-	8,  // 14: codevaldwork.v1.Relationship.created_at:type_name -> google.protobuf.Timestamp
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	8,  // 10: codevaldwork.v1.Project.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 11: codevaldwork.v1.Project.updated_at:type_name -> google.protobuf.Timestamp
+	9,  // 12: codevaldwork.v1.Relationship.properties:type_name -> google.protobuf.Struct
+	8,  // 13: codevaldwork.v1.Relationship.created_at:type_name -> google.protobuf.Timestamp
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_codevaldwork_v1_codevaldwork_proto_init() }

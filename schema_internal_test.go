@@ -69,9 +69,9 @@ func TestDefaultWorkSchema_ProjectShape(t *testing.T) {
 	}
 	want := map[string]types.PropertyType{
 		"name":        types.PropertyTypeString,
+		"projectName": types.PropertyTypeString,
 		"description": types.PropertyTypeString,
 		"githubRepo":  types.PropertyTypeString,
-		"dueAt":       types.PropertyTypeDatetime,
 	}
 	if got := propTypes(td); !reflect.DeepEqual(got, want) {
 		t.Errorf("Project property types mismatch:\n got=%v\nwant=%v", got, want)
@@ -207,14 +207,13 @@ func TestTaskFromEntity_AcceptsJSONDecodedTagsAndNumber(t *testing.T) {
 // ── projectToProperties / agentToProperties ──────────────────────────────────
 
 func TestProjectToProperties_RoundTrip(t *testing.T) {
-	due := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
 	in := Project{
 		ID:          "proj-1",
 		AgencyID:    "agency-1",
 		Name:        "Sprint 14",
+		ProjectName: "sprint_14",
 		Description: "Push X out the door",
 		GithubRepo:  "aosanya/CodeValdWork",
-		DueAt:       &due,
 		CreatedAt:   time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
 		UpdatedAt:   time.Date(2026, 4, 2, 0, 0, 0, 0, time.UTC),
 	}

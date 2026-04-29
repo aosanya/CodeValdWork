@@ -11,7 +11,11 @@ import (
 
 // AssignTask implements pb.TaskServiceServer.
 func (s *Server) AssignTask(ctx context.Context, req *pb.AssignTaskRequest) (*pb.AssignTaskResponse, error) {
-	if err := s.mgr.AssignTask(ctx, req.AgencyId, req.TaskId, req.AgentId); err != nil {
+	taskID, err := s.resolveTaskID(ctx, req.AgencyId, req.TaskId, req.TaskName, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	if err := s.mgr.AssignTask(ctx, req.AgencyId, taskID, req.AgentId); err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.AssignTaskResponse{}, nil
@@ -19,7 +23,11 @@ func (s *Server) AssignTask(ctx context.Context, req *pb.AssignTaskRequest) (*pb
 
 // UnassignTask implements pb.TaskServiceServer.
 func (s *Server) UnassignTask(ctx context.Context, req *pb.UnassignTaskRequest) (*pb.UnassignTaskResponse, error) {
-	if err := s.mgr.UnassignTask(ctx, req.AgencyId, req.TaskId); err != nil {
+	taskID, err := s.resolveTaskID(ctx, req.AgencyId, req.TaskId, req.TaskName, req.ProjectName)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	if err := s.mgr.UnassignTask(ctx, req.AgencyId, taskID); err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.UnassignTaskResponse{}, nil

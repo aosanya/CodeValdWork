@@ -17,6 +17,7 @@ func TestWorkRoutes_StaticCapabilitySnapshot(t *testing.T) {
 		// Task lifecycle (Phase 1)
 		"create_task",
 		"list_tasks",
+		"search_tasks",
 		"get_task",
 		"update_task",
 		"delete_task",
@@ -36,6 +37,8 @@ func TestWorkRoutes_StaticCapabilitySnapshot(t *testing.T) {
 		"remove_task_from_project",
 		"list_tasks_in_project",
 		"list_projects_for_task",
+		// JSON import
+		"import_project",
 		// Generic graph relationships (WORK-009)
 		"create_relationship",
 		"delete_relationship",
@@ -89,6 +92,7 @@ func TestWorkRoutes_IsWriteFlags(t *testing.T) {
 		"delete_project":           true,
 		"add_task_to_project":      true,
 		"remove_task_from_project": true,
+		"import_project":           true,
 		"create_relationship":    true,
 		"delete_relationship":    true,
 	}
@@ -125,7 +129,7 @@ func TestWorkRoutes_PathBindingSpotChecks(t *testing.T) {
 			capability: "update_project",
 			want: []types.PathBinding{
 				{URLParam: "agencyId", Field: "agency_id"},
-				{URLParam: "projectId", Field: "project.id"},
+				{URLParam: "projectName", Field: "project.project_name"},
 			},
 		},
 		{

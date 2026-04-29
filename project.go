@@ -4,10 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
 )
+
+// taskPrefix returns the prefix to use when auto-generating task names for p.
+// If p.TaskPrefix is set it is used directly; otherwise it defaults to
+// "<projectName>-" (e.g. project "my_sprint" → "my_sprint-").
+func (p Project) effectiveTaskPrefix() string {
+	if p.TaskPrefix != "" {
+		return p.TaskPrefix
+	}
+	return p.ProjectName + "-"
+}
 
 // Project is an optional container that groups related tasks (e.g. a sprint,
 // a milestone, or an epic). Tasks become members via the `member_of`
@@ -23,6 +34,11 @@ type Project struct {
 	// Name is the short human-readable label. Required.
 	Name string
 
+	// ProjectName is the URL-safe slug derived from Name: lowercase with
+	// spaces replaced by underscores (e.g. "My Sprint" → "my_sprint").
+	// Set by the backend on creation; used as the URL path segment.
+	ProjectName string
+
 	// Description provides additional context for the project. Optional.
 	Description string
 
@@ -30,8 +46,10 @@ type Project struct {
 	// "owner/name" or a full https URL. Optional.
 	GithubRepo string
 
-	// DueAt is the target completion date for the project. Optional.
-	DueAt *time.Time
+	// TaskPrefix is prepended to the auto-generated task name counter when
+	// tasks are created via CreateTaskInProject (e.g. "MVP-" → "MVP-001").
+	// If empty, defaults to "<projectName>-" at creation time.
+	TaskPrefix string
 
 	// CreatedAt is the UTC timestamp when the project was first created.
 	CreatedAt time.Time
@@ -40,18 +58,22 @@ type Project struct {
 	UpdatedAt time.Time
 }
 
+// toSlug converts a project name to a URL-safe slug: lowercase with spaces
+// replaced by underscores — matching the git repository name convention.
+func toSlug(name string) string {
+	return strings.ToLower(strings.ReplaceAll(name, " ", "_"))
+}
+
 // projectToProperties serialises a Project into the property map stored on
 // its entitygraph Entity. Time fields are encoded as RFC 3339 strings.
 func projectToProperties(p Project) map[string]any {
-	props := map[string]any{
+	return map[string]any{
 		"name":        p.Name,
+		"projectName": p.ProjectName,
 		"description": p.Description,
 		"githubRepo":  p.GithubRepo,
+		"taskPrefix":  p.TaskPrefix,
 	}
-	if p.DueAt != nil && !p.DueAt.IsZero() {
-		props["dueAt"] = p.DueAt.UTC().Format(time.RFC3339Nano)
-	}
-	return props
 }
 
 // projectFromEntity reconstructs a Project from an entitygraph Entity.
@@ -65,16 +87,21 @@ func projectFromEntity(e entitygraph.Entity) Project {
 	if v, ok := e.Properties["name"].(string); ok {
 		p.Name = v
 	}
+	if v, ok := e.Properties["projectName"].(string); ok {
+		p.ProjectName = v
+	}
 	if v, ok := e.Properties["description"].(string); ok {
 		p.Description = v
 	}
 	if v, ok := e.Properties["githubRepo"].(string); ok {
 		p.GithubRepo = v
 	}
-	if v, ok := e.Properties["dueAt"].(string); ok && v != "" {
-		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
-			p.DueAt = &ts
-		}
+	if v, ok := e.Properties["taskPrefix"].(string); ok {
+		p.TaskPrefix = v
+	}
+	// Backfill slug for projects created before this field was added.
+	if p.ProjectName == "" && p.Name != "" {
+		p.ProjectName = toSlug(p.Name)
 	}
 	return p
 }
@@ -88,6 +115,7 @@ func (m *taskManager) CreateProject(ctx context.Context, agencyID string, p Proj
 		return Project{}, fmt.Errorf("%w: Project.Name is required", ErrInvalidTask)
 	}
 	p.AgencyID = agencyID
+	p.ProjectName = toSlug(p.Name)
 	created, err := m.dm.CreateEntity(ctx, entitygraph.CreateEntityRequest{
 		AgencyID:   agencyID,
 		TypeID:     projectTypeID,
@@ -119,8 +147,27 @@ func (m *taskManager) GetProject(ctx context.Context, agencyID, projectID string
 	return projectFromEntity(e), nil
 }
 
-// UpdateProject patches the mutable fields (Name, Description, GithubRepo,
-// DueAt) of an existing Project. Returns [ErrProjectNotFound] if the project
+// GetProjectByName retrieves a Project by its slug (projectName property).
+// Returns [ErrProjectNotFound] when no project with that slug exists.
+func (m *taskManager) GetProjectByName(ctx context.Context, agencyID, projectName string) (Project, error) {
+	entities, err := m.dm.ListEntities(ctx, entitygraph.EntityFilter{
+		AgencyID: agencyID,
+		TypeID:   projectTypeID,
+	})
+	if err != nil {
+		return Project{}, fmt.Errorf("GetProjectByName: %w", err)
+	}
+	for _, e := range entities {
+		p := projectFromEntity(e)
+		if p.ProjectName == projectName {
+			return p, nil
+		}
+	}
+	return Project{}, ErrProjectNotFound
+}
+
+// UpdateProject patches the mutable fields (Name, Description, GithubRepo)
+// of an existing Project. Returns [ErrProjectNotFound] if the project
 // does not exist.
 func (m *taskManager) UpdateProject(ctx context.Context, agencyID string, p Project) (Project, error) {
 	current, err := m.GetProject(ctx, agencyID, p.ID)
@@ -257,4 +304,50 @@ func (m *taskManager) ListProjectsForTask(ctx context.Context, agencyID, taskID 
 		out = append(out, p)
 	}
 	return out, nil
+}
+
+// GetTaskByName retrieves a task by its project-scoped taskName within a
+// project identified by projectName. Returns [ErrTaskNotFound] when no task
+// with that name exists in the project.
+func (m *taskManager) GetTaskByName(ctx context.Context, agencyID, projectName, taskName string) (Task, error) {
+	project, err := m.GetProjectByName(ctx, agencyID, projectName)
+	if err != nil {
+		return Task{}, fmt.Errorf("GetTaskByName: resolve project: %w", err)
+	}
+	tasks, err := m.ListTasksInProject(ctx, agencyID, project.ID)
+	if err != nil {
+		return Task{}, fmt.Errorf("GetTaskByName: list: %w", err)
+	}
+	for _, t := range tasks {
+		if t.TaskName == taskName {
+			return t, nil
+		}
+	}
+	return Task{}, ErrTaskNotFound
+}
+
+// CreateTaskInProject creates a task, auto-generates its taskName from the
+// project's task prefix, and writes the member_of edge — all in sequence.
+// The taskName counter is derived from the current number of tasks in the
+// project so it is simple and monotonically increasing (not guaranteed unique
+// under concurrent creation, which is acceptable for MVP).
+func (m *taskManager) CreateTaskInProject(ctx context.Context, agencyID, projectName string, task Task) (Task, error) {
+	project, err := m.GetProjectByName(ctx, agencyID, projectName)
+	if err != nil {
+		return Task{}, fmt.Errorf("CreateTaskInProject: resolve project: %w", err)
+	}
+	existing, err := m.ListTasksInProject(ctx, agencyID, project.ID)
+	if err != nil {
+		return Task{}, fmt.Errorf("CreateTaskInProject: count existing: %w", err)
+	}
+	task.TaskName = fmt.Sprintf("%s%03d", project.effectiveTaskPrefix(), len(existing)+1)
+
+	created, err := m.CreateTask(ctx, agencyID, task)
+	if err != nil {
+		return Task{}, fmt.Errorf("CreateTaskInProject: create task: %w", err)
+	}
+	if err := m.AddTaskToProject(ctx, agencyID, created.ID, project.ID); err != nil {
+		return Task{}, fmt.Errorf("CreateTaskInProject: add member: %w", err)
+	}
+	return created, nil
 }

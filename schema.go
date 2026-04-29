@@ -66,6 +66,8 @@ func taskTypeDefinition() types.TypeDefinition {
 			{Name: "context", Type: types.PropertyTypeString},
 			// completedAt is set by [TaskManager] when status reaches a terminal state.
 			{Name: "completedAt", Type: types.PropertyTypeDatetime},
+			// taskName is the project-scoped auto-generated name (e.g. "MVP-001").
+			{Name: "taskName", Type: types.PropertyTypeString},
 		},
 		Relationships: []types.RelationshipDefinition{
 			{
@@ -138,13 +140,15 @@ func projectTypeDefinition() types.TypeDefinition {
 		Properties: []types.PropertyDefinition{
 			// name is the short human-readable label. Required.
 			{Name: "name", Type: types.PropertyTypeString, Required: true},
+			// projectName is the URL-safe slug (lowercase, spaces→underscores).
+			{Name: "projectName", Type: types.PropertyTypeString},
 			// description provides additional context for the project.
 			{Name: "description", Type: types.PropertyTypeString},
 			// githubRepo is the canonical GitHub repository for the project,
 			// e.g. "owner/name" or a full https URL.
 			{Name: "githubRepo", Type: types.PropertyTypeString},
-			// dueAt is the target completion date for the project.
-			{Name: "dueAt", Type: types.PropertyTypeDatetime},
+			// taskPrefix is prepended to the counter when auto-generating task names.
+			{Name: "taskPrefix", Type: types.PropertyTypeString},
 		},
 	}
 }
