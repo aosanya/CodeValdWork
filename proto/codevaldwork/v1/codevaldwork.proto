@@ -42,7 +42,6 @@ message Task {
   string        id              = 1;
   string        agency_id       = 2;
   reserved 3;
-  reserved "title";
   string        description     = 4;
   TaskStatus    status          = 5;
   TaskPriority  priority        = 6;
@@ -61,6 +60,9 @@ message Task {
   // project_name is the URL-safe slug of the project this task belongs to.
   // Empty for tasks not in a project.
   string                    project_name    = 16;
+  // title is the short human-readable label for the task (e.g. "Farm Dashboard").
+  // Distinct from description, which carries the full implementation spec.
+  string                    title           = 17;
 }
 
 // TaskFilter is used in ListTasks to constrain results.

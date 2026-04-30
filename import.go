@@ -81,6 +81,7 @@ type importDoc struct {
 
 type importTask struct {
 	Name        string   `json:"name"`
+	Title       string   `json:"title"`
 	Priority    string   `json:"priority"`
 	DependsOn   []string `json:"depends_on"`
 	Description string   `json:"description"`
@@ -249,9 +250,11 @@ func (m *taskManager) runImport(ctx context.Context, agencyID, jobID, document s
 		}
 		entry.appendStep(fmt.Sprintf("Creating task %q…", it.Name))
 		t, err := m.CreateTask(ctx, agencyID, Task{
+			Title:       it.Title,
 			Priority:    parsePriority(it.Priority),
 			Description: it.Description,
-			Tags:        []string{it.Name},
+			TaskName:    it.Name,
+			ProjectName: proj.ProjectName,
 		})
 		if err != nil {
 			m.failImportJob(ctx, agencyID, jobID, fmt.Sprintf("create task %s: %v", it.Name, err))

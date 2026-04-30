@@ -119,6 +119,10 @@ type Task struct {
 	// status (completed, failed, or cancelled). Empty until then.
 	CompletedAt string `json:"completed_at,omitempty"`
 
+	// Title is the short human-readable label for the task (e.g. "Farm Dashboard").
+	// Distinct from Description, which carries the full implementation spec.
+	Title string `json:"title,omitempty"`
+
 	// TaskName is the project-scoped human-readable identifier auto-generated
 	// by CreateTaskInProject (e.g. "MVP-001"). Empty for tasks not in a project.
 	TaskName string `json:"task_name,omitempty"`

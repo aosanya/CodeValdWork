@@ -212,7 +212,10 @@ type Task struct {
 	TaskName string `protobuf:"bytes,15,opt,name=task_name,json=taskName,proto3" json:"task_name,omitempty"`
 	// project_name is the URL-safe slug of the project this task belongs to.
 	// Empty for tasks not in a project.
-	ProjectName   string `protobuf:"bytes,16,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
+	ProjectName string `protobuf:"bytes,16,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
+	// title is the short human-readable label for the task (e.g. "Farm Dashboard").
+	// Distinct from description, which carries the full implementation spec.
+	Title         string `protobuf:"bytes,17,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -341,6 +344,13 @@ func (x *Task) GetTaskName() string {
 func (x *Task) GetProjectName() string {
 	if x != nil {
 		return x.ProjectName
+	}
+	return ""
+}
+
+func (x *Task) GetTitle() string {
+	if x != nil {
+		return x.Title
 	}
 	return ""
 }
@@ -716,7 +726,7 @@ var File_codevaldwork_v1_codevaldwork_proto protoreflect.FileDescriptor
 
 const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
-	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xe4\x04\n" +
+	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xf3\x04\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12 \n" +
@@ -734,7 +744,8 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x0festimated_hours\x18\r \x01(\x01R\x0eestimatedHours\x12\x18\n" +
 	"\acontext\x18\x0e \x01(\tR\acontext\x12\x1b\n" +
 	"\ttask_name\x18\x0f \x01(\tR\btaskName\x12!\n" +
-	"\fproject_name\x18\x10 \x01(\tR\vprojectNameJ\x04\b\x03\x10\x04J\x04\b\a\x10\bR\x05titleR\vassigned_to\"\x8f\x01\n" +
+	"\fproject_name\x18\x10 \x01(\tR\vprojectName\x12\x14\n" +
+	"\x05title\x18\x11 \x01(\tR\x05titleJ\x04\b\x03\x10\x04J\x04\b\a\x10\bR\vassigned_to\"\x8f\x01\n" +
 	"\n" +
 	"TaskFilter\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +

@@ -44,6 +44,8 @@ func DefaultWorkSchema() types.Schema {
 				EntityIDParam:     "taskId",
 				StorageCollection: "work_tasks",
 				Properties: []types.PropertyDefinition{
+					// title is the short human-readable label (e.g. "Farm Dashboard").
+					{Name: "title", Type: types.PropertyTypeString},
 					// description provides additional context for the assigned agent.
 					{Name: "description", Type: types.PropertyTypeString},
 					// status is the current lifecycle state — see [TaskStatus].

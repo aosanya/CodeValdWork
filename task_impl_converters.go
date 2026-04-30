@@ -13,6 +13,7 @@ import "github.com/aosanya/CodeValdSharedLib/entitygraph"
 // written as explicit schema properties (ISO 8601 / RFC 3339 strings).
 func taskToProperties(t Task) map[string]any {
 	props := map[string]any{
+		"title":        t.Title,
 		"description":  t.Description,
 		"status":       string(t.Status),
 		"priority":     string(t.Priority),
@@ -48,6 +49,7 @@ func taskFromEntity(e entitygraph.Entity) Task {
 	t := Task{
 		ID:             e.ID,
 		AgencyID:       e.AgencyID,
+		Title:          entitygraph.StringProp(e.Properties, "title"),
 		Description:    entitygraph.StringProp(e.Properties, "description"),
 		Status:         TaskStatus(entitygraph.StringProp(e.Properties, "status")),
 		Priority:       TaskPriority(entitygraph.StringProp(e.Properties, "priority")),

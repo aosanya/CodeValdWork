@@ -126,6 +126,7 @@ func taskToProto(t codevaldwork.Task) *pb.Task {
 	pt := &pb.Task{
 		Id:             t.ID,
 		AgencyId:       t.AgencyID,
+		Title:          t.Title,
 		Description:    t.Description,
 		Status:         statusToProto(t.Status),
 		Priority:       priorityToProto(t.Priority),
@@ -165,6 +166,7 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 	t := codevaldwork.Task{
 		ID:             pt.Id,
 		AgencyID:       pt.AgencyId,
+		Title:          pt.Title,
 		Description:    pt.Description,
 		Status:         protoToStatus(pt.Status),
 		Priority:       protoToPriority(pt.Priority),

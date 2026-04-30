@@ -12,14 +12,14 @@ import (
 
 func TestDefaultWorkSchema_TypeNames(t *testing.T) {
 	s := DefaultWorkSchema()
-	if got, want := len(s.Types), 3; got != want {
+	if got, want := len(s.Types), 4; got != want {
 		t.Fatalf("len(Types) = %d, want %d", got, want)
 	}
 	got := make(map[string]bool, len(s.Types))
 	for _, td := range s.Types {
 		got[td.Name] = true
 	}
-	for _, want := range []string{"Task", "Project", "Agent"} {
+	for _, want := range []string{"Task", "Project", "Agent", "ImportProjectJob"} {
 		if !got[want] {
 			t.Errorf("missing TypeDefinition %q", want)
 		}
@@ -29,6 +29,7 @@ func TestDefaultWorkSchema_TypeNames(t *testing.T) {
 func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 	td := findType(t, DefaultWorkSchema(), "Task")
 	want := map[string]types.PropertyType{
+		"title":           types.PropertyTypeString,
 		"description":     types.PropertyTypeString,
 		"status":          types.PropertyTypeString,
 		"priority":        types.PropertyTypeString,

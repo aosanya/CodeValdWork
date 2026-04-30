@@ -1,0 +1,10 @@
+FOR r IN work_relationships REMOVE r IN work_relationships
+FOR g IN work_graph REMOVE g IN work_graph
+FOR gr IN work_groups REMOVE gr IN work_groups
+FOR a IN work_agents REMOVE a IN work_agents
+FOR ij IN work_import_jobs REMOVE ij IN work_import_jobs
+FOR p IN work_projects REMOVE p IN work_projects
+FOR t IN work_tasks REMOVE t IN work_tasks
+FOR e IN work_entities REMOVE e IN work_entities
+FOR sd IN work_schemas_draft REMOVE sd IN work_schemas_draft
+FOR sp IN work_schemas_published REMOVE sp IN work_schemas_published
