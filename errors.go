@@ -32,6 +32,10 @@ var ErrAgentAlreadyExists = errors.New("agent already exists")
 // for the given agencyID and entity ID.
 var ErrProjectNotFound = errors.New("project not found")
 
+// ErrTagNotFound is returned when a Tag vertex does not exist for the
+// given agencyID and entity ID.
+var ErrTagNotFound = errors.New("tag not found")
+
 // ErrProjectAlreadyExists is returned by [TaskManager.CreateProject]
 // when a Project with the same ID already exists in the agency.
 var ErrProjectAlreadyExists = errors.New("project already exists")

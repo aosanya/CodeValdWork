@@ -4,10 +4,11 @@
 // for CodeValdWork. cmd/server seeds this schema idempotently on startup via
 // entitygraph.SeedSchema (see internal/app).
 //
-// The schema declares four TypeDefinitions:
+// The schema declares five TypeDefinitions:
 //   - Task              — a unit of work assigned to an AI Agent (mutable)
 //   - Project           — optional container that groups related Tasks via `member_of` edges
 //   - Agent             — Work-domain projection of an AI agent; vertex for `assigned_to` edges
+//   - Tag               — free-form label attached to Tasks via `has_tag` edges
 //   - ImportProjectJob  — tracks async project-import operations
 //
 // Graph topology:
@@ -17,11 +18,13 @@
 //	Task ──blocks───────► Task
 //	Task ──subtask_of───► Task
 //	Task ──depends_on───► Task
+//	Task ──has_tag──────► Tag
 //
 // Storage:
 //   - Task             → "work_tasks"          document collection
 //   - Project          → "work_projects"       document collection
 //   - Agent            → "work_agents"         document collection
+//   - Tag              → "work_tags"           document collection
 //   - ImportProjectJob → "work_import_jobs"    document collection
 //   - All edges        → "work_relationships"  edge collection
 package codevaldwork
@@ -68,6 +71,10 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "task_name", Type: types.PropertyTypeString},
 					// project_name is the URL-safe slug of the project this task belongs to.
 					{Name: "project_name", Type: types.PropertyTypeString},
+					// separate_branch indicates whether this task should be worked on in its own git branch.
+					{Name: "separate_branch", Type: types.PropertyTypeBoolean},
+					// branch_name is the git branch to create/use for this task (e.g. "feature/SF-001_scaffolding").
+					{Name: "branch_name", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},
@@ -130,6 +137,17 @@ func DefaultWorkSchema() types.Schema {
 							{Name: "added_at", Type: types.PropertyTypeString},
 						},
 					},
+					{
+						Name:        RelLabelHasTag,
+						Label:       "Has tag",
+						PathSegment: "tags",
+						ToType:      "Tag",
+						ToMany:      true,
+						Inverse:     "tagged_tasks",
+						Properties: []types.PropertyDefinition{
+							{Name: "tagged_at", Type: types.PropertyTypeString},
+						},
+					},
 				},
 			},
 			{
@@ -190,6 +208,34 @@ func DefaultWorkSchema() types.Schema {
 						ToType:      "Task",
 						ToMany:      true,
 						Inverse:     RelLabelAssignedTo,
+					},
+				},
+			},
+			{
+				Name:              "Tag",
+				DisplayName:       "Tag",
+				PathSegment:       "tags",
+				EntityIDParam:     "tagId",
+				StorageCollection: "work_tags",
+				UniqueKey:         []string{"name"},
+				Properties: []types.PropertyDefinition{
+					// name is the unique label text (e.g. "setup", "auth").
+					{Name: "name", Type: types.PropertyTypeString, Required: true},
+					// color is an optional hex/CSS color for UI rendering.
+					{Name: "color", Type: types.PropertyTypeString},
+					// description provides additional context for the tag.
+					{Name: "description", Type: types.PropertyTypeString},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
+				},
+				Relationships: []types.RelationshipDefinition{
+					{
+						Name:        "tagged_tasks",
+						Label:       "Tagged Tasks",
+						PathSegment: "tasks",
+						ToType:      "Task",
+						ToMany:      true,
+						Inverse:     RelLabelHasTag,
 					},
 				},
 			},

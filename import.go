@@ -84,6 +84,7 @@ type importTask struct {
 	Title       string   `json:"title"`
 	Priority    string   `json:"priority"`
 	DependsOn   []string `json:"depends_on"`
+	Tags        []string `json:"tags"`
 	Description string   `json:"description"`
 }
 
@@ -255,6 +256,7 @@ func (m *taskManager) runImport(ctx context.Context, agencyID, jobID, document s
 			Description: it.Description,
 			TaskName:    it.Name,
 			ProjectName: proj.ProjectName,
+			Tags:        it.Tags,
 		})
 		if err != nil {
 			m.failImportJob(ctx, agencyID, jobID, fmt.Sprintf("create task %s: %v", it.Name, err))
@@ -293,6 +295,51 @@ func (m *taskManager) runImport(ctx context.Context, agencyID, jobID, document s
 				return
 			}
 			depsCreated++
+		}
+	}
+
+	entry.appendStep("Writing tag entities and edges…")
+	// tagIDMap maps tag name → entity ID, built once to avoid duplicate upserts.
+	tagIDMap := make(map[string]string)
+	for _, it := range doc.Tasks {
+		for _, tagName := range it.Tags {
+			if _, seen := tagIDMap[tagName]; seen {
+				continue
+			}
+			now := time.Now().UTC().Format(time.RFC3339)
+			tagEntity, err := m.dm.UpsertEntity(ctx, entitygraph.CreateEntityRequest{
+				AgencyID: agencyID,
+				TypeID:   tagTypeID,
+				Properties: map[string]any{
+					"name":       tagName,
+					"created_at": now,
+					"updated_at": now,
+				},
+			})
+			if err != nil {
+				m.failImportJob(ctx, agencyID, jobID, fmt.Sprintf("upsert tag %q: %v", tagName, err))
+				return
+			}
+			tagIDMap[tagName] = tagEntity.ID
+		}
+	}
+	for _, it := range doc.Tasks {
+		shortKey := strings.TrimPrefix(it.Name, doc.TaskPrefix)
+		taskID := idMap[shortKey]
+		for _, tagName := range it.Tags {
+			tagID := tagIDMap[tagName]
+			_, err := m.CreateRelationship(ctx, agencyID, Relationship{
+				Label:  RelLabelHasTag,
+				FromID: taskID,
+				ToID:   tagID,
+				Properties: map[string]any{
+					"tagged_at": time.Now().UTC().Format(time.RFC3339),
+				},
+			})
+			if err != nil {
+				m.failImportJob(ctx, agencyID, jobID, fmt.Sprintf("has_tag %s→%q: %v", it.Name, tagName, err))
+				return
+			}
 		}
 	}
 

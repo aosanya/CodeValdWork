@@ -76,6 +76,9 @@ const (
 
 	// RelLabelMemberOf links a Task to a Project. Project membership is many-to-many.
 	RelLabelMemberOf = "member_of"
+
+	// RelLabelHasTag links a Task to a Tag. Tagging is many-to-many.
+	RelLabelHasTag = "has_tag"
 )
 
 // relationshipFromEntitygraph adapts a SharedLib edge into the Work-domain
@@ -111,6 +114,7 @@ var relationshipEndpointTypes = map[string]struct {
 	RelLabelSubtaskOf:  {fromType: taskTypeID, toType: taskTypeID},
 	RelLabelDependsOn:  {fromType: taskTypeID, toType: taskTypeID},
 	RelLabelMemberOf:   {fromType: taskTypeID, toType: projectTypeID},
+	RelLabelHasTag:     {fromType: taskTypeID, toType: tagTypeID},
 }
 
 // notFoundForType returns the typed sentinel error for a vertex TypeID.
@@ -122,6 +126,8 @@ func notFoundForType(typeID string) error {
 		return ErrAgentNotFound
 	case projectTypeID:
 		return ErrProjectNotFound
+	case tagTypeID:
+		return ErrTagNotFound
 	default:
 		return entitygraph.ErrEntityNotFound
 	}

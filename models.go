@@ -4,6 +4,7 @@
 //   - Task    — a unit of work assigned to an AI Agent
 //   - Agent   — Work-domain projection of an AI agent
 //   - Project — optional container that groups related Tasks
+//   - Tag     — free-form label attached to Tasks via `has_tag` edges
 //
 // All domain structs use string timestamps (ISO 8601 / RFC 3339) to match
 // the entitygraph property storage convention used across the CodeVald platform.
@@ -261,6 +262,31 @@ type Project struct {
 	TaskPrefix string `json:"task_prefix,omitempty"`
 
 	// CreatedAt is the RFC 3339 timestamp when the project was first created.
+	CreatedAt string `json:"created_at"`
+
+	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.
+	UpdatedAt string `json:"updated_at"`
+}
+
+// Tag is a free-form label that can be attached to Tasks via `has_tag` graph
+// edges. Tags are unique by name within an agency (UniqueKey: ["name"]).
+type Tag struct {
+	// ID is the entity-graph storage key — opaque to callers.
+	ID string `json:"id"`
+
+	// AgencyID is the agency that owns this tag.
+	AgencyID string `json:"agency_id"`
+
+	// Name is the unique label text (e.g. "setup", "auth"). Required.
+	Name string `json:"name"`
+
+	// Color is an optional hex/CSS color hint for UI rendering.
+	Color string `json:"color,omitempty"`
+
+	// Description provides additional context for the tag. Optional.
+	Description string `json:"description,omitempty"`
+
+	// CreatedAt is the RFC 3339 timestamp when the tag was first created.
 	CreatedAt string `json:"created_at"`
 
 	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.

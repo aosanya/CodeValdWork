@@ -62,7 +62,9 @@ func (m *taskManager) GetTask(ctx context.Context, agencyID, taskID string) (Tas
 	if e.AgencyID != agencyID || e.TypeID != taskTypeID {
 		return Task{}, ErrTaskNotFound
 	}
-	return taskFromEntity(e), nil
+	t := taskFromEntity(e)
+	t.Tags = m.loadTagNames(ctx, agencyID, t.ID)
+	return t, nil
 }
 
 // UpdateTask validates the requested status transition then patches the
@@ -170,9 +172,32 @@ func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter Tas
 
 	tasks := make([]Task, 0, len(entities))
 	for _, e := range entities {
-		tasks = append(tasks, taskFromEntity(e))
+		t := taskFromEntity(e)
+		t.Tags = m.loadTagNames(ctx, agencyID, t.ID)
+		tasks = append(tasks, t)
 	}
 	return tasks, nil
+}
+
+// loadTagNames traverses outbound has_tag edges from taskID and returns the
+// name of each linked Tag entity. Errors are silently swallowed — a missing
+// or unreadable tag is omitted rather than failing the parent call.
+func (m *taskManager) loadTagNames(ctx context.Context, agencyID, taskID string) []string {
+	edges, err := m.TraverseRelationships(ctx, agencyID, taskID, RelLabelHasTag, DirectionOutbound)
+	if err != nil || len(edges) == 0 {
+		return nil
+	}
+	names := make([]string, 0, len(edges))
+	for _, edge := range edges {
+		tagEntity, err := m.dm.GetEntity(ctx, agencyID, edge.ToID)
+		if err != nil {
+			continue
+		}
+		if name := entitygraph.StringProp(tagEntity.Properties, "name"); name != "" {
+			names = append(names, name)
+		}
+	}
+	return names
 }
 
 // publish emits a typed [eventbus.Event] via the optional Publisher.

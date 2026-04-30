@@ -34,6 +34,9 @@ const projectTypeID = "Project"
 // agentTypeID is the TypeDefinition.Name used for Agent entities.
 const agentTypeID = "Agent"
 
+// tagTypeID is the TypeDefinition.Name used for Tag entities.
+const tagTypeID = "Tag"
+
 // TaskManager is the primary interface for task lifecycle management.
 // All operations are scoped to the manager's agencyID, fixed at construction.
 //

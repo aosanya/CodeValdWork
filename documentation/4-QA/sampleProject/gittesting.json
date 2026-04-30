@@ -7,6 +7,9 @@
       "title": "Project Scaffolding",
       "priority": "critical",
       "depends_on": [],
+      "tags": ["setup", "scaffolding", "infrastructure", "flutter"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-001_scaffolding",
       "description": "flutter create sharedfarms; pubspec.yaml with flutter_riverpod, go_router, http, hive_flutter, firebase_messaging, connectivity_plus; analysis_options.yaml with flutter_lints; folder structure: lib/core/, lib/features/, lib/models/, lib/shared/; core/network/api_client.dart — single HTTP client, no raw http.get in widget code; core/config/config.dart; core/errors/errors.dart; initial commit on feature/SF-001_scaffolding"
     },
     {
@@ -16,6 +19,9 @@
       "depends_on": [
         "001"
       ],
+      "tags": ["auth", "security", "jwt", "user-management"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-002_auth-registration-login",
       "description": "features/auth/ — registration screen (name, phone/email, password), login screen, AuthNotifier (Riverpod AsyncNotifier), ApiClient.register + ApiClient.login; JWT token stored in secure storage; GoRouter redirect guard (/login if unauthenticated); farm profile creation on first login (farm name, location, size, primary crops grown); support for multiple farms per user"
     },
     {
@@ -25,6 +31,9 @@
       "depends_on": [
         "002"
       ],
+      "tags": ["dashboard", "ui", "weather", "home-screen"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-003_farm-dashboard",
       "description": "features/dashboard/ — home screen after login; active crops summary (name, stage, days since planting); upcoming tasks due within 7 days; weather widget (temperature and rain forecast via third-party only — no custom forecasting); shortcut to nearby shared resources; DashboardNotifier; pull-to-refresh; stale data shown during refresh; overdue tasks highlighted"
     },
     {
@@ -34,6 +43,9 @@
       "depends_on": [
         "002"
       ],
+      "tags": ["crops", "tracking", "data-entry", "history"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-004_crop-tracking",
       "description": "features/crops/ — create crop entry (type, variety, plot/area, planting date); log milestones (germination, flowering, pest/disease, irrigation, fertilisation); record harvest (date, quantity, unit: kg/bags/tonnes); chronological crop history per entry; statuses: active, harvested, failed; CropNotifier; table-driven widget and provider tests"
     },
     {
@@ -43,6 +55,9 @@
       "depends_on": [
         "002"
       ],
+      "tags": ["resources", "sharing", "community", "loan-management"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-005_shared-resource-management",
       "description": "features/resources/ — list owned resource (name, category: tractor/pump/storage/etc., availability window, fee notes); browse nearby resources filtered by category; send / accept / decline resource requests with date range; active loans view (borrower, duration, return status); mark loan as returned to close cycle; ResourceNotifier (AsyncNotifier)"
     },
     {
@@ -52,6 +67,9 @@
       "depends_on": [
         "002"
       ],
+      "tags": ["tasks", "scheduling", "notifications", "planning"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-006_task-scheduling",
       "description": "features/tasks/ — create task (title, description, assignee, due date, priority: low/medium/high); statuses: pending, in_progress, completed, cancelled; validate status transitions; 24-hour local push notification reminder via flutter_local_notifications; overdue task highlighting surfaced to dashboard; TaskNotifier"
     },
     {
@@ -61,6 +79,9 @@
       "depends_on": [
         "002"
       ],
+      "tags": ["marketplace", "listings", "commerce", "produce"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-007_marketplace",
       "description": "features/marketplace/ — create produce listing (crop type, quantity, unit, asking price, location, available-from date); browse all listings filtered by crop type and distance; express buyer interest; seller confirms buyer; statuses: active, sold, archived; client-side auto-archive filter past available-from date; MarketplaceNotifier"
     },
     {
@@ -70,6 +91,9 @@
       "depends_on": [
         "002"
       ],
+      "tags": ["feed", "social", "community", "media"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-008_community-feed",
       "description": "features/feed/ — post text update, photo, or tip scoped to region or platform-wide; like and comment on posts; delete own posts and comments; FeedNotifier; paginated list with infinite scroll; image picker for photo posts; empty and error states"
     },
     {
@@ -79,6 +103,9 @@
       "depends_on": [
         "001"
       ],
+      "tags": ["notifications", "push", "fcm", "in-app"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-009_notifications",
       "description": "core/notifications/ — FCM push integration (Android v1; iOS deferred); in-app notification centre with read/unread state; per-type preference settings; push event types: resource request received/accepted/declined, task due reminder (24 h before), marketplace interest received on listing, new comment on farmer's post; NotificationNotifier"
     },
     {
@@ -91,6 +118,9 @@
         "005",
         "006"
       ],
+      "tags": ["offline", "sync", "cache", "connectivity"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-010_offline-support",
       "description": "Hive/Isar local cache for dashboard, crops, tasks, and resource listings; offline banner widget when connectivity unavailable (connectivity_plus); write queue: mutations recorded locally and synced on reconnect; OfflineSyncService runs in background on reconnect; all providers fall back to cached data gracefully; offline banner dismissed automatically on reconnect"
     },
     {
@@ -108,6 +138,9 @@
         "009",
         "010"
       ],
+      "tags": ["testing", "qa", "accessibility", "polish"],
+      "separate_branch": true,
+      "branch_name": "feature/SF-011_polish-and-testing",
       "description": "Table-driven unit tests for all Notifier classes with mocked ApiClient; widget tests for key screens (auth, dashboard, crop list, task list); flutter analyze 0 issues; dart format applied before every commit; loading skeletons and error/empty states on all screens; accessibility labels on all interactive widgets; GoRouter deep-link smoke tests"
     }
   ]

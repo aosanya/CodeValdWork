@@ -79,6 +79,33 @@ func taskFromEntity(e entitygraph.Entity) Task {
 	return t
 }
 
+// ── Tag ───────────────────────────────────────────────────────────────────────
+
+// tagToProperties serialises a Tag into the property map stored on its
+// entitygraph Entity.
+func tagToProperties(t Tag) map[string]any {
+	return map[string]any{
+		"name":        t.Name,
+		"color":       t.Color,
+		"description": t.Description,
+		"created_at":  t.CreatedAt,
+		"updated_at":  t.UpdatedAt,
+	}
+}
+
+// tagFromEntity reconstructs a Tag from an entitygraph Entity.
+func tagFromEntity(e entitygraph.Entity) Tag {
+	return Tag{
+		ID:          e.ID,
+		AgencyID:    e.AgencyID,
+		Name:        entitygraph.StringProp(e.Properties, "name"),
+		Color:       entitygraph.StringProp(e.Properties, "color"),
+		Description: entitygraph.StringProp(e.Properties, "description"),
+		CreatedAt:   entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:   entitygraph.StringProp(e.Properties, "updated_at"),
+	}
+}
+
 // ── Agent ─────────────────────────────────────────────────────────────────────
 
 // agentToProperties serialises an Agent into the property map stored on its
