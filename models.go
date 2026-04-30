@@ -128,6 +128,63 @@ type Task struct {
 	ProjectName string `json:"project_name,omitempty"`
 }
 
+// ImportResult is returned by [TaskManager.ImportProject].
+type ImportResult struct {
+	// Project is the newly created Project vertex.
+	Project Project
+
+	// Tasks are the Task vertices created in document order.
+	Tasks []Task
+
+	// DepsCreated is the number of depends_on edges written between tasks.
+	DepsCreated int
+
+	// TasksCreated is the number of Task vertices created (len(Tasks)).
+	TasksCreated int
+}
+
+// ImportProjectJob tracks an async project-import operation started by
+// [TaskManager.StartImportProject]. Status transitions:
+//
+//	pending → running → completed | failed | cancelled
+type ImportProjectJob struct {
+	// ID is the entity-graph storage key for this job.
+	ID string `json:"id"`
+
+	// AgencyID is the agency that owns this import job.
+	AgencyID string `json:"agency_id"`
+
+	// Status is the current lifecycle state ("pending", "running",
+	// "completed", "failed", "cancelled").
+	Status string `json:"status"`
+
+	// ErrorMessage is set when Status is "failed".
+	ErrorMessage string `json:"error_message,omitempty"`
+
+	// ProgressSteps are in-memory log lines captured while the job goroutine
+	// is running. Not persisted — only present in [GetImportProjectStatus]
+	// responses while the goroutine is alive.
+	ProgressSteps []string `json:"progress_steps,omitempty"`
+
+	// TasksCreated is the number of Task vertices written. Populated once the
+	// job reaches "completed".
+	TasksCreated int `json:"tasks_created,omitempty"`
+
+	// DepsCreated is the number of depends_on edges written. Populated once
+	// the job reaches "completed".
+	DepsCreated int `json:"deps_created,omitempty"`
+
+	// ProjectName is the URL-safe slug of the project created by this import.
+	// Populated once the job reaches "completed".
+	ProjectName string `json:"project_name,omitempty"`
+
+	// CreatedAt is the RFC 3339 timestamp when the job was first created.
+	CreatedAt string `json:"created_at"`
+
+	// UpdatedAt is the RFC 3339 timestamp of the most recent status change.
+	UpdatedAt string `json:"updated_at"`
+}
+
 // TaskFilter constrains the results returned by [TaskManager.ListTasks].
 // Zero values mean "no filter" for that field — all values match.
 type TaskFilter struct {

@@ -4,10 +4,11 @@
 // for CodeValdWork. cmd/server seeds this schema idempotently on startup via
 // entitygraph.SeedSchema (see internal/app).
 //
-// The schema declares three TypeDefinitions:
-//   - Task    — a unit of work assigned to an AI Agent (mutable)
-//   - Project — optional container that groups related Tasks via `member_of` edges
-//   - Agent   — Work-domain projection of an AI agent; vertex for `assigned_to` edges
+// The schema declares four TypeDefinitions:
+//   - Task              — a unit of work assigned to an AI Agent (mutable)
+//   - Project           — optional container that groups related Tasks via `member_of` edges
+//   - Agent             — Work-domain projection of an AI agent; vertex for `assigned_to` edges
+//   - ImportProjectJob  — tracks async project-import operations
 //
 // Graph topology:
 //
@@ -18,10 +19,11 @@
 //	Task ──depends_on───► Task
 //
 // Storage:
-//   - Task    → "work_tasks"          document collection
-//   - Project → "work_projects"       document collection
-//   - Agent   → "work_agents"         document collection
-//   - All edges → "work_relationships" edge collection
+//   - Task             → "work_tasks"          document collection
+//   - Project          → "work_projects"       document collection
+//   - Agent            → "work_agents"         document collection
+//   - ImportProjectJob → "work_import_jobs"    document collection
+//   - All edges        → "work_relationships"  edge collection
 package codevaldwork
 
 import "github.com/aosanya/CodeValdSharedLib/types"
@@ -187,6 +189,23 @@ func DefaultWorkSchema() types.Schema {
 						ToMany:      true,
 						Inverse:     RelLabelAssignedTo,
 					},
+				},
+			},
+			{
+				Name:              "ImportProjectJob",
+				DisplayName:       "Import Project Job",
+				StorageCollection: "work_import_jobs",
+				Properties: []types.PropertyDefinition{
+					// status tracks the async lifecycle: pending, running, completed, failed, cancelled.
+					{Name: "status", Type: types.PropertyTypeString},
+					// error_message is populated when status is "failed".
+					{Name: "error_message", Type: types.PropertyTypeString},
+					// tasks_created is the number of Task vertices written on completion.
+					{Name: "tasks_created", Type: types.PropertyTypeNumber},
+					// deps_created is the number of depends_on edges written on completion.
+					{Name: "deps_created", Type: types.PropertyTypeNumber},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
 				},
 			},
 		},

@@ -1,4 +1,7 @@
-// task_impl_converters.go — entity↔domain converters and property helpers.
+// task_impl_converters.go — entity↔domain converters.
+//
+// Property helpers (StringProp, Float64Prop, …) live in
+// [github.com/aosanya/CodeValdSharedLib/entitygraph] and are used directly.
 package codevaldwork
 
 import "github.com/aosanya/CodeValdSharedLib/entitygraph"
@@ -45,17 +48,17 @@ func taskFromEntity(e entitygraph.Entity) Task {
 	t := Task{
 		ID:             e.ID,
 		AgencyID:       e.AgencyID,
-		Description:    strProp(e.Properties, "description"),
-		Status:         TaskStatus(strProp(e.Properties, "status")),
-		Priority:       TaskPriority(strProp(e.Properties, "priority")),
-		Context:        strProp(e.Properties, "context"),
-		DueAt:          strProp(e.Properties, "due_at"),
-		CompletedAt:    strProp(e.Properties, "completed_at"),
-		TaskName:       strProp(e.Properties, "task_name"),
-		ProjectName:    strProp(e.Properties, "project_name"),
-		CreatedAt:      strProp(e.Properties, "created_at"),
-		UpdatedAt:      strProp(e.Properties, "updated_at"),
-		EstimatedHours: float64Prop(e.Properties, "estimated_hours"),
+		Description:    entitygraph.StringProp(e.Properties, "description"),
+		Status:         TaskStatus(entitygraph.StringProp(e.Properties, "status")),
+		Priority:       TaskPriority(entitygraph.StringProp(e.Properties, "priority")),
+		Context:        entitygraph.StringProp(e.Properties, "context"),
+		DueAt:          entitygraph.StringProp(e.Properties, "due_at"),
+		CompletedAt:    entitygraph.StringProp(e.Properties, "completed_at"),
+		TaskName:       entitygraph.StringProp(e.Properties, "task_name"),
+		ProjectName:    entitygraph.StringProp(e.Properties, "project_name"),
+		CreatedAt:      entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:      entitygraph.StringProp(e.Properties, "updated_at"),
+		EstimatedHours: entitygraph.Float64Prop(e.Properties, "estimated_hours"),
 	}
 	if v, ok := e.Properties["tags"]; ok {
 		switch tags := v.(type) {
@@ -93,11 +96,11 @@ func agentFromEntity(e entitygraph.Entity) Agent {
 	return Agent{
 		ID:          e.ID,
 		AgencyID:    e.AgencyID,
-		AgentID:     strProp(e.Properties, "agent_id"),
-		DisplayName: strProp(e.Properties, "display_name"),
-		Capability:  strProp(e.Properties, "capability"),
-		CreatedAt:   strProp(e.Properties, "created_at"),
-		UpdatedAt:   strProp(e.Properties, "updated_at"),
+		AgentID:     entitygraph.StringProp(e.Properties, "agent_id"),
+		DisplayName: entitygraph.StringProp(e.Properties, "display_name"),
+		Capability:  entitygraph.StringProp(e.Properties, "capability"),
+		CreatedAt:   entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:   entitygraph.StringProp(e.Properties, "updated_at"),
 	}
 }
 
@@ -122,13 +125,13 @@ func projectFromEntity(e entitygraph.Entity) Project {
 	p := Project{
 		ID:          e.ID,
 		AgencyID:    e.AgencyID,
-		Name:        strProp(e.Properties, "name"),
-		ProjectName: strProp(e.Properties, "project_name"),
-		Description: strProp(e.Properties, "description"),
-		GithubRepo:  strProp(e.Properties, "github_repo"),
-		TaskPrefix:  strProp(e.Properties, "task_prefix"),
-		CreatedAt:   strProp(e.Properties, "created_at"),
-		UpdatedAt:   strProp(e.Properties, "updated_at"),
+		Name:        entitygraph.StringProp(e.Properties, "name"),
+		ProjectName: entitygraph.StringProp(e.Properties, "project_name"),
+		Description: entitygraph.StringProp(e.Properties, "description"),
+		GithubRepo:  entitygraph.StringProp(e.Properties, "github_repo"),
+		TaskPrefix:  entitygraph.StringProp(e.Properties, "task_prefix"),
+		CreatedAt:   entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:   entitygraph.StringProp(e.Properties, "updated_at"),
 	}
 	// Backfill slug for entities created before project_name was added.
 	if p.ProjectName == "" && p.Name != "" {
@@ -137,32 +140,3 @@ func projectFromEntity(e entitygraph.Entity) Project {
 	return p
 }
 
-// ── Property helpers ──────────────────────────────────────────────────────────
-
-// strProp returns the string value of key in props, or "" if absent or wrong type.
-func strProp(props map[string]any, key string) string {
-	if v, ok := props[key]; ok {
-		if s, ok := v.(string); ok {
-			return s
-		}
-	}
-	return ""
-}
-
-// float64Prop returns the float64 value of key in props, or 0 if absent.
-// Handles float64, float32, int, int64 (JSON decode / ArangoDB wire forms).
-func float64Prop(props map[string]any, key string) float64 {
-	if v, ok := props[key]; ok {
-		switch n := v.(type) {
-		case float64:
-			return n
-		case float32:
-			return float64(n)
-		case int:
-			return float64(n)
-		case int64:
-			return float64(n)
-		}
-	}
-	return 0
-}

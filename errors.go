@@ -48,9 +48,17 @@ var ErrInvalidRelationship = errors.New("invalid relationship")
 var ErrRelationshipNotFound = errors.New("relationship not found")
 
 // ErrInvalidImport is returned by [TaskManager.ImportProject] when the
-// supplied Markdown document cannot be parsed — for example, when the
-// expected "# MVP — <name>" heading is absent or no task rows are found.
+// supplied document cannot be parsed.
 var ErrInvalidImport = errors.New("invalid import: markdown document could not be parsed")
+
+// ErrImportJobNotFound is returned by [TaskManager.GetImportProjectStatus]
+// and [TaskManager.CancelImportProject] when no job with the given ID exists.
+var ErrImportJobNotFound = errors.New("import job not found")
+
+// ErrImportJobNotCancellable is returned by [TaskManager.CancelImportProject]
+// when the job has already reached a terminal state (completed, failed, or
+// cancelled).
+var ErrImportJobNotCancellable = errors.New("import job is not cancellable")
 
 // ErrBlocked is the sentinel returned by [TaskManager.UpdateTask] when a
 // pending → in_progress transition is rejected because the task has one or
