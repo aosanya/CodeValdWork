@@ -1,10 +1,6 @@
 package codevaldwork
 
-import "time"
-
-// Event topic constants — the closed set CodeValdWork publishes per
-// `architecture-domain.md §6`. Keep in sync with the `produces` list in
-// `internal/registrar/registrar.go`.
+// Event topic constants — the closed set CodeValdWork publishes.
 const (
 	// TopicTaskCreated fires after a Task entity is created.
 	// Payload: [TaskCreatedPayload].
@@ -19,9 +15,8 @@ const (
 	TopicTaskStatusChanged = "work.task.status.changed"
 
 	// TopicTaskCompleted fires when a transition reaches a terminal status
-	// (completed, failed, cancelled). It is published in addition to
-	// [TopicTaskStatusChanged], not instead of — subscribers may listen
-	// to either depending on their interest. Payload: [TaskCompletedPayload].
+	// (completed, failed, cancelled). Published in addition to
+	// [TopicTaskStatusChanged]. Payload: [TaskCompletedPayload].
 	TopicTaskCompleted = "work.task.completed"
 
 	// TopicTaskAssigned fires when an `assigned_to` edge is created or
@@ -33,9 +28,7 @@ const (
 	TopicRelationshipCreated = "work.relationship.created"
 )
 
-// AllTopics is the closed list of topics this service publishes. Used by
-// the registrar's `produces` declaration and by tests asserting every
-// topic is covered.
+// AllTopics is the closed list of topics this service publishes.
 func AllTopics() []string {
 	return []string{
 		TopicTaskCreated,
@@ -54,11 +47,6 @@ type TaskCreatedPayload struct {
 }
 
 // TaskUpdatedPayload is the [Event.Payload] for [TopicTaskUpdated].
-//
-// ChangedFields lists the property names that were observed to differ
-// between the prior and updated state. Status changes are reported
-// separately via [TopicTaskStatusChanged] and are NOT included here even
-// when status is part of the same UpdateTask call.
 type TaskUpdatedPayload struct {
 	TaskID        string
 	ChangedFields []string
@@ -75,7 +63,8 @@ type TaskStatusChangedPayload struct {
 type TaskCompletedPayload struct {
 	TaskID         string
 	TerminalStatus TaskStatus
-	CompletedAt    time.Time
+	// CompletedAt is the RFC 3339 timestamp when the terminal status was set.
+	CompletedAt string
 }
 
 // TaskAssignedPayload is the [Event.Payload] for [TopicTaskAssigned].

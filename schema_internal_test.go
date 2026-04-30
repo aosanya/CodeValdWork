@@ -3,7 +3,6 @@ package codevaldwork
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
 	"github.com/aosanya/CodeValdSharedLib/types"
@@ -30,16 +29,18 @@ func TestDefaultWorkSchema_TypeNames(t *testing.T) {
 func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 	td := findType(t, DefaultWorkSchema(), "Task")
 	want := map[string]types.PropertyType{
-		"description":    types.PropertyTypeString,
-		"status":         types.PropertyTypeOption,
-		"priority":       types.PropertyTypeOption,
-		"dueAt":          types.PropertyTypeDatetime,
-		"tags":           types.PropertyTypeArray,
-		"estimatedHours": types.PropertyTypeNumber,
-		"context":        types.PropertyTypeString,
-		"completedAt":    types.PropertyTypeDatetime,
-		"taskName":       types.PropertyTypeString,
-		"projectName":    types.PropertyTypeString,
+		"description":     types.PropertyTypeString,
+		"status":          types.PropertyTypeString,
+		"priority":        types.PropertyTypeString,
+		"due_at":          types.PropertyTypeString,
+		"tags":            types.PropertyTypeArray,
+		"estimated_hours": types.PropertyTypeNumber,
+		"context":         types.PropertyTypeString,
+		"completed_at":    types.PropertyTypeString,
+		"task_name":       types.PropertyTypeString,
+		"project_name":    types.PropertyTypeString,
+		"created_at":      types.PropertyTypeString,
+		"updated_at":      types.PropertyTypeString,
 	}
 	got := propTypes(td)
 	if !reflect.DeepEqual(got, want) {
@@ -65,11 +66,13 @@ func TestDefaultWorkSchema_ProjectShape(t *testing.T) {
 		t.Errorf("Project.PathSegment = %q, want %q", td.PathSegment, "projects")
 	}
 	want := map[string]types.PropertyType{
-		"name":        types.PropertyTypeString,
-		"projectName": types.PropertyTypeString,
-		"description": types.PropertyTypeString,
-		"githubRepo":  types.PropertyTypeString,
-		"taskPrefix":  types.PropertyTypeString,
+		"name":         types.PropertyTypeString,
+		"project_name": types.PropertyTypeString,
+		"description":  types.PropertyTypeString,
+		"github_repo":  types.PropertyTypeString,
+		"task_prefix":  types.PropertyTypeString,
+		"created_at":   types.PropertyTypeString,
+		"updated_at":   types.PropertyTypeString,
 	}
 	if got := propTypes(td); !reflect.DeepEqual(got, want) {
 		t.Errorf("Project property types mismatch:\n got=%v\nwant=%v", got, want)
@@ -88,86 +91,75 @@ func TestDefaultWorkSchema_AgentShape(t *testing.T) {
 		t.Errorf("Agent.PathSegment = %q, want %q", td.PathSegment, "agents")
 	}
 	want := map[string]types.PropertyType{
-		"agentID":     types.PropertyTypeString,
-		"displayName": types.PropertyTypeString,
-		"capability":  types.PropertyTypeString,
+		"agent_id":     types.PropertyTypeString,
+		"display_name": types.PropertyTypeString,
+		"capability":   types.PropertyTypeString,
+		"created_at":   types.PropertyTypeString,
+		"updated_at":   types.PropertyTypeString,
 	}
 	if got := propTypes(td); !reflect.DeepEqual(got, want) {
 		t.Errorf("Agent property types mismatch:\n got=%v\nwant=%v", got, want)
 	}
-	if !findProp(t, td, "agentID").Required {
-		t.Errorf("Agent.agentID must be Required")
+	if !findProp(t, td, "agent_id").Required {
+		t.Errorf("Agent.agent_id must be Required")
 	}
 }
 
-func TestDefaultWorkSchema_StatusOptionsMatchConstants(t *testing.T) {
+func TestDefaultWorkSchema_TaskRelationships_HaveInverse(t *testing.T) {
 	td := findType(t, DefaultWorkSchema(), "Task")
-	got := findProp(t, td, "status").Options
-	want := []string{
-		string(TaskStatusPending),
-		string(TaskStatusInProgress),
-		string(TaskStatusCompleted),
-		string(TaskStatusFailed),
-		string(TaskStatusCancelled),
+	inverses := map[string]string{
+		RelLabelAssignedTo: "assigned_tasks",
+		RelLabelBlocks:     "blocked_by",
+		RelLabelSubtaskOf:  "has_subtask",
+		RelLabelDependsOn:  "depended_on_by",
+		RelLabelMemberOf:   "has_task",
 	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("status Options = %v, want %v", got, want)
-	}
-}
-
-func TestDefaultWorkSchema_PriorityOptionsMatchConstants(t *testing.T) {
-	td := findType(t, DefaultWorkSchema(), "Task")
-	got := findProp(t, td, "priority").Options
-	want := []string{
-		string(TaskPriorityLow),
-		string(TaskPriorityMedium),
-		string(TaskPriorityHigh),
-		string(TaskPriorityCritical),
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("priority Options = %v, want %v", got, want)
+	for _, rel := range td.Relationships {
+		want, ok := inverses[rel.Name]
+		if !ok {
+			continue
+		}
+		if rel.Inverse != want {
+			t.Errorf("Task.%s Inverse = %q, want %q", rel.Name, rel.Inverse, want)
+		}
 	}
 }
 
 // ── taskToProperties ─────────────────────────────────────────────────────────
 
-func TestTaskToProperties_DropsEntityTimestampKeys(t *testing.T) {
-	now := time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC)
-	props := taskToProperties(Task{
-		CreatedAt: now,
-		UpdatedAt: now,
-	})
+func TestTaskToProperties_IncludesTimestamps(t *testing.T) {
+	in := Task{
+		CreatedAt: "2026-04-01T10:00:00Z",
+		UpdatedAt: "2026-04-01T10:00:00Z",
+	}
+	props := taskToProperties(in)
 	for _, key := range []string{"created_at", "updated_at"} {
-		if _, ok := props[key]; ok {
-			t.Errorf("taskToProperties wrote %q — entity timestamps must come from entitygraph.Entity, not properties", key)
+		if _, ok := props[key]; !ok {
+			t.Errorf("taskToProperties missing %q — timestamps must be explicit schema properties", key)
 		}
 	}
 }
 
 func TestTaskToProperties_RoundTrip_RichFields(t *testing.T) {
-	due := time.Date(2026, 5, 1, 10, 0, 0, 0, time.UTC)
-	completed := time.Date(2026, 4, 30, 9, 0, 0, 0, time.UTC)
 	in := Task{
 		ID:             "task-1",
 		AgencyID:       "agency-1",
 		Description:    "World",
 		Status:         TaskStatusInProgress,
 		Priority:       TaskPriorityHigh,
-		DueAt:          &due,
+		DueAt:          "2026-05-01T10:00:00Z",
 		Tags:           []string{"alpha", "beta"},
 		EstimatedHours: 4.5,
 		Context:        "agent memory blob",
-		CompletedAt:    &completed,
-		CreatedAt:      time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
-		UpdatedAt:      time.Date(2026, 4, 2, 0, 0, 0, 0, time.UTC),
+		CompletedAt:    "2026-04-30T09:00:00Z",
+		CreatedAt:      "2026-04-01T00:00:00Z",
+		UpdatedAt:      "2026-04-02T00:00:00Z",
 	}
 	e := entitygraph.Entity{
 		ID:         in.ID,
 		AgencyID:   in.AgencyID,
 		TypeID:     taskTypeID,
 		Properties: taskToProperties(in),
-		CreatedAt:  in.CreatedAt,
-		UpdatedAt:  in.UpdatedAt,
 	}
 	out := taskFromEntity(e)
 	if !reflect.DeepEqual(out, in) {
@@ -176,18 +168,17 @@ func TestTaskToProperties_RoundTrip_RichFields(t *testing.T) {
 }
 
 func TestTaskFromEntity_AcceptsJSONDecodedTagsAndNumber(t *testing.T) {
-	// Simulate the wire form returned by the ArangoDB backend after JSON decode.
 	e := entitygraph.Entity{
 		ID:       "task-1",
 		AgencyID: "agency-1",
 		TypeID:   taskTypeID,
 		Properties: map[string]any{
-			"description":    "",
-			"status":         "pending",
-			"priority":       "medium",
-			"context":        "",
-			"tags":           []any{"a", "b", "c"},
-			"estimatedHours": 2.0,
+			"description":     "",
+			"status":          "pending",
+			"priority":        "medium",
+			"context":         "",
+			"tags":            []any{"a", "b", "c"},
+			"estimated_hours": 2.0,
 		},
 	}
 	out := taskFromEntity(e)
@@ -209,16 +200,14 @@ func TestProjectToProperties_RoundTrip(t *testing.T) {
 		ProjectName: "sprint_14",
 		Description: "Push X out the door",
 		GithubRepo:  "aosanya/CodeValdWork",
-		CreatedAt:   time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
-		UpdatedAt:   time.Date(2026, 4, 2, 0, 0, 0, 0, time.UTC),
+		CreatedAt:   "2026-04-01T00:00:00Z",
+		UpdatedAt:   "2026-04-02T00:00:00Z",
 	}
 	e := entitygraph.Entity{
 		ID:         in.ID,
 		AgencyID:   in.AgencyID,
 		TypeID:     "Project",
 		Properties: projectToProperties(in),
-		CreatedAt:  in.CreatedAt,
-		UpdatedAt:  in.UpdatedAt,
 	}
 	out := projectFromEntity(e)
 	if !reflect.DeepEqual(out, in) {
@@ -233,16 +222,14 @@ func TestAgentToProperties_RoundTrip(t *testing.T) {
 		AgentID:     "ai-bot-7",
 		DisplayName: "Bot 7",
 		Capability:  "code",
-		CreatedAt:   time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
-		UpdatedAt:   time.Date(2026, 4, 2, 0, 0, 0, 0, time.UTC),
+		CreatedAt:   "2026-04-01T00:00:00Z",
+		UpdatedAt:   "2026-04-02T00:00:00Z",
 	}
 	e := entitygraph.Entity{
 		ID:         in.ID,
 		AgencyID:   in.AgencyID,
 		TypeID:     "Agent",
 		Properties: agentToProperties(in),
-		CreatedAt:  in.CreatedAt,
-		UpdatedAt:  in.UpdatedAt,
 	}
 	out := agentFromEntity(e)
 	if !reflect.DeepEqual(out, in) {

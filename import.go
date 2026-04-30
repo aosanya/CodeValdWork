@@ -21,32 +21,24 @@ type ImportResult struct {
 }
 
 // importDoc is the JSON schema for a project import document.
-// DueAt is intentionally absent — imported tasks start with no deadline.
 type importDoc struct {
 	Project    string       `json:"project"`
-	TaskPrefix string       `json:"task_prefix"` // e.g. "MVP-SF"; prefixed onto each task id as the stored tag
+	TaskPrefix string       `json:"task_prefix"`
 	Tasks      []importTask `json:"tasks"`
 }
 
 type importTask struct {
-	Name        string   `json:"name"`        // full prefixed name, e.g. "MVP-SF-001"
-	Priority    string   `json:"priority"`    // "low"|"medium"|"high"|"critical"; default medium
-	DependsOn   []string `json:"depends_on"`  // short IDs of prerequisite tasks, e.g. "001"
+	Name        string   `json:"name"`
+	Priority    string   `json:"priority"`
+	DependsOn   []string `json:"depends_on"`
 	Description string   `json:"description"`
 }
 
 // ImportProject parses a JSON document describing a project and creates:
-//   - one Project vertex (name from the "project" field)
-//   - one Task vertex per entry in "tasks" (always starts as pending)
+//   - one Project vertex
+//   - one Task vertex per entry in "tasks"
 //   - one member_of edge per Task pointing to the Project
-//   - depends_on edges for each entry in a task's "depends_on" array whose
-//     referenced ID is present in the same document
-//
-// The task "name" field carries the full prefixed name (e.g. "MVP-SF-001").
-// The "task_prefix" is stripped from each name to derive the short key used
-// by "depends_on" entries (e.g. "001").
-//
-// Returns [ErrInvalidImport] when the document is malformed or empty.
+//   - depends_on edges for each entry in a task's "depends_on" array
 func (m *taskManager) ImportProject(ctx context.Context, agencyID, document string) (ImportResult, error) {
 	var doc importDoc
 	if err := json.Unmarshal([]byte(document), &doc); err != nil {
@@ -69,7 +61,6 @@ func (m *taskManager) ImportProject(ctx context.Context, agencyID, document stri
 		return ImportResult{}, fmt.Errorf("ImportProject: create project: %w", err)
 	}
 
-	// shortKey (e.g. "001") → entity ID assigned by the graph
 	idMap := make(map[string]string, len(doc.Tasks))
 	tasks := make([]Task, 0, len(doc.Tasks))
 
@@ -98,14 +89,14 @@ func (m *taskManager) ImportProject(ctx context.Context, agencyID, document stri
 		for _, depShortID := range it.DependsOn {
 			toID, ok := idMap[depShortID]
 			if !ok {
-				continue // dependency not in this document — skip
+				continue
 			}
 			_, err := m.CreateRelationship(ctx, agencyID, Relationship{
 				Label:  RelLabelDependsOn,
 				FromID: fromID,
 				ToID:   toID,
 				Properties: map[string]any{
-					"createdAt": time.Now().UTC().Format(time.RFC3339Nano),
+					"created_at": time.Now().UTC().Format(time.RFC3339),
 				},
 			})
 			if err != nil {

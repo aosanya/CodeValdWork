@@ -6,6 +6,7 @@ package server
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -133,14 +134,26 @@ func taskToProto(t codevaldwork.Task) *pb.Task {
 		Context:        t.Context,
 		TaskName:       t.TaskName,
 		ProjectName:    t.ProjectName,
-		CreatedAt:      timestamppb.New(t.CreatedAt),
-		UpdatedAt:      timestamppb.New(t.UpdatedAt),
 	}
-	if t.CompletedAt != nil {
-		pt.CompletedAt = timestamppb.New(*t.CompletedAt)
+	if t.CreatedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, t.CreatedAt); err == nil {
+			pt.CreatedAt = timestamppb.New(ts)
+		}
 	}
-	if t.DueAt != nil {
-		pt.DueAt = timestamppb.New(*t.DueAt)
+	if t.UpdatedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, t.UpdatedAt); err == nil {
+			pt.UpdatedAt = timestamppb.New(ts)
+		}
+	}
+	if t.CompletedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, t.CompletedAt); err == nil {
+			pt.CompletedAt = timestamppb.New(ts)
+		}
+	}
+	if t.DueAt != "" {
+		if ts, err := time.Parse(time.RFC3339, t.DueAt); err == nil {
+			pt.DueAt = timestamppb.New(ts)
+		}
 	}
 	return pt
 }
@@ -162,18 +175,16 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 		ProjectName:    pt.ProjectName,
 	}
 	if pt.CreatedAt != nil {
-		t.CreatedAt = pt.CreatedAt.AsTime()
+		t.CreatedAt = pt.CreatedAt.AsTime().UTC().Format(time.RFC3339)
 	}
 	if pt.UpdatedAt != nil {
-		t.UpdatedAt = pt.UpdatedAt.AsTime()
+		t.UpdatedAt = pt.UpdatedAt.AsTime().UTC().Format(time.RFC3339)
 	}
 	if pt.CompletedAt != nil {
-		ts := pt.CompletedAt.AsTime()
-		t.CompletedAt = &ts
+		t.CompletedAt = pt.CompletedAt.AsTime().UTC().Format(time.RFC3339)
 	}
 	if pt.DueAt != nil {
-		ts := pt.DueAt.AsTime()
-		t.DueAt = &ts
+		t.DueAt = pt.DueAt.AsTime().UTC().Format(time.RFC3339)
 	}
 	return t
 }

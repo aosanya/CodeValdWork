@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -157,7 +158,7 @@ func (s *Server) ListProjectsForTask(ctx context.Context, req *pb.ListProjectsFo
 // ── Conversion helpers ────────────────────────────────────────────────────────
 
 func projectToProto(p codevaldwork.Project) *pb.Project {
-	return &pb.Project{
+	pt := &pb.Project{
 		Id:          p.ID,
 		AgencyId:    p.AgencyID,
 		Name:        p.Name,
@@ -165,9 +166,18 @@ func projectToProto(p codevaldwork.Project) *pb.Project {
 		Description: p.Description,
 		GithubRepo:  p.GithubRepo,
 		TaskPrefix:  p.TaskPrefix,
-		CreatedAt:   timestamppb.New(p.CreatedAt),
-		UpdatedAt:   timestamppb.New(p.UpdatedAt),
 	}
+	if p.CreatedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, p.CreatedAt); err == nil {
+			pt.CreatedAt = timestamppb.New(ts)
+		}
+	}
+	if p.UpdatedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, p.UpdatedAt); err == nil {
+			pt.UpdatedAt = timestamppb.New(ts)
+		}
+	}
+	return pt
 }
 
 func protoToProject(pp *pb.Project) codevaldwork.Project {
@@ -184,10 +194,10 @@ func protoToProject(pp *pb.Project) codevaldwork.Project {
 		TaskPrefix:  pp.TaskPrefix,
 	}
 	if pp.CreatedAt != nil {
-		p.CreatedAt = pp.CreatedAt.AsTime()
+		p.CreatedAt = pp.CreatedAt.AsTime().UTC().Format(time.RFC3339)
 	}
 	if pp.UpdatedAt != nil {
-		p.UpdatedAt = pp.UpdatedAt.AsTime()
+		p.UpdatedAt = pp.UpdatedAt.AsTime().UTC().Format(time.RFC3339)
 	}
 	return p
 }

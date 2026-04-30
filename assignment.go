@@ -12,12 +12,6 @@ import (
 // `assigned_to` graph edge (Task → Agent). A Task has at most one assignee —
 // any pre-existing outbound `assigned_to` edge from the Task is removed
 // before the new one is created.
-//
-// Returns [ErrTaskNotFound] if the Task does not exist in the agency, or
-// [ErrAgentNotFound] if the Agent does not exist. The cross-agency case
-// (different agency for Task and Agent) is rejected by CreateRelationship's
-// endpoint check with [ErrTaskNotFound] / [ErrAgentNotFound] depending on
-// which lookup fails first.
 func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID string) error {
 	if _, err := m.GetTask(ctx, agencyID, taskID); err != nil {
 		return err
@@ -42,7 +36,7 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 		FromID:   taskID,
 		ToID:     agentID,
 		Properties: map[string]any{
-			"assignedAt": time.Now().UTC().Format(time.RFC3339Nano),
+			"assigned_at": time.Now().UTC().Format(time.RFC3339),
 		},
 	}); err != nil {
 		return fmt.Errorf("AssignTask: create edge: %w", err)
@@ -56,8 +50,7 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 }
 
 // UnassignTask removes any outbound `assigned_to` edge from the Task.
-// Idempotent — returns nil whether or not an edge was present. Returns
-// [ErrTaskNotFound] only if the Task itself is missing.
+// Idempotent — returns nil whether or not an edge was present.
 func (m *taskManager) UnassignTask(ctx context.Context, agencyID, taskID string) error {
 	if _, err := m.GetTask(ctx, agencyID, taskID); err != nil {
 		return err

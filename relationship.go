@@ -11,20 +11,8 @@ import (
 
 // Relationship is the Work-domain projection of an entitygraph edge between
 // two Work vertices (Task / Project / Agent).
-//
-// The (Label, fromType, toType) triple is constrained by the Work edge-label
-// whitelist declared on Task's [types.TypeDefinition.Relationships]:
-//
-//	assigned_to  Task → Agent     (functional)   props: assignedAt, assignedBy
-//	blocks       Task → Task      (collection)   props: createdAt, reason
-//	subtask_of   Task → Task      (functional)   props: createdAt
-//	depends_on   Task → Task      (collection)   props: createdAt, reason
-//	member_of    Task → Project   (collection)   props: addedAt
-//
-// CreatedAt is set by [TaskManager.CreateRelationship] to time.Now().UTC().
 type Relationship struct {
-	// ID is the storage-assigned edge identifier. Empty on a [TaskManager.CreateRelationship]
-	// request; populated by the returned value.
+	// ID is the storage-assigned edge identifier.
 	ID string
 
 	// AgencyID is the agency that owns both endpoints and the edge itself.
@@ -39,32 +27,25 @@ type Relationship struct {
 	// ToID is the target vertex entity ID.
 	ToID string
 
-	// Properties are caller-supplied edge metadata. Keys are restricted by the
-	// schema's [types.RelationshipDefinition.Properties] for this label, but
-	// no enforcement is performed at the Work layer — extra keys are passed
-	// through to the underlying entitygraph backend.
+	// Properties are caller-supplied edge metadata.
 	Properties map[string]any
 
-	// CreatedAt is the UTC timestamp the edge was created.
-	CreatedAt time.Time
+	// CreatedAt is the RFC 3339 timestamp the edge was created.
+	CreatedAt string
 }
 
 // Direction selects edge orientation for [TaskManager.TraverseRelationships].
 type Direction int
 
 const (
-	// DirectionInbound returns edges pointing AT the start vertex
-	// (i.e. the start vertex is the To endpoint).
+	// DirectionInbound returns edges pointing AT the start vertex.
 	DirectionInbound Direction = iota
 
-	// DirectionOutbound returns edges pointing AWAY from the start vertex
-	// (i.e. the start vertex is the From endpoint).
+	// DirectionOutbound returns edges pointing AWAY from the start vertex.
 	DirectionOutbound
 )
 
 // String returns the entitygraph traversal direction string for d.
-// "outbound" / "inbound" match the values accepted by
-// [entitygraph.TraverseGraphRequest.Direction].
 func (d Direction) String() string {
 	switch d {
 	case DirectionInbound:
@@ -77,34 +58,28 @@ func (d Direction) String() string {
 }
 
 // Edge-label constants — the closed set of allowed Work relationship labels.
-// Adding a new label requires updating the Task TypeDefinition's
-// [types.TypeDefinition.Relationships] (see [taskTypeDefinition]).
 const (
 	// RelLabelAssignedTo connects a Task to the Agent currently responsible
 	// for it (functional — at most one per Task).
 	RelLabelAssignedTo = "assigned_to"
 
 	// RelLabelBlocks indicates the source Task must reach a terminal status
-	// before the target Task may transition to in_progress. Hard-enforced
-	// by [TaskManager.UpdateTask] (added in MVP-WORK-011).
+	// before the target Task may transition to in_progress.
 	RelLabelBlocks = "blocks"
 
 	// RelLabelSubtaskOf marks the source Task as a child of the target Task
 	// (functional — a subtask has at most one parent).
 	RelLabelSubtaskOf = "subtask_of"
 
-	// RelLabelDependsOn is a soft dependency — informational only, no
-	// status gate.
+	// RelLabelDependsOn is a soft dependency — informational only, no status gate.
 	RelLabelDependsOn = "depends_on"
 
-	// RelLabelMemberOf links a Task to a Project. Project membership is
-	// many-to-many.
+	// RelLabelMemberOf links a Task to a Project. Project membership is many-to-many.
 	RelLabelMemberOf = "member_of"
 )
 
 // relationshipFromEntitygraph adapts a SharedLib edge into the Work-domain
-// Relationship type. The mapping is straightforward: entitygraph.Relationship.Name
-// is exposed as Relationship.Label.
+// Relationship type.
 func relationshipFromEntitygraph(r entitygraph.Relationship) Relationship {
 	props := r.Properties
 	if props != nil {
@@ -121,14 +96,12 @@ func relationshipFromEntitygraph(r entitygraph.Relationship) Relationship {
 		FromID:     r.FromID,
 		ToID:       r.ToID,
 		Properties: props,
-		CreatedAt:  r.CreatedAt,
+		CreatedAt:  r.CreatedAt.UTC().Format(time.RFC3339),
 	}
 }
 
 // relationshipEndpointTypes maps each Work edge label to the (FromType, ToType)
-// pair declared in the schema's Relationships whitelist. Used by
-// CreateRelationship to verify the endpoints' TypeIDs before delegating to the
-// underlying DataManager.
+// pair declared in the schema's Relationships whitelist.
 var relationshipEndpointTypes = map[string]struct {
 	fromType string
 	toType   string
@@ -140,8 +113,7 @@ var relationshipEndpointTypes = map[string]struct {
 	RelLabelMemberOf:   {fromType: taskTypeID, toType: projectTypeID},
 }
 
-// notFoundForType returns the typed sentinel error to surface when a vertex
-// of the given TypeID cannot be located in the agency.
+// notFoundForType returns the typed sentinel error for a vertex TypeID.
 func notFoundForType(typeID string) error {
 	switch typeID {
 	case taskTypeID:
@@ -156,10 +128,9 @@ func notFoundForType(typeID string) error {
 }
 
 // labelHasCreatedAt reports whether the schema's RelationshipDefinition for
-// label declares a "createdAt" property the manager should default-populate.
-// member_of uses "addedAt", assigned_to uses "assignedAt" — so those labels
-// return false (the caller is expected to supply the timestamp on the
-// Properties map, or the WORK-010/012 specialised helpers will do it).
+// label declares a "created_at" property the manager should default-populate.
+// member_of uses "added_at", assigned_to uses "assigned_at" — those labels
+// return false (the caller supplies the timestamp on the Properties map).
 func labelHasCreatedAt(label string) bool {
 	switch label {
 	case RelLabelBlocks, RelLabelSubtaskOf, RelLabelDependsOn:
@@ -169,10 +140,9 @@ func labelHasCreatedAt(label string) bool {
 	}
 }
 
-// CreateRelationship validates the (label, FromID, ToID) triple against the
-// Work edge-label whitelist and creates the edge via the underlying
-// DataManager. Re-creating an existing edge is idempotent — the existing
-// edge is returned with no error.
+// CreateRelationship validates the (label, FromID, ToID) triple and creates
+// the edge via the underlying DataManager. Re-creating an existing edge is
+// idempotent — the existing edge is returned with no error.
 func (m *taskManager) CreateRelationship(ctx context.Context, agencyID string, rel Relationship) (Relationship, error) {
 	allowed, ok := relationshipEndpointTypes[rel.Label]
 	if !ok {
@@ -221,8 +191,8 @@ func (m *taskManager) CreateRelationship(ctx context.Context, agencyID string, r
 	for k, v := range rel.Properties {
 		props[k] = v
 	}
-	if _, ok := props["createdAt"]; !ok && labelHasCreatedAt(rel.Label) {
-		props["createdAt"] = time.Now().UTC().Format(time.RFC3339Nano)
+	if _, ok := props["created_at"]; !ok && labelHasCreatedAt(rel.Label) {
+		props["created_at"] = time.Now().UTC().Format(time.RFC3339)
 	}
 
 	created, err := m.dm.CreateRelationship(ctx, entitygraph.CreateRelationshipRequest{
@@ -251,8 +221,7 @@ func (m *taskManager) CreateRelationship(ctx context.Context, agencyID string, r
 	return out, nil
 }
 
-// DeleteRelationship removes the single edge identified by (fromID, toID, label)
-// in the agency. Returns ErrRelationshipNotFound when no such edge exists.
+// DeleteRelationship removes the single edge identified by (fromID, toID, label).
 func (m *taskManager) DeleteRelationship(ctx context.Context, agencyID, fromID, toID, label string) error {
 	edges, err := m.dm.ListRelationships(ctx, entitygraph.RelationshipFilter{
 		AgencyID: agencyID,
@@ -276,9 +245,7 @@ func (m *taskManager) DeleteRelationship(ctx context.Context, agencyID, fromID, 
 }
 
 // TraverseRelationships returns the single-hop edges incident on vertexID
-// matching label and direction. Implemented as TraverseGraph(depth=1) with
-// the label name filter — the edge slice is returned directly; vertices are
-// discarded.
+// matching label and direction.
 func (m *taskManager) TraverseRelationships(ctx context.Context, agencyID, vertexID, label string, dir Direction) ([]Relationship, error) {
 	res, err := m.dm.TraverseGraph(ctx, entitygraph.TraverseGraphRequest{
 		AgencyID:  agencyID,

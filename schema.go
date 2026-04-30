@@ -30,20 +30,6 @@ import "github.com/aosanya/CodeValdSharedLib/types"
 // The operation is idempotent — calling it multiple times with the same schema
 // ID is safe.
 func DefaultWorkSchema() types.Schema {
-	taskStatusOptions := []string{
-		string(TaskStatusPending),
-		string(TaskStatusInProgress),
-		string(TaskStatusCompleted),
-		string(TaskStatusFailed),
-		string(TaskStatusCancelled),
-	}
-	taskPriorityOptions := []string{
-		string(TaskPriorityLow),
-		string(TaskPriorityMedium),
-		string(TaskPriorityHigh),
-		string(TaskPriorityCritical),
-	}
-
 	return types.Schema{
 		ID:      "work-schema-v1",
 		Version: 1,
@@ -59,23 +45,27 @@ func DefaultWorkSchema() types.Schema {
 					// description provides additional context for the assigned agent.
 					{Name: "description", Type: types.PropertyTypeString},
 					// status is the current lifecycle state — see [TaskStatus].
-					{Name: "status", Type: types.PropertyTypeOption, Options: taskStatusOptions},
+					// Well-known values: "pending", "in_progress", "completed", "failed", "cancelled".
+					{Name: "status", Type: types.PropertyTypeString},
 					// priority indicates relative urgency — see [TaskPriority].
-					{Name: "priority", Type: types.PropertyTypeOption, Options: taskPriorityOptions},
-					// dueAt is the deadline by which the task should be completed.
-					{Name: "dueAt", Type: types.PropertyTypeDatetime},
+					// Well-known values: "low", "medium", "high", "critical".
+					{Name: "priority", Type: types.PropertyTypeString},
+					// due_at is the RFC 3339 deadline; empty when no deadline is set.
+					{Name: "due_at", Type: types.PropertyTypeString},
 					// tags are free-form labels associated with the task.
 					{Name: "tags", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
-					// estimatedHours is the planned effort to complete the task, in hours.
-					{Name: "estimatedHours", Type: types.PropertyTypeNumber},
+					// estimated_hours is the planned effort to complete the task, in hours.
+					{Name: "estimated_hours", Type: types.PropertyTypeNumber},
 					// context is the AI agent's working memory blob.
 					{Name: "context", Type: types.PropertyTypeString},
-					// completedAt is set by [TaskManager] when status reaches a terminal state.
-					{Name: "completedAt", Type: types.PropertyTypeDatetime},
-					// taskName is the project-scoped auto-generated name (e.g. "MVP-001").
-					{Name: "taskName", Type: types.PropertyTypeString},
-					// projectName is the URL-safe slug of the project this task belongs to.
-					{Name: "projectName", Type: types.PropertyTypeString},
+					// completed_at is set when status reaches a terminal state (RFC 3339).
+					{Name: "completed_at", Type: types.PropertyTypeString},
+					// task_name is the project-scoped auto-generated name (e.g. "MVP-001").
+					{Name: "task_name", Type: types.PropertyTypeString},
+					// project_name is the URL-safe slug of the project this task belongs to.
+					{Name: "project_name", Type: types.PropertyTypeString},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
 				},
 				Relationships: []types.RelationshipDefinition{
 					{
@@ -84,9 +74,10 @@ func DefaultWorkSchema() types.Schema {
 						PathSegment: "agent",
 						ToType:      "Agent",
 						ToMany:      false,
+						Inverse:     "assigned_tasks",
 						Properties: []types.PropertyDefinition{
-							{Name: "assignedAt", Type: types.PropertyTypeDatetime},
-							{Name: "assignedBy", Type: types.PropertyTypeString},
+							{Name: "assigned_at", Type: types.PropertyTypeString},
+							{Name: "assigned_by", Type: types.PropertyTypeString},
 						},
 					},
 					{
@@ -95,8 +86,9 @@ func DefaultWorkSchema() types.Schema {
 						PathSegment: "blocks",
 						ToType:      "Task",
 						ToMany:      true,
+						Inverse:     "blocked_by",
 						Properties: []types.PropertyDefinition{
-							{Name: "createdAt", Type: types.PropertyTypeDatetime},
+							{Name: "created_at", Type: types.PropertyTypeString},
 							{Name: "reason", Type: types.PropertyTypeString},
 						},
 					},
@@ -106,8 +98,9 @@ func DefaultWorkSchema() types.Schema {
 						PathSegment: "parent",
 						ToType:      "Task",
 						ToMany:      false,
+						Inverse:     "has_subtask",
 						Properties: []types.PropertyDefinition{
-							{Name: "createdAt", Type: types.PropertyTypeDatetime},
+							{Name: "created_at", Type: types.PropertyTypeString},
 						},
 					},
 					{
@@ -116,8 +109,9 @@ func DefaultWorkSchema() types.Schema {
 						PathSegment: "depends-on",
 						ToType:      "Task",
 						ToMany:      true,
+						Inverse:     "depended_on_by",
 						Properties: []types.PropertyDefinition{
-							{Name: "createdAt", Type: types.PropertyTypeDatetime},
+							{Name: "created_at", Type: types.PropertyTypeString},
 							{Name: "reason", Type: types.PropertyTypeString},
 						},
 					},
@@ -127,8 +121,9 @@ func DefaultWorkSchema() types.Schema {
 						PathSegment: "projects",
 						ToType:      "Project",
 						ToMany:      true,
+						Inverse:     "has_task",
 						Properties: []types.PropertyDefinition{
-							{Name: "addedAt", Type: types.PropertyTypeDatetime},
+							{Name: "added_at", Type: types.PropertyTypeString},
 						},
 					},
 				},
@@ -142,15 +137,26 @@ func DefaultWorkSchema() types.Schema {
 				Properties: []types.PropertyDefinition{
 					// name is the short human-readable label. Required.
 					{Name: "name", Type: types.PropertyTypeString, Required: true},
-					// projectName is the URL-safe slug (lowercase, spaces→underscores).
-					{Name: "projectName", Type: types.PropertyTypeString},
+					// project_name is the URL-safe slug (lowercase, spaces→underscores).
+					{Name: "project_name", Type: types.PropertyTypeString},
 					// description provides additional context for the project.
 					{Name: "description", Type: types.PropertyTypeString},
-					// githubRepo is the canonical GitHub repository for the project,
-					// e.g. "owner/name" or a full https URL.
-					{Name: "githubRepo", Type: types.PropertyTypeString},
-					// taskPrefix is prepended to the counter when auto-generating task names.
-					{Name: "taskPrefix", Type: types.PropertyTypeString},
+					// github_repo is the canonical GitHub repository, e.g. "owner/name".
+					{Name: "github_repo", Type: types.PropertyTypeString},
+					// task_prefix is prepended to the counter when auto-generating task names.
+					{Name: "task_prefix", Type: types.PropertyTypeString},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
+				},
+				Relationships: []types.RelationshipDefinition{
+					{
+						Name:        "has_task",
+						Label:       "Tasks",
+						PathSegment: "tasks",
+						ToType:      "Task",
+						ToMany:      true,
+						Inverse:     RelLabelMemberOf,
+					},
 				},
 			},
 			{
@@ -159,17 +165,28 @@ func DefaultWorkSchema() types.Schema {
 				PathSegment:       "agents",
 				EntityIDParam:     "agentId",
 				StorageCollection: "work_agents",
-				// UniqueKey on agentID makes the external identifier the natural key for
-				// UpsertEntity — TaskManager.UpsertAgent relies on this for find-or-create.
-				UniqueKey: []string{"agentID"},
+				// UniqueKey on agent_id makes the external identifier the natural key for
+				// UpsertEntity — UpsertAgent relies on this for find-or-create.
+				UniqueKey: []string{"agent_id"},
 				Properties: []types.PropertyDefinition{
-					// agentID is the external agent identifier (e.g. CodeValdAI agent ID).
-					// Unique per (agencyID, agentID) — enforced via UpsertEntity.
-					{Name: "agentID", Type: types.PropertyTypeString, Required: true},
-					// displayName is a human-readable label for the agent.
-					{Name: "displayName", Type: types.PropertyTypeString},
-					// capability is the agent's primary capability (e.g. "code", "research", "review").
+					// agent_id is the external agent identifier. Unique per agency.
+					{Name: "agent_id", Type: types.PropertyTypeString, Required: true},
+					// display_name is a human-readable label for the agent.
+					{Name: "display_name", Type: types.PropertyTypeString},
+					// capability is the agent's primary capability (e.g. "code", "research").
 					{Name: "capability", Type: types.PropertyTypeString},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
+				},
+				Relationships: []types.RelationshipDefinition{
+					{
+						Name:        "assigned_tasks",
+						Label:       "Assigned Tasks",
+						PathSegment: "tasks",
+						ToType:      "Task",
+						ToMany:      true,
+						Inverse:     RelLabelAssignedTo,
+					},
 				},
 			},
 		},

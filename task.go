@@ -73,19 +73,14 @@ type TaskManager interface {
 	DeleteRelationship(ctx context.Context, agencyID, fromID, toID, label string) error
 
 	// TraverseRelationships returns the single-hop edges incident on
-	// vertexID with the given label and direction. Multi-hop traversal is
-	// out of scope — callers needing it should use entitygraph.DataManager.TraverseGraph
-	// directly.
+	// vertexID with the given label and direction.
 	//
-	// Returns an empty slice (not an error) when no edges match. If vertexID
-	// does not exist in the agency, the underlying graph traversal returns an
-	// empty result — callers that need a strict not-found check should call
-	// [TaskManager.GetTask] (or the equivalent type-specific lookup) first.
+	// Returns an empty slice (not an error) when no edges match.
 	TraverseRelationships(ctx context.Context, agencyID, vertexID, label string, dir Direction) ([]Relationship, error)
 
 	// UpsertAgent creates or merges an Agent vertex keyed by the
-	// (agencyID, agent.AgentID) natural key. On the merge branch, displayName
-	// and capability are updated; agentID is immutable.
+	// (agencyID, agent.AgentID) natural key. On the merge branch, display_name
+	// and capability are updated; agent_id is immutable.
 	UpsertAgent(ctx context.Context, agencyID string, agent Agent) (Agent, error)
 
 	// GetAgent retrieves a single Agent by its entity ID within the given
@@ -115,7 +110,7 @@ type TaskManager interface {
 	// [ErrProjectNotFound] if no matching project exists.
 	GetProject(ctx context.Context, agencyID, projectID string) (Project, error)
 
-	// GetProjectByName retrieves a single Project by its slug (projectName).
+	// GetProjectByName retrieves a single Project by its slug (project_name).
 	// Returns [ErrProjectNotFound] if no project with that slug exists.
 	GetProjectByName(ctx context.Context, agencyID, projectName string) (Project, error)
 
@@ -147,12 +142,12 @@ type TaskManager interface {
 	// via outbound `member_of` edges.
 	ListProjectsForTask(ctx context.Context, agencyID, taskID string) ([]Project, error)
 
-	// GetTaskByName retrieves a task by its project-scoped name (taskName)
-	// within a project (projectName). Returns [ErrTaskNotFound] if no task
+	// GetTaskByName retrieves a task by its project-scoped name (task_name)
+	// within a project (project_name). Returns [ErrTaskNotFound] if no task
 	// with that name exists in the project.
 	GetTaskByName(ctx context.Context, agencyID, projectName, taskName string) (Task, error)
 
-	// CreateTaskInProject creates a task, auto-generates its taskName from the
+	// CreateTaskInProject creates a task, auto-generates its task_name from the
 	// project's task_prefix, and writes the member_of edge in one atomic sequence.
 	// Returns [ErrProjectNotFound] if the project does not exist.
 	CreateTaskInProject(ctx context.Context, agencyID, projectName string, task Task) (Task, error)
@@ -167,19 +162,11 @@ type TaskManager interface {
 // Used by internal/app to seed [DefaultWorkSchema] on startup.
 type WorkSchemaManager = entitygraph.SchemaManager
 
-// CrossPublisher is the historical name for the event-publishing contract
-// CodeValdWork callers inject. As of MVP-WORK-014 it is a type alias for
-// [eventbus.Publisher] — the SharedLib package that unifies the publish
-// contract across CodeValdAgency, CodeValdComm, CodeValdDT, and CodeValdWork.
-//
-// New callers should refer to [eventbus.Publisher] directly; this alias
-// remains for source compatibility and reads well in the [NewTaskManager]
-// signature.
+// CrossPublisher is a type alias for [eventbus.Publisher] — the SharedLib
+// package that unifies the publish contract across CodeVald services.
 type CrossPublisher = eventbus.Publisher
 
 // taskManager is the concrete implementation of [TaskManager].
-// It wraps an [entitygraph.DataManager] to persist Task entities in the
-// agency graph and emits work.task.* events via the optional Publisher.
 type taskManager struct {
 	dm        entitygraph.DataManager
 	publisher eventbus.Publisher // optional; nil = skip event publishing
@@ -197,10 +184,8 @@ func NewTaskManager(dm entitygraph.DataManager, pub eventbus.Publisher) (TaskMan
 }
 
 // CreateTask creates a Task entity in the agency graph.
-// The entity ID is assigned by the underlying DataManager; any ID supplied on
-// the request is ignored.
 func (m *taskManager) CreateTask(ctx context.Context, agencyID string, task Task) (Task, error) {
-	now := time.Now().UTC()
+	now := time.Now().UTC().Format(time.RFC3339)
 	task.AgencyID = agencyID
 	task.Status = TaskStatusPending
 	task.CreatedAt = now
@@ -208,7 +193,7 @@ func (m *taskManager) CreateTask(ctx context.Context, agencyID string, task Task
 	if task.Priority == "" {
 		task.Priority = TaskPriorityMedium
 	}
-	task.CompletedAt = nil
+	task.CompletedAt = ""
 
 	created, err := m.dm.CreateEntity(ctx, entitygraph.CreateEntityRequest{
 		AgencyID:   agencyID,
@@ -250,17 +235,12 @@ func (m *taskManager) GetTask(ctx context.Context, agencyID, taskID string) (Tas
 //
 // The pending → in_progress transition is additionally gated by the blocker
 // rule: any inbound `blocks` edge whose source task has not reached a
-// terminal status (completed / failed / cancelled) returns a *BlockedError
-// (which wraps [ErrBlocked]) listing the offending blocker task IDs.
-// Other transitions — including pending → cancelled — bypass the gate.
+// terminal status returns a *BlockedError listing the offending blocker task IDs.
 func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task) (Task, error) {
 	current, err := m.GetTask(ctx, agencyID, task.ID)
 	if err != nil {
 		return Task{}, err
 	}
-	// Only validate the transition when status is actually changing —
-	// same-status edits (e.g. patching title or description while pending)
-	// are no-op transitions and must be permitted.
 	if current.Status != task.Status && !current.Status.CanTransitionTo(task.Status) {
 		return Task{}, ErrInvalidStatusTransition
 	}
@@ -272,13 +252,12 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 		}
 	}
 
-	now := time.Now().UTC()
+	now := time.Now().UTC().Format(time.RFC3339)
 	task.AgencyID = agencyID
 	task.UpdatedAt = now
 	task.CreatedAt = current.CreatedAt
-	if isTerminalStatus(task.Status) && task.CompletedAt == nil {
-		ts := now
-		task.CompletedAt = &ts
+	if isTerminalStatus(task.Status) && task.CompletedAt == "" {
+		task.CompletedAt = now
 	}
 
 	updated, err := m.dm.UpdateEntity(ctx, agencyID, task.ID, entitygraph.UpdateEntityRequest{
@@ -293,8 +272,6 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 
 	out := taskFromEntity(updated)
 
-	// Publish hooks. Order matters: status.changed precedes completed when
-	// both fire so subscribers see the transition before the terminal hook.
 	if changed := nonStatusChangedFields(current, out); len(changed) > 0 {
 		m.publish(ctx, TopicTaskUpdated, agencyID, TaskUpdatedPayload{
 			TaskID:        out.ID,
@@ -308,9 +285,9 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 			To:     out.Status,
 		})
 		if isTerminalStatus(out.Status) {
-			completedAt := now
-			if out.CompletedAt != nil {
-				completedAt = *out.CompletedAt
+			completedAt := out.CompletedAt
+			if completedAt == "" {
+				completedAt = now
 			}
 			m.publish(ctx, TopicTaskCompleted, agencyID, TaskCompletedPayload{
 				TaskID:         out.ID,
@@ -322,7 +299,7 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 	return out, nil
 }
 
-// DeleteTask soft-deletes the Task entity (entitygraph never hard-deletes).
+// DeleteTask soft-deletes the Task entity.
 func (m *taskManager) DeleteTask(ctx context.Context, agencyID, taskID string) error {
 	if _, err := m.GetTask(ctx, agencyID, taskID); err != nil {
 		return err
@@ -337,9 +314,7 @@ func (m *taskManager) DeleteTask(ctx context.Context, agencyID, taskID string) e
 }
 
 // ListTasks returns all non-deleted Task entities for the agency that match
-// the filter. Status and Priority are pushed down to the DataManager's
-// property filter; assignment-by-agent is no longer a property — callers
-// needing it should traverse inbound `assigned_to` from the Agent vertex.
+// the filter.
 func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter TaskFilter) ([]Task, error) {
 	props := map[string]any{}
 	if filter.Status != "" {
@@ -366,9 +341,8 @@ func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter Tas
 }
 
 // publish emits a typed [eventbus.Event] via the optional Publisher.
-// A nil publisher is silently skipped; errors from the publisher are
-// swallowed — events are best-effort and must not fail the originating
-// operation.
+// A nil publisher is silently skipped; errors are swallowed — events are
+// best-effort and must not fail the originating operation.
 func (m *taskManager) publish(ctx context.Context, topic, agencyID string, payload any) {
 	eventbus.SafePublish(ctx, m.publisher, eventbus.Event{
 		Topic:    topic,
@@ -390,10 +364,7 @@ func isTerminalStatus(s TaskStatus) bool {
 
 // nonStatusChangedFields lists the mutable Task property names that differ
 // between before and after, excluding Status (reported separately via
-// [TopicTaskStatusChanged]) and entity timestamps. Drives
-// [TaskUpdatedPayload.ChangedFields] so subscribers know what changed
-// without diffing the payload themselves. Returns nil when nothing
-// non-status differs.
+// [TopicTaskStatusChanged]). Returns nil when nothing non-status differs.
 func nonStatusChangedFields(before, after Task) []string {
 	var out []string
 	if before.Description != after.Description {
@@ -402,14 +373,14 @@ func nonStatusChangedFields(before, after Task) []string {
 	if before.Priority != after.Priority {
 		out = append(out, "priority")
 	}
-	if !timePtrEqual(before.DueAt, after.DueAt) {
-		out = append(out, "dueAt")
+	if before.DueAt != after.DueAt {
+		out = append(out, "due_at")
 	}
 	if !stringSlicesEqual(before.Tags, after.Tags) {
 		out = append(out, "tags")
 	}
 	if before.EstimatedHours != after.EstimatedHours {
-		out = append(out, "estimatedHours")
+		out = append(out, "estimated_hours")
 	}
 	if before.Context != after.Context {
 		out = append(out, "context")
@@ -417,21 +388,8 @@ func nonStatusChangedFields(before, after Task) []string {
 	return out
 }
 
-// timePtrEqual reports whether two *time.Time pointers refer to the same
-// instant (or are both nil).
-func timePtrEqual(a, b *time.Time) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	return a.Equal(*b)
-}
-
 // stringSlicesEqual reports whether two string slices have identical
-// length and elements in order. Used by [nonStatusChangedFields] to
-// detect Task.Tags changes.
+// length and elements in order.
 func stringSlicesEqual(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
@@ -445,8 +403,7 @@ func stringSlicesEqual(a, b []string) bool {
 }
 
 // findActiveBlockers returns the IDs of tasks that block taskID via inbound
-// `blocks` edges and are themselves still non-terminal. An empty slice
-// (paired with nil error) means the gate is open.
+// `blocks` edges and are themselves still non-terminal.
 func (m *taskManager) findActiveBlockers(ctx context.Context, agencyID, taskID string) ([]string, error) {
 	edges, err := m.TraverseRelationships(ctx, agencyID, taskID, RelLabelBlocks, DirectionInbound)
 	if err != nil {
@@ -456,8 +413,6 @@ func (m *taskManager) findActiveBlockers(ctx context.Context, agencyID, taskID s
 	for _, e := range edges {
 		blocker, err := m.GetTask(ctx, agencyID, e.FromID)
 		if err != nil {
-			// A missing or non-Task source vertex cannot constrain
-			// progress — skip it rather than fail the whole transition.
 			if errors.Is(err, ErrTaskNotFound) {
 				continue
 			}
@@ -468,108 +423,4 @@ func (m *taskManager) findActiveBlockers(ctx context.Context, agencyID, taskID s
 		}
 	}
 	return nonTerminal, nil
-}
-
-// taskToProperties serialises a Task into the property map stored on its
-// entitygraph Entity. The schema declares datetime fields as
-// PropertyTypeDatetime; this layer encodes them as RFC 3339 strings — the
-// canonical wire form for ISO 8601 datetimes. Entity-level timestamps
-// (CreatedAt / UpdatedAt) are not written as properties — they are tracked
-// by entitygraph natively.
-//
-// The legacy `assigned_to` property is intentionally not written:
-// MVP-WORK-009/010 replace it with an `assigned_to` graph edge between Task
-// and Agent vertices.
-func taskToProperties(t Task) map[string]any {
-	props := map[string]any{
-		"description": t.Description,
-		"status":      string(t.Status),
-		"priority":    string(t.Priority),
-		"context":     t.Context,
-		"taskName":    t.TaskName,
-		"projectName": t.ProjectName,
-	}
-	if t.DueAt != nil && !t.DueAt.IsZero() {
-		props["dueAt"] = t.DueAt.UTC().Format(time.RFC3339Nano)
-	}
-	if len(t.Tags) > 0 {
-		tags := make([]string, len(t.Tags))
-		copy(tags, t.Tags)
-		props["tags"] = tags
-	}
-	if t.EstimatedHours != 0 {
-		props["estimatedHours"] = t.EstimatedHours
-	}
-	if t.CompletedAt != nil && !t.CompletedAt.IsZero() {
-		props["completedAt"] = t.CompletedAt.UTC().Format(time.RFC3339Nano)
-	}
-	return props
-}
-
-// taskFromEntity reconstructs a Task from an entitygraph Entity.
-// Tags and estimatedHours accept both the native Go type (used by the unit
-// fakeDataManager) and the JSON-decoded form ([]any / float64) the ArangoDB
-// backend returns.
-func taskFromEntity(e entitygraph.Entity) Task {
-	t := Task{
-		ID:        e.ID,
-		AgencyID:  e.AgencyID,
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-	}
-	if v, ok := e.Properties["description"].(string); ok {
-		t.Description = v
-	}
-	if v, ok := e.Properties["status"].(string); ok {
-		t.Status = TaskStatus(v)
-	}
-	if v, ok := e.Properties["priority"].(string); ok {
-		t.Priority = TaskPriority(v)
-	}
-	if v, ok := e.Properties["context"].(string); ok {
-		t.Context = v
-	}
-	if v, ok := e.Properties["dueAt"].(string); ok && v != "" {
-		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
-			t.DueAt = &ts
-		}
-	}
-	if v, ok := e.Properties["tags"]; ok {
-		switch tags := v.(type) {
-		case []string:
-			t.Tags = append([]string(nil), tags...)
-		case []any:
-			out := make([]string, 0, len(tags))
-			for _, x := range tags {
-				if s, ok := x.(string); ok {
-					out = append(out, s)
-				}
-			}
-			t.Tags = out
-		}
-	}
-	if v, ok := e.Properties["estimatedHours"]; ok {
-		switch n := v.(type) {
-		case float64:
-			t.EstimatedHours = n
-		case float32:
-			t.EstimatedHours = float64(n)
-		case int:
-			t.EstimatedHours = float64(n)
-		case int64:
-			t.EstimatedHours = float64(n)
-		}
-	}
-	if v, ok := e.Properties["completedAt"].(string); ok && v != "" {
-		if ts, err := time.Parse(time.RFC3339Nano, v); err == nil {
-			t.CompletedAt = &ts
-		}
-	}
-	if v, ok := e.Properties["taskName"].(string); ok {
-		t.TaskName = v
-	}
-	if v, ok := e.Properties["projectName"].(string); ok {
-		t.ProjectName = v
-	}
-	return t
 }

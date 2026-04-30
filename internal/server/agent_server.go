@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -67,15 +68,24 @@ func (s *Server) ListAgents(ctx context.Context, req *pb.ListAgentsRequest) (*pb
 // ── Conversion helpers ────────────────────────────────────────────────────────
 
 func agentToProto(a codevaldwork.Agent) *pb.Agent {
-	return &pb.Agent{
+	pt := &pb.Agent{
 		Id:          a.ID,
 		AgencyId:    a.AgencyID,
 		AgentId:     a.AgentID,
 		DisplayName: a.DisplayName,
 		Capability:  a.Capability,
-		CreatedAt:   timestamppb.New(a.CreatedAt),
-		UpdatedAt:   timestamppb.New(a.UpdatedAt),
 	}
+	if a.CreatedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, a.CreatedAt); err == nil {
+			pt.CreatedAt = timestamppb.New(ts)
+		}
+	}
+	if a.UpdatedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, a.UpdatedAt); err == nil {
+			pt.UpdatedAt = timestamppb.New(ts)
+		}
+	}
+	return pt
 }
 
 func protoToAgent(pa *pb.Agent) codevaldwork.Agent {
@@ -90,10 +100,10 @@ func protoToAgent(pa *pb.Agent) codevaldwork.Agent {
 		Capability:  pa.Capability,
 	}
 	if pa.CreatedAt != nil {
-		a.CreatedAt = pa.CreatedAt.AsTime()
+		a.CreatedAt = pa.CreatedAt.AsTime().UTC().Format(time.RFC3339)
 	}
 	if pa.UpdatedAt != nil {
-		a.UpdatedAt = pa.UpdatedAt.AsTime()
+		a.UpdatedAt = pa.UpdatedAt.AsTime().UTC().Format(time.RFC3339)
 	}
 	return a
 }

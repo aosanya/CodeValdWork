@@ -161,7 +161,7 @@ func (f *fakeDataManager) UpsertEntity(ctx context.Context, req entitygraph.Crea
 func uniqueKeyFor(typeID string) []string {
 	switch typeID {
 	case "Agent":
-		return []string{"agentID"}
+		return []string{"agent_id"}
 	default:
 		return nil
 	}

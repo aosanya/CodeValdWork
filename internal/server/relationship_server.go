@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -49,15 +50,20 @@ func (s *Server) TraverseRelationships(ctx context.Context, req *pb.TraverseRela
 // ── Conversion helpers ────────────────────────────────────────────────────────
 
 func relationshipToProto(r codevaldwork.Relationship) *pb.Relationship {
-	return &pb.Relationship{
+	pt := &pb.Relationship{
 		Id:         r.ID,
 		AgencyId:   r.AgencyID,
 		Label:      r.Label,
 		FromId:     r.FromID,
 		ToId:       r.ToID,
 		Properties: mapToStruct(r.Properties),
-		CreatedAt:  timestamppb.New(r.CreatedAt),
 	}
+	if r.CreatedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, r.CreatedAt); err == nil {
+			pt.CreatedAt = timestamppb.New(ts)
+		}
+	}
+	return pt
 }
 
 // structToMap converts a google.protobuf.Struct into the map[string]any shape

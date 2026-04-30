@@ -244,13 +244,13 @@ func TestTask_HasNoAssignedToField(t *testing.T) {
 		Description:    "",
 		Status:         "",
 		Priority:       "",
-		DueAt:          nil,
+		DueAt:          "",
 		Tags:           nil,
 		EstimatedHours: 0,
 		Context:        "",
 		CreatedAt:      task.CreatedAt,
 		UpdatedAt:      task.UpdatedAt,
-		CompletedAt:    nil,
+		CompletedAt:    "",
 	}
 	_ = task
 }
