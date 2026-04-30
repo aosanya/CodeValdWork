@@ -131,6 +131,12 @@ type Task struct {
 	// ProjectName is the URL-safe slug of the project this task belongs to.
 	// Empty for tasks not in a project.
 	ProjectName string `json:"project_name,omitempty"`
+
+	// SeparateBranch indicates whether this task should be worked on in its own git branch.
+	SeparateBranch bool `json:"separate_branch,omitempty"`
+
+	// BranchName is the git branch to create/use for this task (e.g. "feature/SF-001_scaffolding").
+	BranchName string `json:"branch_name,omitempty"`
 }
 
 // ImportResult is returned by [TaskManager.ImportProject].

@@ -63,6 +63,10 @@ message Task {
   // title is the short human-readable label for the task (e.g. "Farm Dashboard").
   // Distinct from description, which carries the full implementation spec.
   string                    title           = 17;
+  // separate_branch indicates whether this task should be worked on in its own git branch.
+  bool                      separate_branch = 18;
+  // branch_name is the git branch to create/use for this task (e.g. "feature/SF-001_scaffolding").
+  string                    branch_name     = 19;
 }
 
 // TaskFilter is used in ListTasks to constrain results.

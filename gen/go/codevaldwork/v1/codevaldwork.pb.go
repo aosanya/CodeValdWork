@@ -215,7 +215,11 @@ type Task struct {
 	ProjectName string `protobuf:"bytes,16,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
 	// title is the short human-readable label for the task (e.g. "Farm Dashboard").
 	// Distinct from description, which carries the full implementation spec.
-	Title         string `protobuf:"bytes,17,opt,name=title,proto3" json:"title,omitempty"`
+	Title string `protobuf:"bytes,17,opt,name=title,proto3" json:"title,omitempty"`
+	// separate_branch indicates whether this task should be worked on in its own git branch.
+	SeparateBranch bool `protobuf:"varint,18,opt,name=separate_branch,json=separateBranch,proto3" json:"separate_branch,omitempty"`
+	// branch_name is the git branch to create/use for this task (e.g. "feature/SF-001_scaffolding").
+	BranchName    string `protobuf:"bytes,19,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -351,6 +355,20 @@ func (x *Task) GetProjectName() string {
 func (x *Task) GetTitle() string {
 	if x != nil {
 		return x.Title
+	}
+	return ""
+}
+
+func (x *Task) GetSeparateBranch() bool {
+	if x != nil {
+		return x.SeparateBranch
+	}
+	return false
+}
+
+func (x *Task) GetBranchName() string {
+	if x != nil {
+		return x.BranchName
 	}
 	return ""
 }
@@ -726,7 +744,7 @@ var File_codevaldwork_v1_codevaldwork_proto protoreflect.FileDescriptor
 
 const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
-	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xf3\x04\n" +
+	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xbd\x05\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12 \n" +
@@ -745,7 +763,10 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\acontext\x18\x0e \x01(\tR\acontext\x12\x1b\n" +
 	"\ttask_name\x18\x0f \x01(\tR\btaskName\x12!\n" +
 	"\fproject_name\x18\x10 \x01(\tR\vprojectName\x12\x14\n" +
-	"\x05title\x18\x11 \x01(\tR\x05titleJ\x04\b\x03\x10\x04J\x04\b\a\x10\bR\vassigned_to\"\x8f\x01\n" +
+	"\x05title\x18\x11 \x01(\tR\x05title\x12'\n" +
+	"\x0fseparate_branch\x18\x12 \x01(\bR\x0eseparateBranch\x12\x1f\n" +
+	"\vbranch_name\x18\x13 \x01(\tR\n" +
+	"branchNameJ\x04\b\x03\x10\x04J\x04\b\a\x10\bR\vassigned_to\"\x8f\x01\n" +
 	"\n" +
 	"TaskFilter\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +

@@ -135,6 +135,8 @@ func taskToProto(t codevaldwork.Task) *pb.Task {
 		Context:        t.Context,
 		TaskName:       t.TaskName,
 		ProjectName:    t.ProjectName,
+		SeparateBranch: t.SeparateBranch,
+		BranchName:     t.BranchName,
 	}
 	if t.CreatedAt != "" {
 		if ts, err := time.Parse(time.RFC3339, t.CreatedAt); err == nil {

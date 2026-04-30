@@ -13,15 +13,17 @@ import "github.com/aosanya/CodeValdSharedLib/entitygraph"
 // written as explicit schema properties (ISO 8601 / RFC 3339 strings).
 func taskToProperties(t Task) map[string]any {
 	props := map[string]any{
-		"title":        t.Title,
-		"description":  t.Description,
-		"status":       string(t.Status),
-		"priority":     string(t.Priority),
-		"context":      t.Context,
-		"task_name":    t.TaskName,
-		"project_name": t.ProjectName,
-		"created_at":   t.CreatedAt,
-		"updated_at":   t.UpdatedAt,
+		"title":           t.Title,
+		"description":     t.Description,
+		"status":          string(t.Status),
+		"priority":        string(t.Priority),
+		"context":         t.Context,
+		"task_name":       t.TaskName,
+		"project_name":    t.ProjectName,
+		"separate_branch": t.SeparateBranch,
+		"branch_name":     t.BranchName,
+		"created_at":      t.CreatedAt,
+		"updated_at":      t.UpdatedAt,
 	}
 	if t.DueAt != "" {
 		props["due_at"] = t.DueAt
@@ -58,6 +60,8 @@ func taskFromEntity(e entitygraph.Entity) Task {
 		CompletedAt:    entitygraph.StringProp(e.Properties, "completed_at"),
 		TaskName:       entitygraph.StringProp(e.Properties, "task_name"),
 		ProjectName:    entitygraph.StringProp(e.Properties, "project_name"),
+		SeparateBranch: entitygraph.BoolProp(e.Properties, "separate_branch"),
+		BranchName:     entitygraph.StringProp(e.Properties, "branch_name"),
 		CreatedAt:      entitygraph.StringProp(e.Properties, "created_at"),
 		UpdatedAt:      entitygraph.StringProp(e.Properties, "updated_at"),
 		EstimatedHours: entitygraph.Float64Prop(e.Properties, "estimated_hours"),

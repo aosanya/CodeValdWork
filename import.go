@@ -80,12 +80,14 @@ type importDoc struct {
 }
 
 type importTask struct {
-	Name        string   `json:"name"`
-	Title       string   `json:"title"`
-	Priority    string   `json:"priority"`
-	DependsOn   []string `json:"depends_on"`
-	Tags        []string `json:"tags"`
-	Description string   `json:"description"`
+	Name           string   `json:"name"`
+	Title          string   `json:"title"`
+	Priority       string   `json:"priority"`
+	DependsOn      []string `json:"depends_on"`
+	Tags           []string `json:"tags"`
+	Description    string   `json:"description"`
+	SeparateBranch bool     `json:"separate_branch"`
+	BranchName     string   `json:"branch_name"`
 }
 
 // ── Public interface methods ──────────────────────────────────────────────────
@@ -251,12 +253,14 @@ func (m *taskManager) runImport(ctx context.Context, agencyID, jobID, document s
 		}
 		entry.appendStep(fmt.Sprintf("Creating task %q…", it.Name))
 		t, err := m.CreateTask(ctx, agencyID, Task{
-			Title:       it.Title,
-			Priority:    parsePriority(it.Priority),
-			Description: it.Description,
-			TaskName:    it.Name,
-			ProjectName: proj.ProjectName,
-			Tags:        it.Tags,
+			Title:          it.Title,
+			Priority:       parsePriority(it.Priority),
+			Description:    it.Description,
+			TaskName:       it.Name,
+			ProjectName:    proj.ProjectName,
+			Tags:           it.Tags,
+			SeparateBranch: it.SeparateBranch,
+			BranchName:     it.BranchName,
 		})
 		if err != nil {
 			m.failImportJob(ctx, agencyID, jobID, fmt.Sprintf("create task %s: %v", it.Name, err))
