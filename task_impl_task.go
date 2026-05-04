@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
@@ -204,6 +205,8 @@ func (m *taskManager) loadTagNames(ctx context.Context, agencyID, taskID string)
 // A nil publisher is silently skipped; errors are swallowed — events are
 // best-effort and must not fail the originating operation.
 func (m *taskManager) publish(ctx context.Context, topic, agencyID string, payload any) {
+	log.Printf("codevaldwork: publish: topic=%q agencyID=%q payloadType=%T publisherNil=%v payload=%+v",
+		topic, agencyID, payload, m.publisher == nil, payload)
 	eventbus.SafePublish(ctx, m.publisher, eventbus.Event{
 		Topic:    topic,
 		AgencyID: agencyID,

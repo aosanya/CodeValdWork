@@ -80,9 +80,10 @@ func (r *Registrar) Close() {
 // Errors are always nil — the operation has already been persisted and
 // must not be rolled back.
 func (r *Registrar) Publish(_ context.Context, e eventbus.Event) error {
-	log.Printf("registrar[codevaldwork]: publish topic=%q agencyID=%q payload=%T",
-		e.Topic, e.AgencyID, e.Payload)
+	log.Printf("registrar[codevaldwork]: publish topic=%q agencyID=%q payloadType=%T payload=%+v",
+		e.Topic, e.AgencyID, e.Payload, e.Payload)
 	// TODO(CROSS-XXX): call OrchestratorService.Publish RPC when available.
+	log.Printf("registrar[codevaldwork]: WARNING event dropped — Cross Publish RPC not yet wired; event will NOT reach CodeValdPubSub")
 	return nil
 }
 
