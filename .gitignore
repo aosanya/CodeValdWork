@@ -10,3 +10,6 @@ coverage.html
 
 # OS
 .DS_Store
+
+.claude/*
+.claude
