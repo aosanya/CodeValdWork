@@ -9,6 +9,7 @@ package registrar
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -75,15 +76,18 @@ func (r *Registrar) Close() {
 }
 
 // Publish implements [eventbus.Publisher].
-// Best-effort notification — currently logs the event; a future iteration
-// will call a CodeValdCross Publish RPC once CodeValdCross exposes one.
-// Errors are always nil — the operation has already been persisted and
-// must not be rolled back.
-func (r *Registrar) Publish(_ context.Context, e eventbus.Event) error {
-	log.Printf("registrar[codevaldwork]: publish topic=%q agencyID=%q payloadType=%T payload=%+v",
-		e.Topic, e.AgencyID, e.Payload, e.Payload)
-	// TODO(CROSS-XXX): call OrchestratorService.Publish RPC when available.
-	log.Printf("registrar[codevaldwork]: WARNING event dropped — Cross Publish RPC not yet wired; event will NOT reach CodeValdPubSub")
+// Marshals the event payload to JSON and forwards it to CodeValdCross via the
+// OrchestratorService.Publish RPC, which routes it on to CodeValdPubSub.
+// Errors are logged but not returned — the operation is already persisted.
+func (r *Registrar) Publish(ctx context.Context, e eventbus.Event) error {
+	payload, err := json.Marshal(e.Payload)
+	if err != nil {
+		log.Printf("registrar[codevaldwork]: marshal payload for topic=%q: %v", e.Topic, err)
+		payload = []byte("{}")
+	}
+	if err := r.heartbeat.Publish(ctx, e.AgencyID, e.Topic, "codevaldwork", string(payload)); err != nil {
+		log.Printf("registrar[codevaldwork]: Publish topic=%q: %v", e.Topic, err)
+	}
 	return nil
 }
 
