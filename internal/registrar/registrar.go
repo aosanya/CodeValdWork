@@ -44,6 +44,7 @@ var _ codevaldwork.CrossPublisher = (*Registrar)(nil)
 func New(
 	crossAddr, advertiseAddr, agencyID string,
 	pingInterval, pingTimeout time.Duration,
+	subscribeTopics []string,
 ) (*Registrar, error) {
 	hb, err := sharedregistrar.New(
 		crossAddr,
@@ -51,7 +52,7 @@ func New(
 		agencyID,
 		"codevaldwork",
 		codevaldwork.AllTopics(),
-		[]string{"cross.task.requested", "cross.agency.created"},
+		subscribeTopics,
 		workRoutes(),
 		pingInterval,
 		pingTimeout,
