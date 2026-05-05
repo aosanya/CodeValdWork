@@ -6,6 +6,7 @@ import (
 
 	codevaldwork "github.com/aosanya/CodeValdWork"
 	"github.com/aosanya/CodeValdSharedLib/eventbus"
+	"github.com/aosanya/CodeValdSharedLib/types"
 )
 
 // findEvent returns the first recorded Event whose Topic matches.
@@ -284,25 +285,39 @@ func TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics(t *testing.T) {
 	}
 }
 
-// AllTopics must list every topic constant exactly once. The registrar's
-// produces declaration depends on this — drift here silently breaks
-// subscriber discovery.
+// AllTopics must contain all schema-derived topics plus the business-semantic
+// extras. The registrar's produces declaration depends on this — drift here
+// silently breaks subscriber discovery.
 func TestAllTopics_StableSurface(t *testing.T) {
 	got := codevaldwork.AllTopics()
-	want := []string{
-		codevaldwork.TopicTaskCreated,
-		codevaldwork.TopicTaskUpdated,
-		codevaldwork.TopicTaskStatusChanged,
+
+	// Schema-derived topics must all be present.
+	derived := types.TopicsFromSchema("work", codevaldwork.DefaultWorkSchema())
+	gotSet := make(map[string]bool, len(got))
+	for _, topic := range got {
+		gotSet[topic] = true
+	}
+	for _, topic := range derived {
+		if !gotSet[topic] {
+			t.Errorf("schema-derived topic missing from AllTopics: %q", topic)
+		}
+	}
+
+	// Business-semantic extras must also be present.
+	extras := []string{
 		codevaldwork.TopicTaskCompleted,
 		codevaldwork.TopicTaskAssigned,
 		codevaldwork.TopicRelationshipCreated,
 	}
-	if len(got) != len(want) {
-		t.Fatalf("count: got %d, want %d", len(got), len(want))
-	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Errorf("topic[%d]: got %q, want %q", i, got[i], want[i])
+	for _, topic := range extras {
+		if !gotSet[topic] {
+			t.Errorf("business topic missing from AllTopics: %q", topic)
 		}
+	}
+
+	// Total count must match so accidental duplicates are caught.
+	want := len(derived) + len(extras)
+	if len(got) != want {
+		t.Fatalf("count: got %d, want %d", len(got), want)
 	}
 }

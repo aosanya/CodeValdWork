@@ -46,6 +46,7 @@ func DefaultWorkSchema() types.Schema {
 				PathSegment:       "tasks",
 				EntityIDParam:     "taskId",
 				StorageCollection: "work_tasks",
+				PublishEvents:     true,
 				Properties: []types.PropertyDefinition{
 					// title is the short human-readable label (e.g. "Farm Dashboard").
 					{Name: "title", Type: types.PropertyTypeString},
@@ -156,6 +157,7 @@ func DefaultWorkSchema() types.Schema {
 				PathSegment:       "projects",
 				EntityIDParam:     "projectId",
 				StorageCollection: "work_projects",
+				PublishEvents:     true,
 				Properties: []types.PropertyDefinition{
 					// name is the short human-readable label. Required.
 					{Name: "name", Type: types.PropertyTypeString, Required: true},
@@ -187,6 +189,7 @@ func DefaultWorkSchema() types.Schema {
 				PathSegment:       "agents",
 				EntityIDParam:     "agentId",
 				StorageCollection: "work_agents",
+				PublishEvents:     true,
 				// UniqueKey on agent_id makes the external identifier the natural key for
 				// UpsertEntity — UpsertAgent relies on this for find-or-create.
 				UniqueKey: []string{"agent_id"},
@@ -217,6 +220,7 @@ func DefaultWorkSchema() types.Schema {
 				PathSegment:       "tags",
 				EntityIDParam:     "tagId",
 				StorageCollection: "work_tags",
+				PublishEvents:     true,
 				UniqueKey:         []string{"name"},
 				Properties: []types.PropertyDefinition{
 					// name is the unique label text (e.g. "setup", "auth").
@@ -243,6 +247,7 @@ func DefaultWorkSchema() types.Schema {
 				Name:              "ImportProjectJob",
 				DisplayName:       "Import Project Job",
 				StorageCollection: "work_import_jobs",
+				PublishEvents:     true,
 				Properties: []types.PropertyDefinition{
 					// status tracks the async lifecycle: pending, running, completed, failed, cancelled.
 					{Name: "status", Type: types.PropertyTypeString},

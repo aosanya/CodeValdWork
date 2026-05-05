@@ -1,5 +1,7 @@
 package codevaldwork
 
+import "github.com/aosanya/CodeValdSharedLib/types"
+
 // Event topic constants — the closed set CodeValdWork publishes.
 const (
 	// TopicTaskCreated fires after a Task entity is created.
@@ -28,16 +30,16 @@ const (
 	TopicRelationshipCreated = "work.relationship.created"
 )
 
-// AllTopics is the closed list of topics this service publishes.
+// AllTopics is the full list of topics this service publishes.
+// Schema-derived lifecycle topics are generated automatically from
+// [DefaultWorkSchema]; business-semantic extras are appended below.
 func AllTopics() []string {
-	return []string{
-		TopicTaskCreated,
-		TopicTaskUpdated,
-		TopicTaskStatusChanged,
+	derived := types.TopicsFromSchema("work", DefaultWorkSchema())
+	return append(derived,
 		TopicTaskCompleted,
 		TopicTaskAssigned,
 		TopicRelationshipCreated,
-	}
+	)
 }
 
 // TaskCreatedPayload is the [Event.Payload] for [TopicTaskCreated].
