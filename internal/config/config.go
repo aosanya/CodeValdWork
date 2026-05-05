@@ -5,6 +5,7 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/serverutil"
@@ -45,6 +46,10 @@ type Config struct {
 
 	// PingTimeout is the per-RPC timeout for each Register call (default 5s).
 	PingTimeout time.Duration
+
+	// SubscribeTopics is the list of pub/sub topics CodeValdWork subscribes to
+	// (comma-separated WORK_SUBSCRIBE_TOPICS env var).
+	SubscribeTopics []string
 }
 
 // Load reads runtime configuration from environment variables, falling back to
@@ -62,6 +67,7 @@ type Config struct {
 //	CODEVALDWORK_AGENCY_ID     agency scope for this instance (default "")
 //	CROSS_PING_INTERVAL        heartbeat cadence Go duration string (default "10s")
 //	CROSS_PING_TIMEOUT         per-RPC Register timeout, Go duration string (default "5s")
+//	WORK_SUBSCRIBE_TOPICS      comma-separated pub/sub topics to subscribe to (default "")
 func Load() Config {
 	port := serverutil.MustGetEnv("CODEVALDWORK_PORT")
 	return Config{
