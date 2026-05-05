@@ -79,7 +79,18 @@ func Load() Config {
 		CrossGRPCAddr:  serverutil.EnvOrDefault("CROSS_GRPC_ADDR", ""),
 		AdvertiseAddr:  serverutil.EnvOrDefault("WORK_GRPC_ADVERTISE_ADDR", ":"+port),
 		AgencyID:       serverutil.EnvOrDefault("CODEVALDWORK_AGENCY_ID", ""),
-		PingInterval:   serverutil.ParseDurationString("CROSS_PING_INTERVAL", 10*time.Second),
-		PingTimeout:    serverutil.ParseDurationString("CROSS_PING_TIMEOUT", 5*time.Second),
+		PingInterval:    serverutil.ParseDurationString("CROSS_PING_INTERVAL", 10*time.Second),
+		PingTimeout:     serverutil.ParseDurationString("CROSS_PING_TIMEOUT", 5*time.Second),
+		SubscribeTopics: parseTopics(serverutil.EnvOrDefault("WORK_SUBSCRIBE_TOPICS", "")),
 	}
+}
+
+func parseTopics(raw string) []string {
+	var out []string
+	for _, t := range strings.Split(raw, ",") {
+		if t = strings.TrimSpace(t); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }
