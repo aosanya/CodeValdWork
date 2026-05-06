@@ -91,6 +91,7 @@ message Agent {
   string capability   = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+  string role_name    = 8;  // role this agent fulfils (e.g. "domain-expert")
 }
 
 // Project is an optional container that groups related tasks (sprints,

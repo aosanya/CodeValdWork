@@ -200,6 +200,8 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "display_name", Type: types.PropertyTypeString},
 					// capability is the agent's primary capability (e.g. "code", "research").
 					{Name: "capability", Type: types.PropertyTypeString},
+					// role_name is the role this agent fulfils (e.g. "domain-expert").
+					{Name: "role_name", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},

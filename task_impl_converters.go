@@ -119,6 +119,7 @@ func agentToProperties(a Agent) map[string]any {
 		"agent_id":     a.AgentID,
 		"display_name": a.DisplayName,
 		"capability":   a.Capability,
+		"role_name":    a.RoleName,
 		"created_at":   a.CreatedAt,
 		"updated_at":   a.UpdatedAt,
 	}
@@ -132,6 +133,7 @@ func agentFromEntity(e entitygraph.Entity) Agent {
 		AgentID:     entitygraph.StringProp(e.Properties, "agent_id"),
 		DisplayName: entitygraph.StringProp(e.Properties, "display_name"),
 		Capability:  entitygraph.StringProp(e.Properties, "capability"),
+		RoleName:    entitygraph.StringProp(e.Properties, "role_name"),
 		CreatedAt:   entitygraph.StringProp(e.Properties, "created_at"),
 		UpdatedAt:   entitygraph.StringProp(e.Properties, "updated_at"),
 	}

@@ -16,7 +16,8 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 	if _, err := m.GetTask(ctx, agencyID, taskID); err != nil {
 		return err
 	}
-	if _, err := m.GetAgent(ctx, agencyID, agentID); err != nil {
+	agent, err := m.GetAgent(ctx, agencyID, agentID)
+	if err != nil {
 		return err
 	}
 
@@ -43,8 +44,9 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 	}
 
 	m.publish(ctx, TopicTaskAssigned, agencyID, TaskAssignedPayload{
-		TaskID:  taskID,
-		AgentID: agentID,
+		TaskID:   taskID,
+		AgentID:  agentID,
+		RoleName: agent.RoleName,
 	})
 	return nil
 }

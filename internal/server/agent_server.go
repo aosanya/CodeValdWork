@@ -74,6 +74,7 @@ func agentToProto(a codevaldwork.Agent) *pb.Agent {
 		AgentId:     a.AgentID,
 		DisplayName: a.DisplayName,
 		Capability:  a.Capability,
+		RoleName:    a.RoleName,
 	}
 	if a.CreatedAt != "" {
 		if ts, err := time.Parse(time.RFC3339, a.CreatedAt); err == nil {
@@ -98,6 +99,7 @@ func protoToAgent(pa *pb.Agent) codevaldwork.Agent {
 		AgentID:     pa.AgentId,
 		DisplayName: pa.DisplayName,
 		Capability:  pa.Capability,
+		RoleName:    pa.RoleName,
 	}
 	if pa.CreatedAt != nil {
 		a.CreatedAt = pa.CreatedAt.AsTime().UTC().Format(time.RFC3339)

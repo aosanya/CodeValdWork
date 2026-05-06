@@ -441,6 +441,7 @@ type Agent struct {
 	Capability    string                 `protobuf:"bytes,5,opt,name=capability,proto3" json:"capability,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	RoleName      string                 `protobuf:"bytes,8,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -522,6 +523,13 @@ func (x *Agent) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *Agent) GetRoleName() string {
+	if x != nil {
+		return x.RoleName
+	}
+	return ""
 }
 
 // Project is an optional container that groups related tasks (sprints,

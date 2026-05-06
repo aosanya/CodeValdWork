@@ -231,6 +231,11 @@ type Agent struct {
 	// "review"). Optional.
 	Capability string `json:"capability,omitempty"`
 
+	// RoleName is the role this agent fulfils within the agency
+	// (e.g. "domain-expert", "human-code-reviewer"). Used as a stable
+	// filter key in event payload_condition rules. Optional.
+	RoleName string `json:"role_name,omitempty"`
+
 	// CreatedAt is the RFC 3339 timestamp when the agent was first registered.
 	CreatedAt string `json:"created_at"`
 
