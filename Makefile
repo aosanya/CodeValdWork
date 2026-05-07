@@ -1,4 +1,4 @@
-.PHONY: build build-server build-dev server dev dev-restart kill proto test cover test-arango test-all vet lint clean
+.PHONY: build build-server build-dev server dev dev-restart kill proto test cover test-arango test-all vet lint clean reset-db
 
 export PATH := /usr/local/go/bin:$(PATH)
 
@@ -92,3 +92,40 @@ clean:
 	go clean ./...
 	rm -f coverage.out coverage.html
 	rm -rf bin/
+
+# ── Dev DB ────────────────────────────────────────────────────────────────────
+
+## Truncate all work ArangoDB collections (dev reset).
+## Loads .env if present; honours WORK_ARANGO_* env vars.
+## Usage: make reset-db
+##        WORK_ARANGO_DATABASE=mydb make reset-db
+reset-db:
+	@if [ -f .env ]; then \
+		set -a && . ./.env && set +a; \
+	fi; \
+	ENDPOINT=$${WORK_ARANGO_ENDPOINT:-http://localhost:8529}; \
+	USER=$${WORK_ARANGO_USER:-root}; \
+	PASS=$${WORK_ARANGO_PASSWORD:-}; \
+	DB=$${WORK_ARANGO_DATABASE:-codevaldwork}; \
+	echo "Resetting work collections in '$$DB' at $$ENDPOINT ..."; \
+	for col in \
+		work_tasks \
+		work_projects \
+		work_agents \
+		work_tags \
+		work_import_jobs \
+		work_entities \
+		work_groups \
+		work_relationships \
+		work_schemas_draft \
+		work_schemas_published; do \
+		STATUS=$$(curl -s -o /dev/null -w "%{http_code}" \
+			-u "$$USER:$$PASS" \
+			-X PUT "$$ENDPOINT/_db/$$DB/_api/collection/$$col/truncate"); \
+		case "$$STATUS" in \
+			200) echo "  [ok]   $$col" ;; \
+			404) echo "  [skip] $$col (collection not found)" ;; \
+			*)   echo "  [FAIL] $$col (HTTP $$STATUS)" ;; \
+		esac; \
+	done; \
+	echo "Done."
