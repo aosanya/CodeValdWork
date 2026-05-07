@@ -441,7 +441,7 @@ type Agent struct {
 	Capability    string                 `protobuf:"bytes,5,opt,name=capability,proto3" json:"capability,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	RoleName      string                 `protobuf:"bytes,8,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"`
+	RoleName      string                 `protobuf:"bytes,8,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"` // role this agent fulfils (e.g. "domain-expert")
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -778,7 +778,7 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
 	"TaskFilter\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +
-	"\bpriority\x18\x02 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriorityJ\x04\b\x03\x10\x04R\vassigned_to\"\x88\x02\n" +
+	"\bpriority\x18\x02 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriorityJ\x04\b\x03\x10\x04R\vassigned_to\"\xa5\x02\n" +
 	"\x05Agent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x19\n" +
@@ -790,7 +790,8 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xd5\x02\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1b\n" +
+	"\trole_name\x18\b \x01(\tR\broleName\"\xd5\x02\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x12\n" +
