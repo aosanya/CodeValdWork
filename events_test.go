@@ -143,6 +143,47 @@ func TestAssignTask_Replacement_FiresAssignedOnce(t *testing.T) {
 	}
 }
 
+func TestAssignTask_PayloadHydrated_IncludesTaskCodeAndTitle(t *testing.T) {
+	pub := &recordingPublisher{}
+	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)
+	ctx := context.Background()
+
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{
+		TaskName:    "UTIL-001",
+		Title:       "Implement app version display widget",
+		Description: "Add a read-only widget to the settings screen showing the current app version.",
+	})
+	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{
+		AgentID:  "dev-01",
+		RoleName: "Developer",
+	})
+
+	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID); err != nil {
+		t.Fatalf("AssignTask: %v", err)
+	}
+
+	ev, ok := findEvent(pub.full, codevaldwork.TopicTaskAssigned)
+	if !ok {
+		t.Fatal("no work.task.assigned event published")
+	}
+	p, ok := ev.Payload.(codevaldwork.TaskAssignedPayload)
+	if !ok {
+		t.Fatalf("payload type = %T, want TaskAssignedPayload", ev.Payload)
+	}
+	if p.TaskCode != "UTIL-001" {
+		t.Errorf("TaskCode = %q, want %q", p.TaskCode, "UTIL-001")
+	}
+	if p.Title != "Implement app version display widget" {
+		t.Errorf("Title = %q, want %q", p.Title, "Implement app version display widget")
+	}
+	if p.Description == "" {
+		t.Error("Description is empty; LLM will not have task context")
+	}
+	if p.RoleName != "Developer" {
+		t.Errorf("RoleName = %q, want Developer", p.RoleName)
+	}
+}
+
 func TestCreateRelationship_PublishesTypedRelationshipCreatedPayload(t *testing.T) {
 	pub := &recordingPublisher{}
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), pub)

@@ -71,9 +71,12 @@ type TaskCompletedPayload struct {
 
 // TaskAssignedPayload is the [Event.Payload] for [TopicTaskAssigned].
 type TaskAssignedPayload struct {
-	TaskID   string
-	AgentID  string
-	RoleName string
+	TaskID      string
+	AgentID     string
+	RoleName    string
+	TaskCode    string // project-scoped code, e.g. "UTIL-001" — empty for tasks not in a project
+	Title       string
+	Description string
 }
 
 // RelationshipCreatedPayload is the [Event.Payload] for [TopicRelationshipCreated].

@@ -13,7 +13,8 @@ import (
 // any pre-existing outbound `assigned_to` edge from the Task is removed
 // before the new one is created.
 func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID string) error {
-	if _, err := m.GetTask(ctx, agencyID, taskID); err != nil {
+	task, err := m.GetTask(ctx, agencyID, taskID)
+	if err != nil {
 		return err
 	}
 	agent, err := m.GetAgent(ctx, agencyID, agentID)
@@ -44,9 +45,12 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 	}
 
 	m.publish(ctx, TopicTaskAssigned, agencyID, TaskAssignedPayload{
-		TaskID:   taskID,
-		AgentID:  agentID,
-		RoleName: agent.RoleName,
+		TaskID:      taskID,
+		AgentID:     agentID,
+		RoleName:    agent.RoleName,
+		TaskCode:    task.TaskName,
+		Title:       task.Title,
+		Description: task.Description,
 	})
 	return nil
 }
