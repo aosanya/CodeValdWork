@@ -29,7 +29,10 @@
 //   - All edges        → "work_relationships"  edge collection
 package codevaldwork
 
-import "github.com/aosanya/CodeValdSharedLib/types"
+import (
+	"github.com/aosanya/CodeValdSharedLib/eventreceiver"
+	"github.com/aosanya/CodeValdSharedLib/types"
+)
 
 // DefaultWorkSchema returns the pre-delivered [types.Schema] seeded on startup.
 // The operation is idempotent — calling it multiple times with the same schema
@@ -39,7 +42,7 @@ func DefaultWorkSchema() types.Schema {
 		ID:      "work-schema-v1",
 		Version: 1,
 		Tag:     "v1",
-		Types: []types.TypeDefinition{
+		Types: append([]types.TypeDefinition{
 			{
 				Name:              "Task",
 				DisplayName:       "Task",
@@ -263,6 +266,6 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},
 			},
-		},
+		}, eventreceiver.ReceivedEventTypeDefinition("work")),
 	}
 }

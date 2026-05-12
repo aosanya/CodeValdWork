@@ -23,6 +23,7 @@ import (
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
 	healthpb "github.com/aosanya/CodeValdSharedLib/gen/go/codevaldhealth/v1"
 	entitygraphpb "github.com/aosanya/CodeValdSharedLib/gen/go/entitygraph/v1"
+	sharedev1 "github.com/aosanya/CodeValdSharedLib/gen/go/codevaldshared/v1"
 	"github.com/aosanya/CodeValdSharedLib/health"
 	"github.com/aosanya/CodeValdSharedLib/serverutil"
 )
@@ -95,6 +96,10 @@ func Run(cfg config.Config) error {
 	pb.RegisterTaskServiceServer(grpcServer, server.New(mgr))
 	entitygraphpb.RegisterEntityServiceServer(grpcServer, server.NewEntityServer(backend))
 	healthpb.RegisterHealthServiceServer(grpcServer, health.New("codevaldwork"))
+	if cfg.AgencyID != "" {
+		dispatcher := server.NewTaskEventDispatcher(mgr, cfg.AgencyID)
+		sharedev1.RegisterEventReceiverServiceServer(grpcServer, server.NewEventReceiver(backend, cfg.AgencyID, dispatcher))
+	}
 
 	// ── Signal handling ───────────────────────────────────────────────────────
 	quit := make(chan os.Signal, 1)
