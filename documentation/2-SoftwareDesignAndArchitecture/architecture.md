@@ -29,7 +29,7 @@ holds a `WorkDataManager` (entity + graph operations) and a `WorkSchemaManager`
 | Decision | Choice |
 |---|---|
 | Entity-graph foundation | `WorkDataManager = entitygraph.DataManager`; `WorkSchemaManager = entitygraph.SchemaManager` |
-| Pre-delivered schema | Fixed TypeDefinitions seeded on `cross.agency.created` |
+| Pre-delivered schema | Fixed TypeDefinitions seeded on `agency.created` |
 | Task entity types | `Task`, `TaskGroup`, `Agent` — each in own `work_*` collection |
 | Relationships | Graph edges: `assigned_to`, `blocks`, `subtask_of`, `depends_on`, `member_of` |
 | Blocker enforcement | Hard gate on `pending → in_progress` if any `blocks`-inbound task is non-terminal |

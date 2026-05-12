@@ -173,7 +173,7 @@ CodeValdWork registers with CodeValdCross on startup and sends periodic heartbea
 | `work.task.updated` | Produces | Task status or assignment changed |
 | `work.task.completed` | Produces | Task reached terminal status |
 | `cross.task.requested` | Consumes | Cortex requesting task creation |
-| `cross.agency.created` | Consumes | New agency registered — seed task backlog |
+| `agency.created` | Consumes | New agency registered — seed task backlog |
 
 ---
 

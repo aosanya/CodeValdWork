@@ -136,13 +136,13 @@ RegisterRequest{
     },
     Consumes: []string{
         "cross.task.requested",   // Cross dispatching a new task
-        "cross.agency.created",   // Seed default schema for new agency
+        "agency.created",   // Seed default schema for new agency
     },
     Routes: workRoutes(),  // all HTTP convenience routes above
 }
 ```
 
-When `cross.agency.created` is received, CodeValdWork calls
+When `agency.created` is received, CodeValdWork calls
 `WorkSchemaManager.SetSchema(agencyID, defaultWorkSchema)` if no schema
 exists for that agency.
 

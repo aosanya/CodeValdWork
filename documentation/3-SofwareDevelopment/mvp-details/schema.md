@@ -109,5 +109,5 @@ WORK-010 enforces the `(agencyID, agentID)` uniqueness constraint at the
 
 - Edge collection registration → [MVP-WORK-009](relationships.md)
 - gRPC proto messages for the new fields → [MVP-WORK-013](grpc-surface.md)
-- Per-agency schema seeding on `cross.agency.created` — explicitly deferred.
+- Per-agency schema seeding on `agency.created` — explicitly deferred.
   Schema is still seeded once on startup via `entitygraph.SeedSchema`.

@@ -5,7 +5,7 @@
 | Stakeholder | Role |
 |---|---|
 | **AI Agents** | Receive task assignments; transition tasks to `in_progress`, then `completed` or `failed` |
-| **CodeValdCross** | Creates tasks when agencies receive new work; queries task status for routing decisions; marks tasks complete when agent output is accepted; routes `cross.task.requested` and `cross.agency.created` events to CodeValdWork |
+| **CodeValdCross** | Creates tasks when agencies receive new work; queries task status for routing decisions; marks tasks complete when agent output is accepted; routes `cross.task.requested` and `agency.created` events to CodeValdWork |
 
 ## Secondary Consumers
 

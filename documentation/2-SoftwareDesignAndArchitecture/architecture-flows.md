@@ -262,9 +262,9 @@ single focused topic rather than filtering `work.task.status.changed`.
 
 ---
 
-## Flow 8: SchemaSeeding (on cross.agency.created)
+## Flow 8: SchemaSeeding (on agency.created)
 
-**Trigger:** `cross.agency.created` pub/sub event from CodeValdCross
+**Trigger:** `agency.created` pub/sub event from CodeValdCross
 
 ```
 1. Extract agencyID from event payload

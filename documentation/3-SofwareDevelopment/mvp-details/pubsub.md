@@ -139,8 +139,8 @@ on the extracted contract).
 
 ### Out of scope
 
-- Per-agency schema seeding on `cross.agency.created` — explicitly deferred.
-- Consuming events (`cross.task.requested`, `cross.agency.created`) — Phase
+- Per-agency schema seeding on `agency.created` — explicitly deferred.
+- Consuming events (`cross.task.requested`, `agency.created`) — Phase
   1 already declares these as `consumes` but does not subscribe; consumption
   is a separate task, not in Phase 2.
 - Replay / dead-letter / retry semantics — best-effort delivery is fine for

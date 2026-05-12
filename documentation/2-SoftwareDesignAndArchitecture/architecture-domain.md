@@ -28,7 +28,7 @@ type WorkSchemaManager = entitygraph.SchemaManager
 ## 2. Pre-Delivered Schema
 
 CodeValdWork ships with a **fixed, built-in schema** — agencies do not author
-TypeDefinitions. On receipt of `cross.agency.created`, CodeValdWork calls
+TypeDefinitions. On receipt of `agency.created`, CodeValdWork calls
 `WorkSchemaManager.SetSchema(agencyID, defaultWorkSchema)` if no schema
 exists for that agency. This is idempotent.
 
