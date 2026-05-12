@@ -21,6 +21,12 @@ const (
 	// [TopicTaskStatusChanged]. Payload: [TaskCompletedPayload].
 	TopicTaskCompleted = "work.task.completed"
 
+	// TopicTaskFailed fires when an AI agent run fails to satisfy the required
+	// output contract (e.g. no actions block emitted). Published in addition to
+	// [TopicTaskCompleted] when the failure is agent-driven.
+	// Payload: [TaskFailedPayload].
+	TopicTaskFailed = "work.task.failed"
+
 	// TopicTaskAssigned fires when an `assigned_to` edge is created or
 	// replaced. Payload: [TaskAssignedPayload].
 	TopicTaskAssigned = "work.task.assigned"
@@ -37,6 +43,7 @@ func AllTopics() []string {
 	derived := types.TopicsFromSchema("work", DefaultWorkSchema())
 	return append(derived,
 		TopicTaskCompleted,
+		TopicTaskFailed,
 		TopicTaskAssigned,
 		TopicRelationshipCreated,
 	)
@@ -67,6 +74,22 @@ type TaskCompletedPayload struct {
 	TerminalStatus TaskStatus
 	// CompletedAt is the RFC 3339 timestamp when the terminal status was set.
 	CompletedAt string
+}
+
+// TaskFailedBy identifies the agent and work plan responsible for a task failure.
+type TaskFailedBy struct {
+	AgentID      string
+	WorkPlanID   string
+	WorkPlanCode string
+}
+
+// TaskFailedPayload is the [Event.Payload] for [TopicTaskFailed].
+// Consumers needing the raw LLM output should fetch the AgentRun from CodeValdAI using RunID.
+type TaskFailedPayload struct {
+	TaskID   string
+	RunID    string
+	Reason   string
+	FailedBy TaskFailedBy
 }
 
 // TaskAssignedPayload is the [Event.Payload] for [TopicTaskAssigned].

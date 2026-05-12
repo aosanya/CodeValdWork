@@ -203,7 +203,66 @@ No pub/sub event for group membership — informational only.
 
 ---
 
-## Flow 7: SchemaSeeding (on cross.agency.created)
+## Flow 7: AI Task Lifecycle Bridge (EventReceiver)
+
+**Domain rule:** CodeValdWork publishes only `work.*` events. It never publishes
+`ai.*`. When an AI agent starts, completes, or fails a task, CodeValdAI publishes
+an `ai.task.*` event — CodeValdWork consumes it and transitions the task status,
+which then fires the corresponding `work.task.*` event through the existing publish
+hooks in `UpdateTask`.
+
+### 7a: `ai.task.in_progress` → task pending → in_progress
+
+**Trigger:** `ai.task.in_progress` from CodeValdAI (published before LLM call)
+
+```
+1. Extract task_id from event payload
+2. workDataManager.GetEntity(ctx, agencyID, task_id)
+   → if not found: log and skip (best-effort)
+3. Execute Flow 3 (UpdateTask — Status Transition) with newStatus = "in_progress"
+   → publishes work.task.in_progress (via work.task.status.changed hook)
+```
+
+### 7b: `ai.task.completed` → task in_progress → completed
+
+**Trigger:** `ai.task.completed` from CodeValdAI (published after successful LLM run)
+
+```
+1. Extract task_id from event payload
+2. Execute Flow 3 (UpdateTask — Status Transition) with newStatus = "completed"
+   → publishes work.task.status.changed (from → completed)
+   → publishes work.task.completed (terminal status hook)
+```
+
+### 7c: `ai.task.failed` → task in_progress → failed
+
+**Trigger:** `ai.task.failed` from CodeValdAI (LLM error or no actions block)
+
+```
+1. Extract task_id, reason, failed_by from event payload
+2. Execute Flow 3 (UpdateTask — Status Transition) with newStatus = "failed"
+   → publishes work.task.status.changed (from → failed)
+   → publishes work.task.failed (terminal status hook)
+```
+
+### New topic: `work.task.in_progress`
+
+Added alongside `work.task.status.changed` in UpdateTask when `newStatus == "in_progress"`:
+
+```
+bus.Publish(ctx, Message{
+    Topic:   "work.task.in_progress",
+    Payload: { taskID, agencyID, agentID },
+    Source:  "codevaldwork",
+})
+```
+
+This lets consumers that only care about the in_progress transition subscribe to a
+single focused topic rather than filtering `work.task.status.changed`.
+
+---
+
+## Flow 8: SchemaSeeding (on cross.agency.created)
 
 **Trigger:** `cross.agency.created` pub/sub event from CodeValdCross
 

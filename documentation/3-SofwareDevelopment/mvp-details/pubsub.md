@@ -22,10 +22,20 @@ topics named in
 |---|---|---|
 | `work.task.created` | Task entity created | `{taskID, agencyID, title, priority}` |
 | `work.task.updated` | Mutable field changed (excluding status) | `{taskID, agencyID, changedFields[]}` |
+| `work.task.assigned` | `assigned_to` edge created or replaced | `{taskID, agencyID, agentID, roleName}` |
+| `work.task.in_progress` | Task transitions to `in_progress` (via AI bridge or direct update) | `{taskID, agencyID, agentID}` |
 | `work.task.status.changed` | Any status transition | `{taskID, agencyID, from, to}` |
 | `work.task.completed` | Status → `completed`, `failed`, or `cancelled` | `{taskID, agencyID, terminalStatus, completedAt}` |
-| `work.task.assigned` | `assigned_to` edge created or replaced | `{taskID, agencyID, agentID}` |
+| `work.task.failed` | Status → `failed` (terminal) | `{taskID, agencyID, completedAt}` |
 | `work.relationship.created` | Any edge created | `{fromID, toID, label, agencyID}` |
+
+**AI lifecycle bridge topics consumed by CodeValdWork:**
+
+| Topic | Publisher | CodeValdWork action |
+|---|---|---|
+| `ai.task.in_progress` | CodeValdAI | `UpdateTask(status=in_progress)` → fires `work.task.in_progress` + `work.task.status.changed` |
+| `ai.task.completed` | CodeValdAI | `UpdateTask(status=completed)` → fires `work.task.completed` + `work.task.status.changed` |
+| `ai.task.failed` | CodeValdAI | `UpdateTask(status=failed)` → fires `work.task.failed` + `work.task.status.changed` |
 
 ### Phase 1 starting point
 
