@@ -5,6 +5,63 @@ Registrar `produces` · SharedLib extraction candidate
 
 ---
 
+## Topic Naming Convention
+
+All PubSub topics across every CodeVald service follow the three-segment rule:
+
+```
+<service>.<entity>.<verb>
+```
+
+| Segment | Meaning | Examples |
+|---|---|---|
+| `service` | Owning service (publisher) | `work`, `ai`, `git`, `comm` |
+| `entity` | Domain entity acted on | `task`, `run`, `agent`, `todo`, `branch`, `relationship` |
+| `verb` | Past-tense event verb | `created`, `assigned`, `completed`, `started`, `dispatched` |
+
+**Rules:**
+- `verb` must be a past-tense verb — never a noun (`todo`), adjective (`in_progress`), or infinitive (`create`).
+- `entity` must be the entity being acted on — never the parent entity when the event concerns a child entity (`work.todo.dispatched`, not `work.task.todo`).
+- Compound verbs are allowed when a single past-tense word is ambiguous: `status.changed` reads as "the status was changed" and is preferred over `updated` when a specific field transition is signalled.
+- Four-segment topics (`work.task.status.changed`) are permitted only for such compound verbs. New topics should be three segments.
+
+### Full Topic Inventory
+
+| Topic | Service | Entity | Verb | Status |
+|---|---|---|---|---|
+| `ai.agent.created` | ai | agent | created | ✓ |
+| `ai.run.completed` | ai | run | completed | ✓ |
+| `ai.run.failed` | ai | run | failed | ✓ |
+| `ai.task.completed` | ai | task | completed | ✓ |
+| `ai.task.failed` | ai | task | failed | ✓ |
+| `ai.task.yielded` | ai | task | yielded | ✓ |
+| `ai.task.started` | ai | task | started | ✓ — replaces `ai.task.in_progress` |
+| `ai.todo.created` | ai | todo | created | ✓ — replaces `ai.task.todo` |
+| `work.task.created` | work | task | created | ✓ |
+| `work.task.updated` | work | task | updated | ✓ |
+| `work.task.assigned` | work | task | assigned | ✓ |
+| `work.task.completed` | work | task | completed | ✓ |
+| `work.task.failed` | work | task | failed | ✓ |
+| `work.task.status.changed` | work | task | status.changed | ✓ compound verb |
+| `work.relationship.created` | work | relationship | created | ✓ |
+| `work.todo.dispatched` | work | todo | dispatched | ✓ — replaces `work.task.todo` |
+| `git.branch.created` | git | branch | created | ✓ — replaces `git.branch.create` |
+| `git.branch.deleted` | git | branch | deleted | ✓ — replaces `git.branch.delete` |
+| `git.repo.created` | git | repo | created | ✓ — replaces `git.repo.create` |
+
+### Renamed Topics
+
+| Old (non-conforming) | New | Reason |
+|---|---|---|
+| `ai.task.in_progress` | `ai.task.started` | `in_progress` is a state, not a verb |
+| `ai.task.todo` | `ai.todo.created` | `todo` is a noun; entity is `todo`, not `task` |
+| `work.task.todo` | `work.todo.dispatched` | same; `dispatched` captures that the todo was sent to an agent |
+| `git.branch.create` | `git.branch.created` | infinitive `create` is not past-tense |
+| `git.branch.delete` | `git.branch.deleted` | same |
+| `git.repo.create` | `git.repo.created` | same |
+
+---
+
 ## MVP-WORK-014 — Pub/sub publishing pipeline
 
 **Status**: 🟒 Not Started

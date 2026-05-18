@@ -1,19 +1,19 @@
-# Task Decomposition — `ai.task.todo` Bridge & `TaskTodo` Entity
+# Task Decomposition — `ai.todo.created` Bridge & `TaskTodo` Entity
 
-Topics: `ai.task.todo` consumer · `TaskTodo` entity · `work.task.todo` publisher ·
+Topics: `ai.todo.created` consumer · `TaskTodo` entity · `work.todo.dispatched` publisher ·
 `todo_assigned_to` edge · `TodoStatus` lifecycle
 
 ---
 
 ## Overview
 
-When a developer AI agent decomposes a task it emits an `ai.task.todo` event.
+When a developer AI agent decomposes a task it emits an `ai.todo.created` event.
 CodeValdWork consumes that event and materialises each `TodoItem` as a first-class
 `TaskTodo` entity — queryable, assignable, and status-tracked in the work graph.
-CodeValdWork then publishes one `work.task.todo` event per entity so CodeValdAI
+CodeValdWork then publishes one `work.todo.dispatched` event per entity so CodeValdAI
 agents can pick each todo up via a work plan.
 
-CodeValdAI does **not** spawn child runs internally when it sees `ai.task.todo`.
+CodeValdAI does **not** spawn child runs internally when it sees `ai.todo.created`.
 CodeValdWork is the sole owner of the todo-to-run lifecycle.
 
 ---
@@ -25,25 +25,25 @@ work.task.assigned  (ParentTaskID absent — original task)
         │
         ▼ CodeValdAI: decomposition run
         │   callLLM → outputs ONLY an ```actions block
-        │             with topic "ai.task.todo"
-        │   dispatchActions: publish "ai.task.todo" to Cross (no internal spawn)
+        │             with topic "ai.todo.created"
+        │   dispatchActions: publish "ai.todo.created" to Cross (no internal spawn)
         │
-        ▼ CodeValdWork: ai.task.todo EventReceiver
+        ▼ CodeValdWork: ai.todo.created EventReceiver
         │
         ├─ for each TodoItem in payload:
         │     CreateEntity("TaskTodo", properties…)
         │     CreateRelationship(TaskTodo ──todo_of──────────► Task)
         │     CreateRelationship(TaskTodo ──todo_assigned_to──► Agent)  [parent assignee]
-        │     Publish "work.task.todo" {TodoID, AgentID, ParentTaskID,
-        │                               Title, Instructions, Ordinality,
-        │                               CanRunParallel, DependsOn}
+        │     Publish "work.todo.dispatched" {TodoID, AgentID, ParentTaskID,
+        │                                    Title, Instructions, Ordinality,
+        │                                    CanRunParallel, DependsOn}
         │
-        ▼ CodeValdAI: work plan subscribed to "work.task.todo"
+        ▼ CodeValdAI: work plan subscribed to "work.todo.dispatched"
             RACIDispatcher → triggerPlanRun
             AgentRun (task_id = TodoID)
-            ai.task.in_progress → CodeValdWork: TaskTodo.status → dispatched
-            ai.task.completed   → CodeValdWork: TaskTodo.status → completed
-            ai.task.failed      → CodeValdWork: TaskTodo.status → failed
+            ai.task.started   → CodeValdWork: TaskTodo.status → dispatched
+            ai.task.completed → CodeValdWork: TaskTodo.status → completed
+            ai.task.failed    → CodeValdWork: TaskTodo.status → failed
 ```
 
 ---
@@ -108,14 +108,14 @@ Bridge logic:
 
 ---
 
-## `work.task.todo` Payload
+## `work.todo.dispatched` Payload
 
 ```go
-// TopicTaskTodo is published once per TaskTodo entity created from an
-// ai.task.todo decomposition. CodeValdAI agents subscribe via work plans.
-const TopicTaskTodo = "work.task.todo"
+// TopicTodoDispatched is published once per TaskTodo entity created from an
+// ai.todo.created decomposition. CodeValdAI agents subscribe via work plans.
+const TopicTodoDispatched = "work.todo.dispatched"
 
-type TaskTodoPayload struct {
+type TodoDispatchedPayload struct {
     TodoID         string
     ParentTaskID   string
     DecompRunID    string
@@ -143,7 +143,7 @@ pending → dispatched → completed
 | Status | Set when |
 |---|---|
 | `pending` | `TaskTodo` entity created |
-| `dispatched` | CodeValdWork receives `ai.task.in_progress` with `TaskID == TodoID` |
+| `dispatched` | CodeValdWork receives `ai.task.started` with `TaskID == TodoID` |
 | `completed` | CodeValdWork receives `ai.task.completed` with `TaskID == TodoID` |
 | `failed` | CodeValdWork receives `ai.task.failed` with `TaskID == TodoID` |
 
@@ -171,14 +171,14 @@ RelLabelTodoAssignedTo: {fromType: taskTodoTypeID, toType: agentTypeID},
 
 ## Consumer Registration
 
-CodeValdWork must subscribe to `ai.task.todo` in its registrar `consumes` list:
+CodeValdWork must subscribe to `ai.todo.created` in its registrar `consumes` list:
 
 ```go
 []string{ // consumes
-    "ai.task.in_progress",
+    "ai.task.started",
     "ai.task.completed",
     "ai.task.failed",
-    "ai.task.todo",   // ← bridges decomposition into TaskTodo entities
+    "ai.todo.created",   // ← bridges decomposition into TaskTodo entities
 }
 ```
 
@@ -192,9 +192,9 @@ CodeValdWork must subscribe to `ai.task.todo` in its registrar `consumes` list:
 | `relationship.go` | `RelLabelHasTodo`, `RelLabelTodoAssignedTo`; update `relationshipEndpointTypes` and `notFoundForType` |
 | `models.go` | `TaskTodo` struct; `TodoStatus` type + constants |
 | `errors.go` | `ErrTaskTodoNotFound` sentinel |
-| `events.go` | `TopicTaskTodo`, `TaskTodoPayload`; add to `AllTopics()` |
+| `events.go` | `TopicTodoDispatched`, `TodoDispatchedPayload`; add to `AllTopics()` |
 | `task.go` | `taskTodoTypeID` constant |
-| `internal/eventhandler/ai_task_todo.go` (new) | Consume `ai.task.todo`; create `TaskTodo` entities; publish `work.task.todo` per item |
+| `internal/server/event_dispatcher.go` | Consume `ai.todo.created`; create `TaskTodo` entities; publish `work.todo.dispatched` per item |
 
 ---
 
@@ -202,12 +202,12 @@ CodeValdWork must subscribe to `ai.task.todo` in its registrar `consumes` list:
 
 | Test | Expected |
 |---|---|
-| Receive `ai.task.todo` with 3 items | 3 `TaskTodo` entities in `work_task_todos` |
+| Receive `ai.todo.created` with 3 items | 3 `TaskTodo` entities in `work_task_todos` |
 | Each `TaskTodo` | `todo_of` edge to parent Task; `todo_assigned_to` edge to parent's agent |
 | Agent fallback | No parent assignee → use `payload.AgentID` |
-| 3 `work.task.todo` events published | One per `TaskTodo`, payload contains `TodoID` + `Instructions` |
+| 3 `work.todo.dispatched` events published | One per `TaskTodo`, payload contains `TodoID` + `Instructions` |
 | Parent Task status | Unchanged after todo creation |
-| `ai.task.in_progress` with `TaskID = TodoID` | `TaskTodo.status → dispatched` |
+| `ai.task.started` with `TaskID = TodoID` | `TaskTodo.status → dispatched` |
 | `ai.task.completed` with `TaskID = TodoID` | `TaskTodo.status → completed` |
 | `ai.task.failed` with `TaskID = TodoID` | `TaskTodo.status → failed` |
-| `ai.task.in_progress` with `TaskID = Task ID` | Parent `Task` status → `in_progress` (existing bridge — unaffected) |
+| `ai.task.started` with `TaskID = Task ID` | Parent `Task` status → `in_progress` (existing bridge — unaffected) |
