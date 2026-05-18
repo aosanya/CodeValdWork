@@ -35,11 +35,11 @@ const (
 	// created. Payload: [RelationshipCreatedPayload].
 	TopicRelationshipCreated = "work.relationship.created"
 
-	// TopicTaskTodo fires when a [TaskTodo] entity is created — once per todo
-	// item produced by an ai.task.todo decomposition payload. CodeValdAI agents
-	// subscribe to this topic via work plans and execute each todo.
-	// Payload: [TaskTodoPayload].
-	TopicTaskTodo = "work.task.todo"
+	// TopicTodoDispatched fires when a [TaskTodo] entity is created — once per
+	// todo item produced by an ai.todo.created decomposition payload. CodeValdAI
+	// agents subscribe to this topic via work plans and execute each todo.
+	// Payload: [TodoDispatchedPayload].
+	TopicTodoDispatched = "work.todo.dispatched"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -52,7 +52,7 @@ func AllTopics() []string {
 		TopicTaskFailed,
 		TopicTaskAssigned,
 		TopicRelationshipCreated,
-		TopicTaskTodo,
+		TopicTodoDispatched,
 	)
 }
 
@@ -116,9 +116,9 @@ type RelationshipCreatedPayload struct {
 	Label  string
 }
 
-// TaskTodoPayload is the [Event.Payload] for [TopicTaskTodo].
-// Published once per TaskTodo entity created from an ai.task.todo decomposition.
-type TaskTodoPayload struct {
+// TodoDispatchedPayload is the [Event.Payload] for [TopicTodoDispatched].
+// Published once per TaskTodo entity created from an ai.todo.created decomposition.
+type TodoDispatchedPayload struct {
 	TodoID       string
 	ParentTaskID string
 	DecompRunID  string

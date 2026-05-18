@@ -10,19 +10,19 @@ import (
 )
 
 const (
-	topicTaskInProgress = "ai.task.in_progress"
-	topicTaskCompleted  = "ai.task.completed"
-	topicTaskFailed     = "ai.task.failed"
-	topicTaskTodo       = "ai.task.todo"
+	topicTaskStarted   = "ai.task.started"
+	topicTaskCompleted = "ai.task.completed"
+	topicTaskFailed    = "ai.task.failed"
+	topicTodoCreated   = "ai.todo.created"
 )
 
-// aiTaskPayload is the common shape of ai.task.in_progress/completed/failed payloads.
+// aiTaskPayload is the common shape of ai.task.started/completed/failed payloads.
 type aiTaskPayload struct {
 	TaskID string `json:"TaskID"`
 }
 
-// aiTaskTodoPayload mirrors the CodeValdAI TaskTodoPayload — the ai.task.todo event body.
-type aiTaskTodoPayload struct {
+// aiTodoCreatedPayload mirrors the CodeValdAI TodoCreatedPayload — the ai.todo.created event body.
+type aiTodoCreatedPayload struct {
 	ParentTaskID string        `json:"parent_task_id"`
 	RunID        string        `json:"run_id"`
 	AgentID      string        `json:"agent_id"`
@@ -53,15 +53,15 @@ func NewTaskEventDispatcher(mgr codevaldwork.TaskManager, agencyID string) *Task
 // Dispatch handles an incoming event by topic.
 func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload string) {
 	switch topic {
-	case topicTaskTodo:
-		d.handleAITaskTodo(ctx, payload)
+	case topicTodoCreated:
+		d.handleAITodoCreated(ctx, payload)
 		return
-	case topicTaskInProgress, topicTaskCompleted, topicTaskFailed:
+	case topicTaskStarted, topicTaskCompleted, topicTaskFailed:
 		d.handleAITaskStatus(ctx, topic, payload)
 	}
 }
 
-// handleAITaskStatus routes ai.task.in_progress/completed/failed to a Task or
+// handleAITaskStatus routes ai.task.started/completed/failed to a Task or
 // TaskTodo status update depending on which entity the TaskID refers to.
 func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, payloadStr string) {
 	var p aiTaskPayload
@@ -72,7 +72,7 @@ func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, pay
 
 	var nextStatus codevaldwork.TaskStatus
 	switch topic {
-	case topicTaskInProgress:
+	case topicTaskStarted:
 		nextStatus = codevaldwork.TaskStatusInProgress
 	case topicTaskCompleted:
 		nextStatus = codevaldwork.TaskStatusCompleted
@@ -103,7 +103,7 @@ func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, pay
 func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topic string) {
 	var status codevaldwork.TodoStatus
 	switch topic {
-	case topicTaskInProgress:
+	case topicTaskStarted:
 		status = codevaldwork.TodoStatusDispatched
 	case topicTaskCompleted:
 		status = codevaldwork.TodoStatusCompleted
@@ -119,17 +119,17 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 	log.Printf("codevaldwork: TaskEventDispatcher: todo %s → %s", todoID, status)
 }
 
-// handleAITaskTodo consumes an ai.task.todo decomposition payload:
+// handleAITodoCreated consumes an ai.todo.created decomposition payload:
 // creates one TaskTodo entity per item, wires the graph edges, and
-// publishes work.task.todo (via CreateTaskTodo) so CodeValdAI agents can
+// publishes work.todo.dispatched (via CreateTaskTodo) so CodeValdAI agents can
 // pick up each todo through their work plans.
-func (d *TaskEventDispatcher) handleAITaskTodo(ctx context.Context, payloadStr string) {
-	var p aiTaskTodoPayload
+func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadStr string) {
+	var p aiTodoCreatedPayload
 	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.ParentTaskID == "" {
-		log.Printf("codevaldwork: TaskEventDispatcher: ai.task.todo: bad payload: %v", err)
+		log.Printf("codevaldwork: TaskEventDispatcher: ai.todo.created: bad payload: %v", err)
 		return
 	}
-	log.Printf("codevaldwork: TaskEventDispatcher: ai.task.todo: parent=%s items=%d", p.ParentTaskID, len(p.Todos))
+	log.Printf("codevaldwork: TaskEventDispatcher: ai.todo.created: parent=%s items=%d", p.ParentTaskID, len(p.Todos))
 
 	for _, item := range p.Todos {
 		// Determine which agent will execute this todo.

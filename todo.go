@@ -10,7 +10,7 @@ import (
 )
 
 // CreateTaskTodo creates a TaskTodo entity in the agency graph and publishes
-// [TopicTaskTodo] so CodeValdAI agents can pick it up via work plans.
+// [TopicTodoDispatched] so CodeValdAI agents can pick it up via work plans.
 func (m *taskManager) CreateTaskTodo(ctx context.Context, agencyID string, todo TaskTodo) (TaskTodo, error) {
 	if todo.Title == "" || todo.Instructions == "" || todo.ParentTaskID == "" {
 		return TaskTodo{}, fmt.Errorf("%w: title, instructions, and parent_task_id are required", ErrInvalidTask)
@@ -31,7 +31,7 @@ func (m *taskManager) CreateTaskTodo(ctx context.Context, agencyID string, todo 
 	}
 
 	out := taskTodoFromEntity(created)
-	m.publish(ctx, TopicTaskTodo, agencyID, TaskTodoPayload{
+	m.publish(ctx, TopicTodoDispatched, agencyID, TodoDispatchedPayload{
 		TodoID:         out.ID,
 		ParentTaskID:   out.ParentTaskID,
 		DecompRunID:    out.DecompRunID,
