@@ -185,6 +185,19 @@ type TaskManager interface {
 	// [ErrImportJobNotFound] if the job does not exist, or
 	// [ErrImportJobNotCancellable] if it has already reached a terminal state.
 	CancelImportProject(ctx context.Context, agencyID, jobID string) error
+
+	// CreateTaskTodo creates a new TaskTodo entity for a decomposed sub-task.
+	// Required fields: Title, Instructions, ParentTaskID. Returns [ErrInvalidTask]
+	// if any required field is empty. Also publishes [TopicTaskTodo] on success.
+	CreateTaskTodo(ctx context.Context, agencyID string, todo TaskTodo) (TaskTodo, error)
+
+	// GetTaskTodo retrieves a single TaskTodo by its entity ID within the given agency.
+	// Returns [ErrTaskTodoNotFound] if no matching todo exists.
+	GetTaskTodo(ctx context.Context, agencyID, todoID string) (TaskTodo, error)
+
+	// UpdateTaskTodoStatus transitions a TaskTodo to a new [TodoStatus].
+	// Returns [ErrTaskTodoNotFound] if the todo does not exist.
+	UpdateTaskTodoStatus(ctx context.Context, agencyID, todoID string, status TodoStatus) (TaskTodo, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].

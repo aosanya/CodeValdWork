@@ -83,6 +83,10 @@ const (
 	// RelLabelHasTodo links a Task to a TaskTodo produced by a decomposition run.
 	// One-to-many: a Task may have multiple TodoItems decomposed from it.
 	RelLabelHasTodo = "has_todo"
+
+	// RelLabelTodoAssignedTo links a TaskTodo to the Agent responsible for executing it.
+	// Separate from RelLabelAssignedTo (Task → Agent) to keep endpoint validation clean.
+	RelLabelTodoAssignedTo = "todo_assigned_to"
 )
 
 // relationshipFromEntitygraph adapts a SharedLib edge into the Work-domain
@@ -119,7 +123,8 @@ var relationshipEndpointTypes = map[string]struct {
 	RelLabelDependsOn:  {fromType: taskTypeID, toType: taskTypeID},
 	RelLabelMemberOf:   {fromType: taskTypeID, toType: projectTypeID},
 	RelLabelHasTag:     {fromType: taskTypeID, toType: tagTypeID},
-	RelLabelHasTodo:    {fromType: taskTypeID, toType: taskTodoTypeID},
+	RelLabelHasTodo:        {fromType: taskTypeID, toType: taskTodoTypeID},
+	RelLabelTodoAssignedTo: {fromType: taskTodoTypeID, toType: agentTypeID},
 }
 
 // notFoundForType returns the typed sentinel error for a vertex TypeID.

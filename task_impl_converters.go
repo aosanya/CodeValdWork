@@ -83,6 +83,66 @@ func taskFromEntity(e entitygraph.Entity) Task {
 	return t
 }
 
+// ── TaskTodo ──────────────────────────────────────────────────────────────────
+
+func taskTodoToProperties(t TaskTodo) map[string]any {
+	props := map[string]any{
+		"title":            t.Title,
+		"description":      t.Description,
+		"instructions":     t.Instructions,
+		"ordinality":       t.Ordinality,
+		"can_run_parallel": t.CanRunParallel,
+		"status":           string(t.Status),
+		"parent_task_id":   t.ParentTaskID,
+		"decomp_run_id":    t.DecompRunID,
+		"agent_id":         t.AgentID,
+		"created_at":       t.CreatedAt,
+		"updated_at":       t.UpdatedAt,
+	}
+	if len(t.DependsOn) > 0 {
+		deps := make([]int, len(t.DependsOn))
+		copy(deps, t.DependsOn)
+		props["depends_on"] = deps
+	}
+	return props
+}
+
+func taskTodoFromEntity(e entitygraph.Entity) TaskTodo {
+	t := TaskTodo{
+		ID:             e.ID,
+		AgencyID:       e.AgencyID,
+		Title:          entitygraph.StringProp(e.Properties, "title"),
+		Description:    entitygraph.StringProp(e.Properties, "description"),
+		Instructions:   entitygraph.StringProp(e.Properties, "instructions"),
+		Ordinality:     int(entitygraph.Float64Prop(e.Properties, "ordinality")),
+		CanRunParallel: entitygraph.BoolProp(e.Properties, "can_run_parallel"),
+		Status:         TodoStatus(entitygraph.StringProp(e.Properties, "status")),
+		ParentTaskID:   entitygraph.StringProp(e.Properties, "parent_task_id"),
+		DecompRunID:    entitygraph.StringProp(e.Properties, "decomp_run_id"),
+		AgentID:        entitygraph.StringProp(e.Properties, "agent_id"),
+		CreatedAt:      entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:      entitygraph.StringProp(e.Properties, "updated_at"),
+	}
+	if v, ok := e.Properties["depends_on"]; ok {
+		switch deps := v.(type) {
+		case []int:
+			t.DependsOn = append([]int(nil), deps...)
+		case []any:
+			out := make([]int, 0, len(deps))
+			for _, x := range deps {
+				switch n := x.(type) {
+				case float64:
+					out = append(out, int(n))
+				case int:
+					out = append(out, n)
+				}
+			}
+			t.DependsOn = out
+		}
+	}
+	return t
+}
+
 // ── Tag ───────────────────────────────────────────────────────────────────────
 
 // tagToProperties serialises a Tag into the property map stored on its
