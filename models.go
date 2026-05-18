@@ -196,6 +196,75 @@ type ImportProjectJob struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+// TodoStatus represents the lifecycle state of a [TaskTodo].
+type TodoStatus string
+
+const (
+	// TodoStatusPending is the initial state — the todo has been created and
+	// is waiting to be picked up by a CodeValdAI agent via work.task.todo.
+	TodoStatusPending TodoStatus = "pending"
+
+	// TodoStatusDispatched means a CodeValdAI agent has started an AgentRun
+	// for this todo (ai.task.in_progress received).
+	TodoStatusDispatched TodoStatus = "dispatched"
+
+	// TodoStatusCompleted is a terminal state — the agent finished successfully.
+	TodoStatusCompleted TodoStatus = "completed"
+
+	// TodoStatusFailed is a terminal state — the agent encountered an error.
+	TodoStatusFailed TodoStatus = "failed"
+)
+
+// TaskTodo is a decomposed sub-task produced when CodeValdWork receives an
+// ai.task.todo event from CodeValdAI. Each TodoItem in the payload becomes
+// one TaskTodo entity linked to its parent Task via a has_todo edge.
+//
+// When a TaskTodo is created CodeValdWork publishes work.task.todo so that
+// CodeValdAI agents can pick it up via their work plans.
+type TaskTodo struct {
+	// ID is the entity-graph storage key — opaque to callers.
+	ID string `json:"id"`
+
+	// AgencyID is the agency that owns this todo.
+	AgencyID string `json:"agency_id"`
+
+	// Title is the short label for this sub-task.
+	Title string `json:"title"`
+
+	// Description explains what this sub-task accomplishes.
+	Description string `json:"description,omitempty"`
+
+	// Instructions is the fully self-contained agent prompt for execution.
+	Instructions string `json:"instructions"`
+
+	// Ordinality is the 1-based position of this todo within the decomposition.
+	Ordinality int `json:"ordinality"`
+
+	// CanRunParallel is true when this todo has no predecessor dependency.
+	CanRunParallel bool `json:"can_run_parallel"`
+
+	// DependsOn lists the ordinality values of todos that must complete first.
+	DependsOn []int `json:"depends_on,omitempty"`
+
+	// Status is the current lifecycle state — see [TodoStatus].
+	Status TodoStatus `json:"status"`
+
+	// ParentTaskID is the Work Task ID from which this todo was decomposed.
+	ParentTaskID string `json:"parent_task_id"`
+
+	// DecompRunID is the CodeValdAI AgentRun ID that produced this todo.
+	DecompRunID string `json:"decomp_run_id,omitempty"`
+
+	// AgentID is the CodeValdAI agent assigned to execute this todo.
+	AgentID string `json:"agent_id,omitempty"`
+
+	// CreatedAt is the RFC 3339 timestamp when the todo was created.
+	CreatedAt string `json:"created_at"`
+
+	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.
+	UpdatedAt string `json:"updated_at"`
+}
+
 // TaskFilter constrains the results returned by [TaskManager.ListTasks].
 // Zero values mean "no filter" for that field — all values match.
 type TaskFilter struct {

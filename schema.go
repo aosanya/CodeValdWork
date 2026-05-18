@@ -4,8 +4,9 @@
 // for CodeValdWork. cmd/server seeds this schema idempotently on startup via
 // entitygraph.SeedSchema (see internal/app).
 //
-// The schema declares five TypeDefinitions:
+// The schema declares six TypeDefinitions:
 //   - Task              — a unit of work assigned to an AI Agent (mutable)
+//   - TaskTodo          — a decomposed sub-task produced by an AI decomposition run (mutable)
 //   - Project           — optional container that groups related Tasks via `member_of` edges
 //   - Agent             — Work-domain projection of an AI agent; vertex for `assigned_to` edges
 //   - Tag               — free-form label attached to Tasks via `has_tag` edges
@@ -19,9 +20,11 @@
 //	Task ──subtask_of───► Task
 //	Task ──depends_on───► Task
 //	Task ──has_tag──────► Tag
+//	Task ──has_todo─────► TaskTodo
 //
 // Storage:
 //   - Task             → "work_tasks"          document collection
+//   - TaskTodo         → "work_task_todos"     document collection
 //   - Project          → "work_projects"       document collection
 //   - Agent            → "work_agents"         document collection
 //   - Tag              → "work_tags"           document collection
@@ -40,8 +43,8 @@ import (
 func DefaultWorkSchema() types.Schema {
 	return types.Schema{
 		ID:      "work-schema-v1",
-		Version: 1,
-		Tag:     "v1",
+		Version: 2,
+		Tag:     "v2",
 		Types: append([]types.TypeDefinition{
 			{
 				Name:              "Task",
@@ -175,6 +178,57 @@ func DefaultWorkSchema() types.Schema {
 						ToType:      "Task",
 						ToMany:      true,
 						Inverse:     RelLabelDependsOn,
+					},
+					{
+						Name:        RelLabelHasTodo,
+						Label:       "Todos",
+						PathSegment: "todos",
+						ToType:      "TaskTodo",
+						ToMany:      true,
+						Inverse:     "todo_of",
+					},
+				},
+			},
+			{
+				Name:              "TaskTodo",
+				DisplayName:       "Task Todo",
+				PathSegment:       "todos",
+				EntityIDParam:     "todoId",
+				StorageCollection: "work_task_todos",
+				PublishEvents:     true,
+				Properties: []types.PropertyDefinition{
+					// title is the short label for this sub-task.
+					{Name: "title", Type: types.PropertyTypeString, Required: true},
+					// description explains what this sub-task accomplishes.
+					{Name: "description", Type: types.PropertyTypeString},
+					// instructions is the fully self-contained agent prompt for executing this todo.
+					{Name: "instructions", Type: types.PropertyTypeString, Required: true},
+					// ordinality is the 1-based position of this todo within the decomposition.
+					{Name: "ordinality", Type: types.PropertyTypeInteger, Required: true},
+					// can_run_parallel is true when this todo has no predecessor dependency.
+					{Name: "can_run_parallel", Type: types.PropertyTypeBoolean},
+					// depends_on is a JSON-encoded []int of ordinality values that must complete first.
+					{Name: "depends_on", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeInteger},
+					// status tracks the todo lifecycle: pending → dispatched → completed | failed.
+					{Name: "status", Type: types.PropertyTypeString},
+					// parent_task_id is the Work Task ID from which this todo was decomposed.
+					{Name: "parent_task_id", Type: types.PropertyTypeString, Required: true},
+					// decomp_run_id is the CodeValdAI AgentRun ID that produced this todo.
+					{Name: "decomp_run_id", Type: types.PropertyTypeString},
+					// agent_id is the CodeValdAI agent assigned to execute this todo.
+					{Name: "agent_id", Type: types.PropertyTypeString},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
+				},
+				Relationships: []types.RelationshipDefinition{
+					{
+						Name:        "todo_of",
+						Label:       "Parent Task",
+						PathSegment: "task",
+						ToType:      "Task",
+						ToMany:      false,
+						Required:    true,
+						Inverse:     RelLabelHasTodo,
 					},
 				},
 			},

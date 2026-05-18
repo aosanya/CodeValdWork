@@ -34,6 +34,12 @@ const (
 	// TopicRelationshipCreated fires when any whitelisted graph edge is
 	// created. Payload: [RelationshipCreatedPayload].
 	TopicRelationshipCreated = "work.relationship.created"
+
+	// TopicTaskTodo fires when a [TaskTodo] entity is created — once per todo
+	// item produced by an ai.task.todo decomposition payload. CodeValdAI agents
+	// subscribe to this topic via work plans and execute each todo.
+	// Payload: [TaskTodoPayload].
+	TopicTaskTodo = "work.task.todo"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -46,6 +52,7 @@ func AllTopics() []string {
 		TopicTaskFailed,
 		TopicTaskAssigned,
 		TopicRelationshipCreated,
+		TopicTaskTodo,
 	)
 }
 
@@ -107,4 +114,18 @@ type RelationshipCreatedPayload struct {
 	FromID string
 	ToID   string
 	Label  string
+}
+
+// TaskTodoPayload is the [Event.Payload] for [TopicTaskTodo].
+// Published once per TaskTodo entity created from an ai.task.todo decomposition.
+type TaskTodoPayload struct {
+	TodoID       string
+	ParentTaskID string
+	DecompRunID  string
+	AgentID      string
+	Title        string
+	Instructions string
+	Ordinality   int
+	CanRunParallel bool
+	DependsOn    []int
 }
