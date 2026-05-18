@@ -211,9 +211,9 @@ an `ai.task.*` event — CodeValdWork consumes it and transitions the task statu
 which then fires the corresponding `work.task.*` event through the existing publish
 hooks in `UpdateTask`.
 
-### 7a: `ai.task.in_progress` → task pending → in_progress
+### 7a: `ai.task.started` → task pending → in_progress
 
-**Trigger:** `ai.task.in_progress` from CodeValdAI (published before LLM call)
+**Trigger:** `ai.task.started` from CodeValdAI (published before LLM call)
 
 ```
 1. Extract task_id from event payload
@@ -245,20 +245,12 @@ hooks in `UpdateTask`.
    → publishes work.task.failed (terminal status hook)
 ```
 
-### New topic: `work.task.in_progress`
+### In-progress transitions
 
-Added alongside `work.task.status.changed` in UpdateTask when `newStatus == "in_progress"`:
-
-```
-bus.Publish(ctx, Message{
-    Topic:   "work.task.in_progress",
-    Payload: { taskID, agencyID, agentID },
-    Source:  "codevaldwork",
-})
-```
-
-This lets consumers that only care about the in_progress transition subscribe to a
-single focused topic rather than filtering `work.task.status.changed`.
+`work.task.status.changed` (with `to=in_progress`) is the canonical signal for
+consumers that need to react to the in-progress transition. There is no separate
+`work.task.in_progress` topic — that name is not a past-tense verb and does not
+conform to the `<service>.<entity>.<verb>` convention.
 
 ---
 

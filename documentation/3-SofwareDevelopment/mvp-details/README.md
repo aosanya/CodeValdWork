@@ -28,7 +28,7 @@ CodeValdWork MVP tasks. Phase 1 (Task lifecycle) is complete; Phase 2
 | [grpc-surface.md](grpc-surface.md) | MVP-WORK-013, MVP-WORK-015 | gRPC RPC expansion + HTTP convenience routes |
 | [pubsub.md](pubsub.md) | MVP-WORK-014 | Six-topic publishing pipeline; SharedLib `eventbus` extraction candidate |
 | [integration-tests.md](integration-tests.md) | MVP-WORK-016 | Phase 2 unit + ArangoDB end-to-end coverage |
-| [task-decomposition.md](task-decomposition.md) | — | `ai.task.todo` bridge → `TaskTodo` entity → `work.task.todo` publisher; todo assignment and status lifecycle |
+| [task-decomposition.md](task-decomposition.md) | — | `ai.todo.created` bridge → `TaskTodo` entity → `work.todo.dispatched` publisher; todo assignment and status lifecycle |
 
 ---
 

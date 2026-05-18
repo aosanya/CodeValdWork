@@ -90,7 +90,7 @@ topics named in
 
 | Topic | Publisher | CodeValdWork action |
 |---|---|---|
-| `ai.task.in_progress` | CodeValdAI | `UpdateTask(status=in_progress)` → fires `work.task.in_progress` + `work.task.status.changed` |
+| `ai.task.started` | CodeValdAI | `UpdateTask(status=in_progress)` → fires `work.task.status.changed` |
 | `ai.task.completed` | CodeValdAI | `UpdateTask(status=completed)` → fires `work.task.completed` + `work.task.status.changed` |
 | `ai.task.failed` | CodeValdAI | `UpdateTask(status=failed)` → fires `work.task.failed` + `work.task.status.changed` |
 
