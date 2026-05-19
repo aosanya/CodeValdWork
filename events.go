@@ -40,6 +40,12 @@ const (
 	// agents subscribe to this topic via work plans and execute each todo.
 	// Payload: [TodoDispatchedPayload].
 	TopicTodoDispatched = "work.todo.dispatched"
+
+	// TopicTaskUpdate is consumed by CodeValdWork to patch mutable task fields.
+	// Published by CodeValdAI when the LLM emits a work.task.update action
+	// (e.g. after choosing a branch name). Currently only branch_name is patched.
+	// Payload: [TaskUpdatePayload].
+	TopicTaskUpdate = "work.task.update"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -119,13 +125,30 @@ type RelationshipCreatedPayload struct {
 // TodoDispatchedPayload is the [Event.Payload] for [TopicTodoDispatched].
 // Published once per TaskTodo entity created from an ai.todo.created decomposition.
 type TodoDispatchedPayload struct {
-	TodoID       string
-	ParentTaskID string
-	DecompRunID  string
-	AgentID      string
-	Title        string
-	Instructions string
-	Ordinality   int
+	TodoID         string
+	TaskID         string // alias for ParentTaskID — used by HydrateEventContext
+	ParentTaskID   string
+	DecompRunID    string
+	AgentID        string
+	Title          string
+	Instructions   string
+	Ordinality     int
 	CanRunParallel bool
-	DependsOn    []int
+	DependsOn      []int
+	Precalls       string // JSON-encoded []PrecallSpec stored on the TaskTodo
+}
+
+// TaskUpdatePayload is the [Event.Payload] for [TopicTaskUpdate].
+// Published by CodeValdAI when the LLM emits a work.task.update action.
+type TaskUpdatePayload struct {
+	// TaskID is the Work Task entity ID to patch.
+	TaskID string `json:"task_id"`
+	// BranchName is the git branch the AI agent created for this task.
+	// Written back so HydrateEventContext can use it for file hydration.
+	BranchName string `json:"branch_name,omitempty"`
+}
+
+// ConsumedTopics is the closed list of topics CodeValdWork subscribes to.
+func ConsumedTopics() []string {
+	return []string{TopicTaskUpdate}
 }

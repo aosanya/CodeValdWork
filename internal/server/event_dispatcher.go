@@ -7,6 +7,7 @@ import (
 	"log"
 
 	codevaldwork "github.com/aosanya/CodeValdWork"
+	"github.com/aosanya/CodeValdSharedLib/eventbus"
 )
 
 const (
@@ -14,11 +15,14 @@ const (
 	topicTaskCompleted = "ai.task.completed"
 	topicTaskFailed    = "ai.task.failed"
 	topicTodoCreated   = "ai.todo.created"
+	topicTaskUpdate    = codevaldwork.TopicTaskUpdate
 )
 
 // aiTaskPayload is the common shape of ai.task.started/completed/failed payloads.
 type aiTaskPayload struct {
 	TaskID string `json:"TaskID"`
+	RunID  string `json:"RunID"`
+	Reason string `json:"Reason"`
 }
 
 // aiTodoCreatedPayload mirrors the CodeValdAI TodoCreatedPayload — the ai.todo.created event body.
@@ -36,6 +40,11 @@ type aiTodoItem struct {
 	Ordinality     int    `json:"ordinality"`
 	CanRunParallel bool   `json:"can_run_parallel"`
 	DependsOn      []int  `json:"depends_on"`
+	// Precalls is a JSON-encoded []PrecallSpec emitted by the LLM when it
+	// creates the todo; stored on the TaskTodo entity and threaded through the
+	// TodoDispatchedPayload so HydrateEventContext can execute them before the
+	// agent runs.
+	Precalls string `json:"precalls,omitempty"`
 }
 
 // TaskEventDispatcher bridges ai.task.* events into work task / todo status transitions
@@ -43,11 +52,13 @@ type aiTodoItem struct {
 type TaskEventDispatcher struct {
 	mgr      codevaldwork.TaskManager
 	agencyID string
+	pub      eventbus.Publisher // optional; nil = skip work.task.failed bridging
 }
 
 // NewTaskEventDispatcher constructs a TaskEventDispatcher.
-func NewTaskEventDispatcher(mgr codevaldwork.TaskManager, agencyID string) *TaskEventDispatcher {
-	return &TaskEventDispatcher{mgr: mgr, agencyID: agencyID}
+// pub may be nil — work.task.failed bridging is skipped when no publisher is set.
+func NewTaskEventDispatcher(mgr codevaldwork.TaskManager, agencyID string, pub eventbus.Publisher) *TaskEventDispatcher {
+	return &TaskEventDispatcher{mgr: mgr, agencyID: agencyID, pub: pub}
 }
 
 // Dispatch handles an incoming event by topic.
@@ -55,7 +66,8 @@ func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload strin
 	switch topic {
 	case topicTodoCreated:
 		d.handleAITodoCreated(ctx, payload)
-		return
+	case topicTaskUpdate:
+		d.handleTaskUpdate(ctx, payload)
 	case topicTaskStarted, topicTaskCompleted, topicTaskFailed:
 		d.handleAITaskStatus(ctx, topic, payload)
 	}
@@ -94,9 +106,27 @@ func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, pay
 	task.Status = nextStatus
 	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
 		log.Printf("codevaldwork: TaskEventDispatcher: UpdateTask %s → %s: %v", p.TaskID, nextStatus, err)
-		return
+		// Fall through: for ai.task.failed we still bridge to work.task.failed even if
+		// the status transition is blocked (e.g. task is already in a terminal state).
+	} else {
+		log.Printf("codevaldwork: TaskEventDispatcher: task %s → %s", p.TaskID, nextStatus)
 	}
-	log.Printf("codevaldwork: TaskEventDispatcher: task %s → %s", p.TaskID, nextStatus)
+
+	// Bridge ai.task.failed → work.task.failed so CodeValdAI's task-failed-operations-handler fires.
+	// Published regardless of whether the status update succeeded — a failed run always
+	// warrants the operations-officer review even if the task was already in a terminal state.
+	if topic == topicTaskFailed {
+		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+			Topic:    codevaldwork.TopicTaskFailed,
+			AgencyID: d.agencyID,
+			Payload: codevaldwork.TaskFailedPayload{
+				TaskID: p.TaskID,
+				RunID:  p.RunID,
+				Reason: p.Reason,
+			},
+		})
+		log.Printf("codevaldwork: TaskEventDispatcher: bridged work.task.failed for task=%s run=%s", p.TaskID, p.RunID)
+	}
 }
 
 // updateTodoStatus transitions a TaskTodo when an ai.task.* event arrives with a TodoID.
@@ -145,6 +175,7 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 			ParentTaskID:   p.ParentTaskID,
 			DecompRunID:    p.RunID,
 			AgentID:        externalAgentID,
+			Precalls:       item.Precalls,
 		}
 
 		created, err := d.mgr.CreateTaskTodo(ctx, d.agencyID, todo)
@@ -177,6 +208,30 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 		log.Printf("codevaldwork: TaskEventDispatcher: created TaskTodo id=%s ordinality=%d agent=%s",
 			created.ID, item.Ordinality, externalAgentID)
 	}
+}
+
+// handleTaskUpdate processes a work.task.update event published by CodeValdAI
+// when the LLM chooses a branch name. It patches only the non-nil fields in
+// the payload (currently branch_name) onto the Task entity.
+func (d *TaskEventDispatcher) handleTaskUpdate(ctx context.Context, payloadStr string) {
+	var p codevaldwork.TaskUpdatePayload
+	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.TaskID == "" {
+		log.Printf("codevaldwork: handleTaskUpdate: bad payload: %v", err)
+		return
+	}
+	task, err := d.mgr.GetTask(ctx, d.agencyID, p.TaskID)
+	if err != nil {
+		log.Printf("codevaldwork: handleTaskUpdate: GetTask %s: %v", p.TaskID, err)
+		return
+	}
+	if p.BranchName != "" {
+		task.BranchName = p.BranchName
+	}
+	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
+		log.Printf("codevaldwork: handleTaskUpdate: UpdateTask %s: %v", p.TaskID, err)
+		return
+	}
+	log.Printf("codevaldwork: handleTaskUpdate: task=%s branch_name=%q", p.TaskID, p.BranchName)
 }
 
 // resolveAgentForTask returns the (entity ID, external agent ID) for the agent

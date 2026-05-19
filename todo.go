@@ -33,6 +33,7 @@ func (m *taskManager) CreateTaskTodo(ctx context.Context, agencyID string, todo 
 	out := taskTodoFromEntity(created)
 	m.publish(ctx, TopicTodoDispatched, agencyID, TodoDispatchedPayload{
 		TodoID:         out.ID,
+		TaskID:         out.ParentTaskID,
 		ParentTaskID:   out.ParentTaskID,
 		DecompRunID:    out.DecompRunID,
 		AgentID:        out.AgentID,
@@ -41,6 +42,7 @@ func (m *taskManager) CreateTaskTodo(ctx context.Context, agencyID string, todo 
 		Ordinality:     out.Ordinality,
 		CanRunParallel: out.CanRunParallel,
 		DependsOn:      out.DependsOn,
+		Precalls:       out.Precalls,
 	})
 	return out, nil
 }

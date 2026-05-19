@@ -48,6 +48,22 @@ All PubSub topics across every CodeVald service follow the three-segment rule:
 | `git.branch.created` | git | branch | created | ✓ — replaces `git.branch.create` |
 | `git.branch.deleted` | git | branch | deleted | ✓ — replaces `git.branch.delete` |
 | `git.repo.created` | git | repo | created | ✓ — replaces `git.repo.create` |
+| `git.file.written` | git | file | written | ✓ — published after WriteFile succeeds |
+| `git.repo.imported` | git | repo | imported | ✓ |
+| `git.repo.import.failed` | git | repo | import.failed | ✓ |
+| `git.branch.fetched` | git | branch | fetched | ✓ |
+| `git.branch.merged` | git | branch | merged | ✓ |
+| `git.conflict.detected` | git | conflict | detected | ✓ |
+
+### Command Topics (imperative — consumed by the owning service)
+
+These topics are **not** events; they are commands published by CodeValdAI when the LLM emits an actions block. The consuming service executes the command and publishes a corresponding past-tense event on completion.
+
+| Topic | Publisher | Consumer | Action | Produces |
+|---|---|---|---|---|
+| `git.branch.create` | CodeValdAI | CodeValdGit | Create branch on repo | `git.branch.fetched` |
+| `git.file.write` | CodeValdAI | CodeValdGit | Commit file to branch | `git.file.written` |
+| `work.task.update` | CodeValdAI | CodeValdWork | Patch task fields (e.g. `branch_name`) | — |
 
 ### Renamed Topics
 

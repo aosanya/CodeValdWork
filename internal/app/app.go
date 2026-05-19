@@ -97,7 +97,7 @@ func Run(cfg config.Config) error {
 	entitygraphpb.RegisterEntityServiceServer(grpcServer, server.NewEntityServer(backend))
 	healthpb.RegisterHealthServiceServer(grpcServer, health.New("codevaldwork"))
 	if cfg.AgencyID != "" {
-		dispatcher := server.NewTaskEventDispatcher(mgr, cfg.AgencyID)
+		dispatcher := server.NewTaskEventDispatcher(mgr, cfg.AgencyID, pub)
 		sharedev1.RegisterEventReceiverServiceServer(grpcServer, server.NewEventReceiver(backend, cfg.AgencyID, dispatcher))
 	}
 

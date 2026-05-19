@@ -258,6 +258,10 @@ type TaskTodo struct {
 	// AgentID is the CodeValdAI agent assigned to execute this todo.
 	AgentID string `json:"agent_id,omitempty"`
 
+	// Precalls is a JSON-encoded []PrecallSpec: pre-execution fetch specs
+	// executed by HydrateEventContext before the LLM runs this todo.
+	Precalls string `json:"precalls,omitempty"`
+
 	// CreatedAt is the RFC 3339 timestamp when the todo was created.
 	CreatedAt string `json:"created_at"`
 
@@ -331,6 +335,10 @@ type Project struct {
 
 	// Description provides additional context for the project. Optional.
 	Description string `json:"description,omitempty"`
+
+	// RepoName is the CodeValdGit repository name associated with this project.
+	// Used by HydrateEventContext to scope file hydration to the correct repo.
+	RepoName string `json:"repo_name,omitempty"`
 
 	// GithubRepo is the canonical GitHub repository, e.g. "owner/name".
 	// Optional.

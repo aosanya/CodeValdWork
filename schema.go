@@ -217,6 +217,11 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "decomp_run_id", Type: types.PropertyTypeString},
 					// agent_id is the CodeValdAI agent assigned to execute this todo.
 					{Name: "agent_id", Type: types.PropertyTypeString},
+					// precalls is a JSON-encoded []PrecallSpec: pre-execution fetch specs whose
+					// results are injected into the LLM context by HydrateEventContext before
+					// the agent runs. Each spec targets a specific service (e.g. "git") and
+					// operation (e.g. "blob_search") with typed parameters.
+					{Name: "precalls", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},
@@ -254,6 +259,9 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "project_name", Type: types.PropertyTypeString},
 					// description provides additional context for the project.
 					{Name: "description", Type: types.PropertyTypeString},
+					// repo_name is the CodeValdGit repository name associated with this project.
+					// Used by HydrateEventContext to scope file hydration to the correct repo.
+					{Name: "repo_name", Type: types.PropertyTypeString},
 					// github_repo is the canonical GitHub repository, e.g. "owner/name".
 					{Name: "github_repo", Type: types.PropertyTypeString},
 					// task_prefix is prepended to the counter when auto-generating task names.

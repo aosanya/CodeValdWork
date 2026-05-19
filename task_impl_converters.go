@@ -96,6 +96,7 @@ func taskTodoToProperties(t TaskTodo) map[string]any {
 		"parent_task_id":   t.ParentTaskID,
 		"decomp_run_id":    t.DecompRunID,
 		"agent_id":         t.AgentID,
+		"precalls":         t.Precalls,
 		"created_at":       t.CreatedAt,
 		"updated_at":       t.UpdatedAt,
 	}
@@ -120,6 +121,7 @@ func taskTodoFromEntity(e entitygraph.Entity) TaskTodo {
 		ParentTaskID:   entitygraph.StringProp(e.Properties, "parent_task_id"),
 		DecompRunID:    entitygraph.StringProp(e.Properties, "decomp_run_id"),
 		AgentID:        entitygraph.StringProp(e.Properties, "agent_id"),
+		Precalls:       entitygraph.StringProp(e.Properties, "precalls"),
 		CreatedAt:      entitygraph.StringProp(e.Properties, "created_at"),
 		UpdatedAt:      entitygraph.StringProp(e.Properties, "updated_at"),
 	}
@@ -208,6 +210,7 @@ func projectToProperties(p Project) map[string]any {
 		"name":         p.Name,
 		"project_name": p.ProjectName,
 		"description":  p.Description,
+		"repo_name":    p.RepoName,
 		"github_repo":  p.GithubRepo,
 		"task_prefix":  p.TaskPrefix,
 		"created_at":   p.CreatedAt,
@@ -223,6 +226,7 @@ func projectFromEntity(e entitygraph.Entity) Project {
 		Name:        entitygraph.StringProp(e.Properties, "name"),
 		ProjectName: entitygraph.StringProp(e.Properties, "project_name"),
 		Description: entitygraph.StringProp(e.Properties, "description"),
+		RepoName:    entitygraph.StringProp(e.Properties, "repo_name"),
 		GithubRepo:  entitygraph.StringProp(e.Properties, "github_repo"),
 		TaskPrefix:  entitygraph.StringProp(e.Properties, "task_prefix"),
 		CreatedAt:   entitygraph.StringProp(e.Properties, "created_at"),
