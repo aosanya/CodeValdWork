@@ -20,9 +20,10 @@ const (
 
 // aiTaskPayload is the common shape of ai.task.started/completed/failed payloads.
 type aiTaskPayload struct {
-	TaskID string `json:"TaskID"`
-	RunID  string `json:"RunID"`
-	Reason string `json:"Reason"`
+	TaskID      string `json:"TaskID"`
+	RunID       string `json:"RunID"`
+	Reason      string `json:"Reason"`
+	HasSubtasks bool   `json:"has_subtasks,omitempty"`
 }
 
 // aiTodoCreatedPayload mirrors the CodeValdAI TodoCreatedPayload — the ai.todo.created event body.
@@ -103,6 +104,14 @@ func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, pay
 		return
 	}
 
+	// When the run produced sub-todos, do not mark the parent task completed yet.
+	// work.task.completed will be published by maybeCompleteParentTask once all
+	// todos reach a terminal state.
+	if topic == topicTaskCompleted && p.HasSubtasks {
+		log.Printf("codevaldwork: TaskEventDispatcher: task %s has subtasks — deferring completion", p.TaskID)
+		return
+	}
+
 	task.Status = nextStatus
 	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
 		log.Printf("codevaldwork: TaskEventDispatcher: UpdateTask %s → %s: %v", p.TaskID, nextStatus, err)
@@ -142,11 +151,51 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 	default:
 		return
 	}
-	if _, err := d.mgr.UpdateTaskTodoStatus(ctx, d.agencyID, todoID, status); err != nil {
+	updated, err := d.mgr.UpdateTaskTodoStatus(ctx, d.agencyID, todoID, status)
+	if err != nil {
 		log.Printf("codevaldwork: TaskEventDispatcher: UpdateTaskTodoStatus %s → %s: %v", todoID, status, err)
 		return
 	}
 	log.Printf("codevaldwork: TaskEventDispatcher: todo %s → %s", todoID, status)
+
+	// When a todo reaches a terminal state, check whether the parent task can
+	// now be marked completed (all sibling todos done).
+	if (status == codevaldwork.TodoStatusCompleted || status == codevaldwork.TodoStatusFailed) &&
+		updated.ParentTaskID != "" {
+		d.maybeCompleteParentTask(ctx, updated.ParentTaskID)
+	}
+}
+
+// maybeCompleteParentTask marks a Task as completed when all of its child todos
+// have reached a terminal state. Called after each todo terminal transition.
+func (d *TaskEventDispatcher) maybeCompleteParentTask(ctx context.Context, taskID string) {
+	edges, err := d.mgr.TraverseRelationships(ctx, d.agencyID, taskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
+	if err != nil {
+		log.Printf("codevaldwork: maybeCompleteParentTask: TraverseRelationships task=%s: %v", taskID, err)
+		return
+	}
+	for _, edge := range edges {
+		todo, err := d.mgr.GetTaskTodo(ctx, d.agencyID, edge.ToID)
+		if err != nil || (todo.Status != codevaldwork.TodoStatusCompleted && todo.Status != codevaldwork.TodoStatusFailed) {
+			return // at least one todo is still running
+		}
+	}
+
+	// All todos terminal — complete the parent task.
+	task, err := d.mgr.GetTask(ctx, d.agencyID, taskID)
+	if err != nil {
+		log.Printf("codevaldwork: maybeCompleteParentTask: GetTask %s: %v", taskID, err)
+		return
+	}
+	if task.Status == codevaldwork.TaskStatusCompleted || task.Status == codevaldwork.TaskStatusFailed {
+		return // already in terminal state
+	}
+	task.Status = codevaldwork.TaskStatusCompleted
+	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
+		log.Printf("codevaldwork: maybeCompleteParentTask: UpdateTask %s: %v", taskID, err)
+		return
+	}
+	log.Printf("codevaldwork: maybeCompleteParentTask: task %s → completed (all todos done)", taskID)
 }
 
 // handleAITodoCreated consumes an ai.todo.created decomposition payload:
