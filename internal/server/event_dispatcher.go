@@ -138,6 +138,23 @@ func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, pay
 	}
 }
 
+// FailTodoWithCascade marks todoID as failed and runs the full cascade:
+// blockDependentTodos → maybeCompleteParentTask. It is the public entry point
+// for the FailTodo gRPC method (and QA test tooling) so the cascade logic is
+// not duplicated outside the dispatcher.
+func (d *TaskEventDispatcher) FailTodoWithCascade(ctx context.Context, todoID string) error {
+	updated, err := d.mgr.UpdateTaskTodoStatus(ctx, d.agencyID, todoID, codevaldwork.TodoStatusFailed)
+	if err != nil {
+		return err
+	}
+	log.Printf("codevaldwork: FailTodoWithCascade: todo %s → failed", todoID)
+	if updated.ParentTaskID != "" {
+		d.blockDependentTodos(ctx, updated.ParentTaskID, updated.Ordinality)
+		d.maybeCompleteParentTask(ctx, updated.ParentTaskID)
+	}
+	return nil
+}
+
 // updateTodoStatus transitions a TaskTodo when an ai.task.* event arrives with a TodoID.
 func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topic string) {
 	var status codevaldwork.TodoStatus
@@ -158,50 +175,151 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 	}
 	log.Printf("codevaldwork: TaskEventDispatcher: todo %s → %s", todoID, status)
 
-	// When a todo reaches a terminal state, check whether the parent task can
-	// now be marked completed (all sibling todos done).
-	if (status == codevaldwork.TodoStatusCompleted || status == codevaldwork.TodoStatusFailed) &&
-		updated.ParentTaskID != "" {
+	if updated.ParentTaskID == "" {
+		return
+	}
+	switch status {
+	case codevaldwork.TodoStatusCompleted:
+		// Unblock any todos that were waiting on this one.
+		d.unblockDependentTodos(ctx, updated.ParentTaskID, updated.Ordinality)
+		d.maybeCompleteParentTask(ctx, updated.ParentTaskID)
+	case codevaldwork.TodoStatusFailed:
+		// Cascade failure to every blocked todo that (transitively) depended on this one.
+		d.blockDependentTodos(ctx, updated.ParentTaskID, updated.Ordinality)
 		d.maybeCompleteParentTask(ctx, updated.ParentTaskID)
 	}
 }
 
-// maybeCompleteParentTask marks a Task as completed when all of its child todos
-// have reached a terminal state. Called after each todo terminal transition.
+// maybeCompleteParentTask marks a Task completed or failed once all child todos
+// are terminal. Terminal states are: completed, failed, blocked (cascade-failed).
 func (d *TaskEventDispatcher) maybeCompleteParentTask(ctx context.Context, taskID string) {
 	edges, err := d.mgr.TraverseRelationships(ctx, d.agencyID, taskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
 	if err != nil {
 		log.Printf("codevaldwork: maybeCompleteParentTask: TraverseRelationships task=%s: %v", taskID, err)
 		return
 	}
+	anyFailed := false
 	for _, edge := range edges {
 		todo, err := d.mgr.GetTaskTodo(ctx, d.agencyID, edge.ToID)
-		if err != nil || (todo.Status != codevaldwork.TodoStatusCompleted && todo.Status != codevaldwork.TodoStatusFailed) {
-			return // at least one todo is still running
+		if err != nil {
+			return
+		}
+		switch todo.Status {
+		case codevaldwork.TodoStatusCompleted:
+			// fine
+		case codevaldwork.TodoStatusFailed, codevaldwork.TodoStatusBlocked:
+			anyFailed = true
+		default:
+			return // pending, dispatched — not yet terminal
 		}
 	}
 
-	// All todos terminal — complete the parent task.
 	task, err := d.mgr.GetTask(ctx, d.agencyID, taskID)
 	if err != nil {
 		log.Printf("codevaldwork: maybeCompleteParentTask: GetTask %s: %v", taskID, err)
 		return
 	}
 	if task.Status == codevaldwork.TaskStatusCompleted || task.Status == codevaldwork.TaskStatusFailed {
-		return // already in terminal state
+		return
 	}
-	task.Status = codevaldwork.TaskStatusCompleted
+	if anyFailed {
+		task.Status = codevaldwork.TaskStatusFailed
+	} else {
+		task.Status = codevaldwork.TaskStatusCompleted
+	}
 	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
 		log.Printf("codevaldwork: maybeCompleteParentTask: UpdateTask %s: %v", taskID, err)
 		return
 	}
-	log.Printf("codevaldwork: maybeCompleteParentTask: task %s → completed (all todos done)", taskID)
+	log.Printf("codevaldwork: maybeCompleteParentTask: task %s → %s (all todos terminal)", taskID, task.Status)
+}
+
+// unblockDependentTodos dispatches any blocked todos whose entire depends_on
+// list is now satisfied after completedOrdinality just completed.
+func (d *TaskEventDispatcher) unblockDependentTodos(ctx context.Context, taskID string, completedOrdinality int) {
+	edges, err := d.mgr.TraverseRelationships(ctx, d.agencyID, taskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
+	if err != nil {
+		log.Printf("codevaldwork: unblockDependentTodos: TraverseRelationships task=%s: %v", taskID, err)
+		return
+	}
+
+	// Build ordinality → status map for the entire sibling set.
+	ordStatus := make(map[int]codevaldwork.TodoStatus, len(edges))
+	todos := make(map[string]codevaldwork.TaskTodo, len(edges))
+	for _, edge := range edges {
+		todo, err := d.mgr.GetTaskTodo(ctx, d.agencyID, edge.ToID)
+		if err != nil {
+			continue
+		}
+		ordStatus[todo.Ordinality] = todo.Status
+		todos[edge.ToID] = todo
+	}
+
+	for todoID, todo := range todos {
+		if todo.Status != codevaldwork.TodoStatusBlocked {
+			continue
+		}
+		dependsOnThis := false
+		for _, dep := range todo.DependsOn {
+			if dep == completedOrdinality {
+				dependsOnThis = true
+				break
+			}
+		}
+		if !dependsOnThis {
+			continue
+		}
+		// Only dispatch if every dependency is now completed.
+		allSatisfied := true
+		for _, dep := range todo.DependsOn {
+			if ordStatus[dep] != codevaldwork.TodoStatusCompleted {
+				allSatisfied = false
+				break
+			}
+		}
+		if allSatisfied {
+			if err := d.mgr.DispatchTaskTodo(ctx, d.agencyID, todoID); err != nil {
+				log.Printf("codevaldwork: unblockDependentTodos: DispatchTaskTodo %s: %v", todoID, err)
+			} else {
+				log.Printf("codevaldwork: unblockDependentTodos: dispatched todo %s (ordinality=%d)", todoID, todo.Ordinality)
+			}
+		}
+	}
+}
+
+// blockDependentTodos cascade-fails every blocked todo that directly or
+// transitively depended on failedOrdinality.
+func (d *TaskEventDispatcher) blockDependentTodos(ctx context.Context, taskID string, failedOrdinality int) {
+	edges, err := d.mgr.TraverseRelationships(ctx, d.agencyID, taskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
+	if err != nil {
+		log.Printf("codevaldwork: blockDependentTodos: TraverseRelationships task=%s: %v", taskID, err)
+		return
+	}
+	for _, edge := range edges {
+		todo, err := d.mgr.GetTaskTodo(ctx, d.agencyID, edge.ToID)
+		if err != nil || todo.Status != codevaldwork.TodoStatusBlocked {
+			continue
+		}
+		for _, dep := range todo.DependsOn {
+			if dep == failedOrdinality {
+				if _, err := d.mgr.UpdateTaskTodoStatus(ctx, d.agencyID, edge.ToID, codevaldwork.TodoStatusFailed); err != nil {
+					log.Printf("codevaldwork: blockDependentTodos: UpdateTaskTodoStatus %s: %v", edge.ToID, err)
+				} else {
+					log.Printf("codevaldwork: blockDependentTodos: cascade-failed todo %s (ordinality=%d)", edge.ToID, todo.Ordinality)
+					// Recurse: this todo is now failed; cascade to its own dependents.
+					d.blockDependentTodos(ctx, taskID, todo.Ordinality)
+				}
+				break
+			}
+		}
+	}
 }
 
 // handleAITodoCreated consumes an ai.todo.created decomposition payload:
-// creates one TaskTodo entity per item, wires the graph edges, and
-// publishes work.todo.dispatched (via CreateTaskTodo) so CodeValdAI agents can
-// pick up each todo through their work plans.
+// creates one TaskTodo entity per item, wires graph edges, then dispatches
+// only root todos (those with empty depends_on). Todos with dependencies start
+// as blocked and are dispatched by unblockDependentTodos once their
+// predecessors complete.
 func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadStr string) {
 	var p aiTodoCreatedPayload
 	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.ParentTaskID == "" {
@@ -210,10 +328,15 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 	}
 	log.Printf("codevaldwork: TaskEventDispatcher: ai.todo.created: parent=%s items=%d", p.ParentTaskID, len(p.Todos))
 
-	for _, item := range p.Todos {
-		// Determine which agent will execute this todo.
-		agentEntityID, externalAgentID := d.resolveAgentForTask(ctx, p.ParentTaskID, p.AgentID)
+	type createdTodo struct {
+		id       string
+		isRoot   bool
+	}
+	created := make([]createdTodo, 0, len(p.Todos))
 
+	agentEntityID, externalAgentID := d.resolveAgentForTask(ctx, p.ParentTaskID, p.AgentID)
+
+	for _, item := range p.Todos {
 		todo := codevaldwork.TaskTodo{
 			Title:          item.Title,
 			Description:    item.Description,
@@ -227,7 +350,7 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 			Precalls:       item.Precalls,
 		}
 
-		created, err := d.mgr.CreateTaskTodo(ctx, d.agencyID, todo)
+		ct, err := d.mgr.CreateTaskTodo(ctx, d.agencyID, todo)
 		if err != nil {
 			log.Printf("codevaldwork: TaskEventDispatcher: CreateTaskTodo ordinality=%d: %v", item.Ordinality, err)
 			continue
@@ -237,25 +360,39 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 		if _, err := d.mgr.CreateRelationship(ctx, d.agencyID, codevaldwork.Relationship{
 			Label:  codevaldwork.RelLabelHasTodo,
 			FromID: p.ParentTaskID,
-			ToID:   created.ID,
+			ToID:   ct.ID,
 		}); err != nil {
-			log.Printf("codevaldwork: TaskEventDispatcher: has_todo edge todo=%s: %v", created.ID, err)
+			log.Printf("codevaldwork: TaskEventDispatcher: has_todo edge todo=%s: %v", ct.ID, err)
 		}
 
 		// todo_assigned_to edge: TaskTodo → Agent
 		if agentEntityID != "" {
 			if _, err := d.mgr.CreateRelationship(ctx, d.agencyID, codevaldwork.Relationship{
 				Label:  codevaldwork.RelLabelTodoAssignedTo,
-				FromID: created.ID,
+				FromID: ct.ID,
 				ToID:   agentEntityID,
 			}); err != nil {
 				log.Printf("codevaldwork: TaskEventDispatcher: todo_assigned_to edge todo=%s agent=%s: %v",
-					created.ID, agentEntityID, err)
+					ct.ID, agentEntityID, err)
 			}
 		}
 
-		log.Printf("codevaldwork: TaskEventDispatcher: created TaskTodo id=%s ordinality=%d agent=%s",
-			created.ID, item.Ordinality, externalAgentID)
+		log.Printf("codevaldwork: TaskEventDispatcher: created TaskTodo id=%s ordinality=%d status=%s agent=%s",
+			ct.ID, item.Ordinality, ct.Status, externalAgentID)
+		created = append(created, createdTodo{id: ct.ID, isRoot: len(item.DependsOn) == 0})
+	}
+
+	// Dispatch only root todos — those with no depends_on. Dependent todos are
+	// blocked and will be dispatched by unblockDependentTodos as predecessors complete.
+	for _, ct := range created {
+		if !ct.isRoot {
+			continue
+		}
+		if err := d.mgr.DispatchTaskTodo(ctx, d.agencyID, ct.id); err != nil {
+			log.Printf("codevaldwork: TaskEventDispatcher: DispatchTaskTodo root todo=%s: %v", ct.id, err)
+		} else {
+			log.Printf("codevaldwork: TaskEventDispatcher: dispatched root todo=%s", ct.id)
+		}
 	}
 }
 

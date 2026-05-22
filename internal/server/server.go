@@ -19,12 +19,20 @@ import (
 // pb.RegisterTaskServiceServer.
 type Server struct {
 	pb.UnimplementedTaskServiceServer
-	mgr codevaldwork.TaskManager
+	mgr        codevaldwork.TaskManager
+	dispatcher *TaskEventDispatcher // optional; required for FailTodo cascade
 }
 
 // New constructs a Server backed by the given TaskManager.
 func New(mgr codevaldwork.TaskManager) *Server {
 	return &Server{mgr: mgr}
+}
+
+// WithDispatcher wires a TaskEventDispatcher into the server, enabling the
+// FailTodo RPC to run blockDependentTodos and maybeCompleteParentTask.
+func (s *Server) WithDispatcher(d *TaskEventDispatcher) *Server {
+	s.dispatcher = d
+	return s
 }
 
 // CreateTask implements pb.TaskServiceServer.
@@ -118,6 +126,20 @@ func (s *Server) ListTasks(ctx context.Context, req *pb.ListTasksRequest) (*pb.L
 		pbTasks = append(pbTasks, taskToProto(t))
 	}
 	return &pb.ListTasksResponse{Tasks: pbTasks}, nil
+}
+
+// FailTodo implements pb.TaskServiceServer.
+// Marks the todo as failed and runs blockDependentTodos + maybeCompleteParentTask
+// via the wired TaskEventDispatcher. Returns FAILED_PRECONDITION if no dispatcher
+// has been wired (server constructed without WithDispatcher).
+func (s *Server) FailTodo(ctx context.Context, req *pb.FailTodoRequest) (*pb.FailTodoResponse, error) {
+	if s.dispatcher == nil {
+		return nil, mapError(codevaldwork.ErrInvalidTask) // dispatcher not wired
+	}
+	if err := s.dispatcher.FailTodoWithCascade(ctx, req.GetTodoId()); err != nil {
+		return nil, mapError(err)
+	}
+	return &pb.FailTodoResponse{}, nil
 }
 
 // ── Conversion helpers ────────────────────────────────────────────────────────

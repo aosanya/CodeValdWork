@@ -209,6 +209,23 @@ func taskRoutes() []types.RouteInfo {
 				{URLParam: "taskId", Field: "task_id"},
 			},
 		},
+		// ── Todo lifecycle ─────────────────────────────────────────────────────
+		{
+			// PATCH /work/{agencyId}/todos/{todoId}/status
+			// Marks a todo as failed and runs blockDependentTodos +
+			// maybeCompleteParentTask — the same cascade CodeValdWork
+			// executes when it receives ai.task.failed from CodeValdAI.
+			// Used for operational overrides and QA testing.
+			Method:     "PATCH",
+			Pattern:    "/work/{agencyId}/todos/{todoId}/status",
+			Capability: "fail_todo",
+			GrpcMethod: "/codevaldwork.v1.TaskService/FailTodo",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "todoId", Field: "todo_id"},
+			},
+		},
 	}
 }
 

@@ -347,8 +347,11 @@ func TestAllTopics_StableSurface(t *testing.T) {
 	// Business-semantic extras must also be present.
 	extras := []string{
 		codevaldwork.TopicTaskCompleted,
+		codevaldwork.TopicTaskFailed,
 		codevaldwork.TopicTaskAssigned,
 		codevaldwork.TopicRelationshipCreated,
+		codevaldwork.TopicTodoDispatched,
+		codevaldwork.TopicTodoCompleted,
 	}
 	for _, topic := range extras {
 		if !gotSet[topic] {

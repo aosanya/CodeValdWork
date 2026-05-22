@@ -41,6 +41,13 @@ const (
 	// Payload: [TodoDispatchedPayload].
 	TopicTodoDispatched = "work.todo.dispatched"
 
+	// TopicTodoCompleted fires when a TaskTodo reaches a terminal status
+	// (completed or failed). Carries todo_type and max_runs so downstream
+	// consumers (e.g. compile-on-todo-completed) can act without fetching
+	// the entity separately.
+	// Payload: [TodoCompletedPayload].
+	TopicTodoCompleted = "work.todo.completed"
+
 	// TopicTaskUpdate is consumed by CodeValdWork to patch mutable task fields.
 	// Published by CodeValdAI when the LLM emits a work.task.update action
 	// (e.g. after choosing a branch name). Currently only branch_name is patched.
@@ -59,6 +66,7 @@ func AllTopics() []string {
 		TopicTaskAssigned,
 		TopicRelationshipCreated,
 		TopicTodoDispatched,
+		TopicTodoCompleted,
 	)
 }
 
@@ -124,9 +132,18 @@ type RelationshipCreatedPayload struct {
 
 // TodoDispatchedPayload is the [Event.Payload] for [TopicTodoDispatched].
 // Published once per TaskTodo entity created from an ai.todo.created decomposition.
+//
+// Field identity contract (important for consumers):
+//   - TodoID        is the identity of the todo itself. CodeValdAI sets the
+//     AgentRun.TaskID to this value so that ai.task.completed/failed events
+//     route back to the todo (via updateTodoStatus), not to the parent task.
+//   - TaskID        equals ParentTaskID and exists only for HydrateEventContext
+//     which needs the parent task ID under the key "TaskID" to fetch task
+//     context. It MUST NOT be used to set AgentRun.TaskID.
+//   - ParentTaskID  is the canonical parent task identifier.
 type TodoDispatchedPayload struct {
 	TodoID         string
-	TaskID         string // alias for ParentTaskID — used by HydrateEventContext
+	TaskID         string // equals ParentTaskID; for HydrateEventContext only — do not use as AgentRun.TaskID
 	ParentTaskID   string
 	DecompRunID    string
 	AgentID        string
@@ -136,6 +153,20 @@ type TodoDispatchedPayload struct {
 	CanRunParallel bool
 	DependsOn      []int
 	Precalls       string // JSON-encoded []PrecallSpec stored on the TaskTodo
+	TodoType       string // semantic type label (e.g. "compile-fix"); used for per-type run-count enforcement
+	MaxRuns        int    // maximum spawns of this todo type within the parent task; 0 means no limit
+}
+
+// TodoCompletedPayload is the [Event.Payload] for [TopicTodoCompleted].
+// Published when a TaskTodo reaches a terminal status (completed or failed).
+type TodoCompletedPayload struct {
+	TodoID       string
+	ParentTaskID string
+	Title        string
+	Status       string // "completed" or "failed"
+	TodoType     string // forwarded from the TaskTodo entity; empty when no type was set
+	MaxRuns      int    // forwarded from the TaskTodo entity; 0 means no limit
+	RunCount     int    // current count of todos of this TodoType for the parent task at the time of completion
 }
 
 // TaskUpdatePayload is the [Event.Payload] for [TopicTaskUpdate].

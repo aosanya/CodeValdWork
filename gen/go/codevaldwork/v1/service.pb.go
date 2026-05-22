@@ -942,6 +942,104 @@ func (*UnassignTaskResponse) Descriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{17}
 }
 
+type FailTodoRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	AgencyId string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	TodoId   string                 `protobuf:"bytes,2,opt,name=todo_id,json=todoId,proto3" json:"todo_id,omitempty"`
+	// reason is an optional human-readable description forwarded to the
+	// cascade log (e.g. "manual override by operator").
+	Reason        string `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FailTodoRequest) Reset() {
+	*x = FailTodoRequest{}
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FailTodoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FailTodoRequest) ProtoMessage() {}
+
+func (x *FailTodoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FailTodoRequest.ProtoReflect.Descriptor instead.
+func (*FailTodoRequest) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *FailTodoRequest) GetAgencyId() string {
+	if x != nil {
+		return x.AgencyId
+	}
+	return ""
+}
+
+func (x *FailTodoRequest) GetTodoId() string {
+	if x != nil {
+		return x.TodoId
+	}
+	return ""
+}
+
+func (x *FailTodoRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type FailTodoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FailTodoResponse) Reset() {
+	*x = FailTodoResponse{}
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FailTodoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FailTodoResponse) ProtoMessage() {}
+
+func (x *FailTodoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FailTodoResponse.ProtoReflect.Descriptor instead.
+func (*FailTodoResponse) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{19}
+}
+
 type UpsertAgentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
@@ -952,7 +1050,7 @@ type UpsertAgentRequest struct {
 
 func (x *UpsertAgentRequest) Reset() {
 	*x = UpsertAgentRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[18]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -964,7 +1062,7 @@ func (x *UpsertAgentRequest) String() string {
 func (*UpsertAgentRequest) ProtoMessage() {}
 
 func (x *UpsertAgentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[18]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -977,7 +1075,7 @@ func (x *UpsertAgentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertAgentRequest.ProtoReflect.Descriptor instead.
 func (*UpsertAgentRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{18}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *UpsertAgentRequest) GetAgencyId() string {
@@ -1003,7 +1101,7 @@ type UpsertAgentResponse struct {
 
 func (x *UpsertAgentResponse) Reset() {
 	*x = UpsertAgentResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[19]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1015,7 +1113,7 @@ func (x *UpsertAgentResponse) String() string {
 func (*UpsertAgentResponse) ProtoMessage() {}
 
 func (x *UpsertAgentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[19]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1028,7 +1126,7 @@ func (x *UpsertAgentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertAgentResponse.ProtoReflect.Descriptor instead.
 func (*UpsertAgentResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{19}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *UpsertAgentResponse) GetAgent() *Agent {
@@ -1048,7 +1146,7 @@ type GetAgentRequest struct {
 
 func (x *GetAgentRequest) Reset() {
 	*x = GetAgentRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[20]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1060,7 +1158,7 @@ func (x *GetAgentRequest) String() string {
 func (*GetAgentRequest) ProtoMessage() {}
 
 func (x *GetAgentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[20]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1073,7 +1171,7 @@ func (x *GetAgentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAgentRequest.ProtoReflect.Descriptor instead.
 func (*GetAgentRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{20}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetAgentRequest) GetAgencyId() string {
@@ -1099,7 +1197,7 @@ type GetAgentResponse struct {
 
 func (x *GetAgentResponse) Reset() {
 	*x = GetAgentResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[21]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1111,7 +1209,7 @@ func (x *GetAgentResponse) String() string {
 func (*GetAgentResponse) ProtoMessage() {}
 
 func (x *GetAgentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[21]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1124,7 +1222,7 @@ func (x *GetAgentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAgentResponse.ProtoReflect.Descriptor instead.
 func (*GetAgentResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{21}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetAgentResponse) GetAgent() *Agent {
@@ -1143,7 +1241,7 @@ type ListAgentsRequest struct {
 
 func (x *ListAgentsRequest) Reset() {
 	*x = ListAgentsRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[22]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1155,7 +1253,7 @@ func (x *ListAgentsRequest) String() string {
 func (*ListAgentsRequest) ProtoMessage() {}
 
 func (x *ListAgentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[22]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1168,7 +1266,7 @@ func (x *ListAgentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAgentsRequest.ProtoReflect.Descriptor instead.
 func (*ListAgentsRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{22}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListAgentsRequest) GetAgencyId() string {
@@ -1187,7 +1285,7 @@ type ListAgentsResponse struct {
 
 func (x *ListAgentsResponse) Reset() {
 	*x = ListAgentsResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[23]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1199,7 +1297,7 @@ func (x *ListAgentsResponse) String() string {
 func (*ListAgentsResponse) ProtoMessage() {}
 
 func (x *ListAgentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[23]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1212,7 +1310,7 @@ func (x *ListAgentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAgentsResponse.ProtoReflect.Descriptor instead.
 func (*ListAgentsResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{23}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListAgentsResponse) GetAgents() []*Agent {
@@ -1232,7 +1330,7 @@ type CreateProjectRequest struct {
 
 func (x *CreateProjectRequest) Reset() {
 	*x = CreateProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[24]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1244,7 +1342,7 @@ func (x *CreateProjectRequest) String() string {
 func (*CreateProjectRequest) ProtoMessage() {}
 
 func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[24]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1257,7 +1355,7 @@ func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
 func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{24}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *CreateProjectRequest) GetAgencyId() string {
@@ -1283,7 +1381,7 @@ type CreateProjectResponse struct {
 
 func (x *CreateProjectResponse) Reset() {
 	*x = CreateProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[25]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1295,7 +1393,7 @@ func (x *CreateProjectResponse) String() string {
 func (*CreateProjectResponse) ProtoMessage() {}
 
 func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[25]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1308,7 +1406,7 @@ func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectResponse.ProtoReflect.Descriptor instead.
 func (*CreateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{25}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *CreateProjectResponse) GetProject() *Project {
@@ -1329,7 +1427,7 @@ type GetProjectRequest struct {
 
 func (x *GetProjectRequest) Reset() {
 	*x = GetProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[26]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1341,7 +1439,7 @@ func (x *GetProjectRequest) String() string {
 func (*GetProjectRequest) ProtoMessage() {}
 
 func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[26]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1354,7 +1452,7 @@ func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectRequest.ProtoReflect.Descriptor instead.
 func (*GetProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{26}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetProjectRequest) GetAgencyId() string {
@@ -1387,7 +1485,7 @@ type GetProjectResponse struct {
 
 func (x *GetProjectResponse) Reset() {
 	*x = GetProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[27]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1399,7 +1497,7 @@ func (x *GetProjectResponse) String() string {
 func (*GetProjectResponse) ProtoMessage() {}
 
 func (x *GetProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[27]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1412,7 +1510,7 @@ func (x *GetProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectResponse.ProtoReflect.Descriptor instead.
 func (*GetProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{27}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetProjectResponse) GetProject() *Project {
@@ -1432,7 +1530,7 @@ type GetProjectByNameRequest struct {
 
 func (x *GetProjectByNameRequest) Reset() {
 	*x = GetProjectByNameRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[28]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1444,7 +1542,7 @@ func (x *GetProjectByNameRequest) String() string {
 func (*GetProjectByNameRequest) ProtoMessage() {}
 
 func (x *GetProjectByNameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[28]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1457,7 +1555,7 @@ func (x *GetProjectByNameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectByNameRequest.ProtoReflect.Descriptor instead.
 func (*GetProjectByNameRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{28}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *GetProjectByNameRequest) GetAgencyId() string {
@@ -1483,7 +1581,7 @@ type GetProjectByNameResponse struct {
 
 func (x *GetProjectByNameResponse) Reset() {
 	*x = GetProjectByNameResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[29]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1495,7 +1593,7 @@ func (x *GetProjectByNameResponse) String() string {
 func (*GetProjectByNameResponse) ProtoMessage() {}
 
 func (x *GetProjectByNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[29]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1508,7 +1606,7 @@ func (x *GetProjectByNameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectByNameResponse.ProtoReflect.Descriptor instead.
 func (*GetProjectByNameResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{29}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetProjectByNameResponse) GetProject() *Project {
@@ -1528,7 +1626,7 @@ type UpdateProjectRequest struct {
 
 func (x *UpdateProjectRequest) Reset() {
 	*x = UpdateProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[30]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1540,7 +1638,7 @@ func (x *UpdateProjectRequest) String() string {
 func (*UpdateProjectRequest) ProtoMessage() {}
 
 func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[30]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1553,7 +1651,7 @@ func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProjectRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{30}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *UpdateProjectRequest) GetAgencyId() string {
@@ -1579,7 +1677,7 @@ type UpdateProjectResponse struct {
 
 func (x *UpdateProjectResponse) Reset() {
 	*x = UpdateProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[31]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1591,7 +1689,7 @@ func (x *UpdateProjectResponse) String() string {
 func (*UpdateProjectResponse) ProtoMessage() {}
 
 func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[31]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1604,7 +1702,7 @@ func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProjectResponse.ProtoReflect.Descriptor instead.
 func (*UpdateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{31}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *UpdateProjectResponse) GetProject() *Project {
@@ -1625,7 +1723,7 @@ type DeleteProjectRequest struct {
 
 func (x *DeleteProjectRequest) Reset() {
 	*x = DeleteProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[32]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1637,7 +1735,7 @@ func (x *DeleteProjectRequest) String() string {
 func (*DeleteProjectRequest) ProtoMessage() {}
 
 func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[32]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1650,7 +1748,7 @@ func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
 func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{32}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *DeleteProjectRequest) GetAgencyId() string {
@@ -1682,7 +1780,7 @@ type DeleteProjectResponse struct {
 
 func (x *DeleteProjectResponse) Reset() {
 	*x = DeleteProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[33]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1694,7 +1792,7 @@ func (x *DeleteProjectResponse) String() string {
 func (*DeleteProjectResponse) ProtoMessage() {}
 
 func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[33]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1707,7 +1805,7 @@ func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectResponse.ProtoReflect.Descriptor instead.
 func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{33}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{35}
 }
 
 type ListProjectsRequest struct {
@@ -1719,7 +1817,7 @@ type ListProjectsRequest struct {
 
 func (x *ListProjectsRequest) Reset() {
 	*x = ListProjectsRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[34]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1731,7 +1829,7 @@ func (x *ListProjectsRequest) String() string {
 func (*ListProjectsRequest) ProtoMessage() {}
 
 func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[34]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1744,7 +1842,7 @@ func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{34}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ListProjectsRequest) GetAgencyId() string {
@@ -1763,7 +1861,7 @@ type ListProjectsResponse struct {
 
 func (x *ListProjectsResponse) Reset() {
 	*x = ListProjectsResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[35]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1775,7 +1873,7 @@ func (x *ListProjectsResponse) String() string {
 func (*ListProjectsResponse) ProtoMessage() {}
 
 func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[35]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1788,7 +1886,7 @@ func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{35}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ListProjectsResponse) GetProjects() []*Project {
@@ -1810,7 +1908,7 @@ type AddTaskToProjectRequest struct {
 
 func (x *AddTaskToProjectRequest) Reset() {
 	*x = AddTaskToProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[36]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1822,7 +1920,7 @@ func (x *AddTaskToProjectRequest) String() string {
 func (*AddTaskToProjectRequest) ProtoMessage() {}
 
 func (x *AddTaskToProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[36]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1835,7 +1933,7 @@ func (x *AddTaskToProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddTaskToProjectRequest.ProtoReflect.Descriptor instead.
 func (*AddTaskToProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{36}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *AddTaskToProjectRequest) GetAgencyId() string {
@@ -1874,7 +1972,7 @@ type AddTaskToProjectResponse struct {
 
 func (x *AddTaskToProjectResponse) Reset() {
 	*x = AddTaskToProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[37]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1886,7 +1984,7 @@ func (x *AddTaskToProjectResponse) String() string {
 func (*AddTaskToProjectResponse) ProtoMessage() {}
 
 func (x *AddTaskToProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[37]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1899,7 +1997,7 @@ func (x *AddTaskToProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddTaskToProjectResponse.ProtoReflect.Descriptor instead.
 func (*AddTaskToProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{37}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{39}
 }
 
 type RemoveTaskFromProjectRequest struct {
@@ -1914,7 +2012,7 @@ type RemoveTaskFromProjectRequest struct {
 
 func (x *RemoveTaskFromProjectRequest) Reset() {
 	*x = RemoveTaskFromProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[38]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1926,7 +2024,7 @@ func (x *RemoveTaskFromProjectRequest) String() string {
 func (*RemoveTaskFromProjectRequest) ProtoMessage() {}
 
 func (x *RemoveTaskFromProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[38]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1939,7 +2037,7 @@ func (x *RemoveTaskFromProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveTaskFromProjectRequest.ProtoReflect.Descriptor instead.
 func (*RemoveTaskFromProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{38}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *RemoveTaskFromProjectRequest) GetAgencyId() string {
@@ -1978,7 +2076,7 @@ type RemoveTaskFromProjectResponse struct {
 
 func (x *RemoveTaskFromProjectResponse) Reset() {
 	*x = RemoveTaskFromProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[39]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1990,7 +2088,7 @@ func (x *RemoveTaskFromProjectResponse) String() string {
 func (*RemoveTaskFromProjectResponse) ProtoMessage() {}
 
 func (x *RemoveTaskFromProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[39]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2003,7 +2101,7 @@ func (x *RemoveTaskFromProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveTaskFromProjectResponse.ProtoReflect.Descriptor instead.
 func (*RemoveTaskFromProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{39}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{41}
 }
 
 type ListTasksInProjectRequest struct {
@@ -2017,7 +2115,7 @@ type ListTasksInProjectRequest struct {
 
 func (x *ListTasksInProjectRequest) Reset() {
 	*x = ListTasksInProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[40]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2029,7 +2127,7 @@ func (x *ListTasksInProjectRequest) String() string {
 func (*ListTasksInProjectRequest) ProtoMessage() {}
 
 func (x *ListTasksInProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[40]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2042,7 +2140,7 @@ func (x *ListTasksInProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTasksInProjectRequest.ProtoReflect.Descriptor instead.
 func (*ListTasksInProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{40}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ListTasksInProjectRequest) GetAgencyId() string {
@@ -2075,7 +2173,7 @@ type ListTasksInProjectResponse struct {
 
 func (x *ListTasksInProjectResponse) Reset() {
 	*x = ListTasksInProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[41]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2087,7 +2185,7 @@ func (x *ListTasksInProjectResponse) String() string {
 func (*ListTasksInProjectResponse) ProtoMessage() {}
 
 func (x *ListTasksInProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[41]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2100,7 +2198,7 @@ func (x *ListTasksInProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTasksInProjectResponse.ProtoReflect.Descriptor instead.
 func (*ListTasksInProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{41}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ListTasksInProjectResponse) GetTasks() []*Task {
@@ -2120,7 +2218,7 @@ type ListProjectsForTaskRequest struct {
 
 func (x *ListProjectsForTaskRequest) Reset() {
 	*x = ListProjectsForTaskRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[42]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2132,7 +2230,7 @@ func (x *ListProjectsForTaskRequest) String() string {
 func (*ListProjectsForTaskRequest) ProtoMessage() {}
 
 func (x *ListProjectsForTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[42]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2145,7 +2243,7 @@ func (x *ListProjectsForTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsForTaskRequest.ProtoReflect.Descriptor instead.
 func (*ListProjectsForTaskRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{42}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ListProjectsForTaskRequest) GetAgencyId() string {
@@ -2171,7 +2269,7 @@ type ListProjectsForTaskResponse struct {
 
 func (x *ListProjectsForTaskResponse) Reset() {
 	*x = ListProjectsForTaskResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[43]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2183,7 +2281,7 @@ func (x *ListProjectsForTaskResponse) String() string {
 func (*ListProjectsForTaskResponse) ProtoMessage() {}
 
 func (x *ListProjectsForTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[43]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2196,7 +2294,7 @@ func (x *ListProjectsForTaskResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsForTaskResponse.ProtoReflect.Descriptor instead.
 func (*ListProjectsForTaskResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{43}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ListProjectsForTaskResponse) GetProjects() []*Project {
@@ -2219,7 +2317,7 @@ type CreateRelationshipRequest struct {
 
 func (x *CreateRelationshipRequest) Reset() {
 	*x = CreateRelationshipRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[44]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2231,7 +2329,7 @@ func (x *CreateRelationshipRequest) String() string {
 func (*CreateRelationshipRequest) ProtoMessage() {}
 
 func (x *CreateRelationshipRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[44]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2244,7 +2342,7 @@ func (x *CreateRelationshipRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRelationshipRequest.ProtoReflect.Descriptor instead.
 func (*CreateRelationshipRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{44}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *CreateRelationshipRequest) GetAgencyId() string {
@@ -2291,7 +2389,7 @@ type CreateRelationshipResponse struct {
 
 func (x *CreateRelationshipResponse) Reset() {
 	*x = CreateRelationshipResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[45]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2303,7 +2401,7 @@ func (x *CreateRelationshipResponse) String() string {
 func (*CreateRelationshipResponse) ProtoMessage() {}
 
 func (x *CreateRelationshipResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[45]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2316,7 +2414,7 @@ func (x *CreateRelationshipResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRelationshipResponse.ProtoReflect.Descriptor instead.
 func (*CreateRelationshipResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{45}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *CreateRelationshipResponse) GetRelationship() *Relationship {
@@ -2338,7 +2436,7 @@ type DeleteRelationshipRequest struct {
 
 func (x *DeleteRelationshipRequest) Reset() {
 	*x = DeleteRelationshipRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[46]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2350,7 +2448,7 @@ func (x *DeleteRelationshipRequest) String() string {
 func (*DeleteRelationshipRequest) ProtoMessage() {}
 
 func (x *DeleteRelationshipRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[46]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2363,7 +2461,7 @@ func (x *DeleteRelationshipRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRelationshipRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRelationshipRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{46}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *DeleteRelationshipRequest) GetAgencyId() string {
@@ -2402,7 +2500,7 @@ type DeleteRelationshipResponse struct {
 
 func (x *DeleteRelationshipResponse) Reset() {
 	*x = DeleteRelationshipResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[47]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2414,7 +2512,7 @@ func (x *DeleteRelationshipResponse) String() string {
 func (*DeleteRelationshipResponse) ProtoMessage() {}
 
 func (x *DeleteRelationshipResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[47]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2427,7 +2525,7 @@ func (x *DeleteRelationshipResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRelationshipResponse.ProtoReflect.Descriptor instead.
 func (*DeleteRelationshipResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{47}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{49}
 }
 
 type TraverseRelationshipsRequest struct {
@@ -2442,7 +2540,7 @@ type TraverseRelationshipsRequest struct {
 
 func (x *TraverseRelationshipsRequest) Reset() {
 	*x = TraverseRelationshipsRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[48]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2454,7 +2552,7 @@ func (x *TraverseRelationshipsRequest) String() string {
 func (*TraverseRelationshipsRequest) ProtoMessage() {}
 
 func (x *TraverseRelationshipsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[48]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2467,7 +2565,7 @@ func (x *TraverseRelationshipsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TraverseRelationshipsRequest.ProtoReflect.Descriptor instead.
 func (*TraverseRelationshipsRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{48}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *TraverseRelationshipsRequest) GetAgencyId() string {
@@ -2507,7 +2605,7 @@ type TraverseRelationshipsResponse struct {
 
 func (x *TraverseRelationshipsResponse) Reset() {
 	*x = TraverseRelationshipsResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[49]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2519,7 +2617,7 @@ func (x *TraverseRelationshipsResponse) String() string {
 func (*TraverseRelationshipsResponse) ProtoMessage() {}
 
 func (x *TraverseRelationshipsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[49]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2532,7 +2630,7 @@ func (x *TraverseRelationshipsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TraverseRelationshipsResponse.ProtoReflect.Descriptor instead.
 func (*TraverseRelationshipsResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{49}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *TraverseRelationshipsResponse) GetRelationships() []*Relationship {
@@ -2555,7 +2653,7 @@ type ImportProjectRequest struct {
 
 func (x *ImportProjectRequest) Reset() {
 	*x = ImportProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[50]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2567,7 +2665,7 @@ func (x *ImportProjectRequest) String() string {
 func (*ImportProjectRequest) ProtoMessage() {}
 
 func (x *ImportProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[50]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2580,7 +2678,7 @@ func (x *ImportProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportProjectRequest.ProtoReflect.Descriptor instead.
 func (*ImportProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{50}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ImportProjectRequest) GetAgencyId() string {
@@ -2609,7 +2707,7 @@ type ImportProjectResponse struct {
 
 func (x *ImportProjectResponse) Reset() {
 	*x = ImportProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[51]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2621,7 +2719,7 @@ func (x *ImportProjectResponse) String() string {
 func (*ImportProjectResponse) ProtoMessage() {}
 
 func (x *ImportProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[51]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2634,7 +2732,7 @@ func (x *ImportProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportProjectResponse.ProtoReflect.Descriptor instead.
 func (*ImportProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{51}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *ImportProjectResponse) GetProject() *Project {
@@ -2715,6 +2813,11 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\ttask_name\x18\x03 \x01(\tR\btaskName\x12!\n" +
 	"\fproject_name\x18\x04 \x01(\tR\vprojectName\"\x16\n" +
 	"\x14UnassignTaskResponse\"_\n" +
+	"\x0fFailTodoRequest\x12\x1b\n" +
+	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x17\n" +
+	"\atodo_id\x18\x02 \x01(\tR\x06todoId\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"\x12\n" +
+	"\x10FailTodoResponse\"_\n" +
 	"\x12UpsertAgentRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12,\n" +
 	"\x05agent\x18\x02 \x01(\v2\x16.codevaldwork.v1.AgentR\x05agent\"C\n" +
@@ -2816,7 +2919,7 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\x15ImportProjectResponse\x122\n" +
 	"\aproject\x18\x01 \x01(\v2\x18.codevaldwork.v1.ProjectR\aproject\x12+\n" +
 	"\x05tasks\x18\x02 \x03(\v2\x15.codevaldwork.v1.TaskR\x05tasks\x12!\n" +
-	"\fdeps_created\x18\x03 \x01(\x05R\vdepsCreated2\xf1\x13\n" +
+	"\fdeps_created\x18\x03 \x01(\x05R\vdepsCreated2\xc2\x14\n" +
 	"\vTaskService\x12U\n" +
 	"\n" +
 	"CreateTask\x12\".codevaldwork.v1.CreateTaskRequest\x1a#.codevaldwork.v1.CreateTaskResponse\x12L\n" +
@@ -2829,7 +2932,8 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\tListTasks\x12!.codevaldwork.v1.ListTasksRequest\x1a\".codevaldwork.v1.ListTasksResponse\x12U\n" +
 	"\n" +
 	"AssignTask\x12\".codevaldwork.v1.AssignTaskRequest\x1a#.codevaldwork.v1.AssignTaskResponse\x12[\n" +
-	"\fUnassignTask\x12$.codevaldwork.v1.UnassignTaskRequest\x1a%.codevaldwork.v1.UnassignTaskResponse\x12X\n" +
+	"\fUnassignTask\x12$.codevaldwork.v1.UnassignTaskRequest\x1a%.codevaldwork.v1.UnassignTaskResponse\x12O\n" +
+	"\bFailTodo\x12 .codevaldwork.v1.FailTodoRequest\x1a!.codevaldwork.v1.FailTodoResponse\x12X\n" +
 	"\vUpsertAgent\x12#.codevaldwork.v1.UpsertAgentRequest\x1a$.codevaldwork.v1.UpsertAgentResponse\x12O\n" +
 	"\bGetAgent\x12 .codevaldwork.v1.GetAgentRequest\x1a!.codevaldwork.v1.GetAgentResponse\x12U\n" +
 	"\n" +
@@ -2863,7 +2967,7 @@ func file_codevaldwork_v1_service_proto_rawDescGZIP() []byte {
 	return file_codevaldwork_v1_service_proto_rawDescData
 }
 
-var file_codevaldwork_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
+var file_codevaldwork_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 54)
 var file_codevaldwork_v1_service_proto_goTypes = []any{
 	(*CreateTaskRequest)(nil),             // 0: codevaldwork.v1.CreateTaskRequest
 	(*CreateTaskResponse)(nil),            // 1: codevaldwork.v1.CreateTaskResponse
@@ -2883,78 +2987,80 @@ var file_codevaldwork_v1_service_proto_goTypes = []any{
 	(*AssignTaskResponse)(nil),            // 15: codevaldwork.v1.AssignTaskResponse
 	(*UnassignTaskRequest)(nil),           // 16: codevaldwork.v1.UnassignTaskRequest
 	(*UnassignTaskResponse)(nil),          // 17: codevaldwork.v1.UnassignTaskResponse
-	(*UpsertAgentRequest)(nil),            // 18: codevaldwork.v1.UpsertAgentRequest
-	(*UpsertAgentResponse)(nil),           // 19: codevaldwork.v1.UpsertAgentResponse
-	(*GetAgentRequest)(nil),               // 20: codevaldwork.v1.GetAgentRequest
-	(*GetAgentResponse)(nil),              // 21: codevaldwork.v1.GetAgentResponse
-	(*ListAgentsRequest)(nil),             // 22: codevaldwork.v1.ListAgentsRequest
-	(*ListAgentsResponse)(nil),            // 23: codevaldwork.v1.ListAgentsResponse
-	(*CreateProjectRequest)(nil),          // 24: codevaldwork.v1.CreateProjectRequest
-	(*CreateProjectResponse)(nil),         // 25: codevaldwork.v1.CreateProjectResponse
-	(*GetProjectRequest)(nil),             // 26: codevaldwork.v1.GetProjectRequest
-	(*GetProjectResponse)(nil),            // 27: codevaldwork.v1.GetProjectResponse
-	(*GetProjectByNameRequest)(nil),       // 28: codevaldwork.v1.GetProjectByNameRequest
-	(*GetProjectByNameResponse)(nil),      // 29: codevaldwork.v1.GetProjectByNameResponse
-	(*UpdateProjectRequest)(nil),          // 30: codevaldwork.v1.UpdateProjectRequest
-	(*UpdateProjectResponse)(nil),         // 31: codevaldwork.v1.UpdateProjectResponse
-	(*DeleteProjectRequest)(nil),          // 32: codevaldwork.v1.DeleteProjectRequest
-	(*DeleteProjectResponse)(nil),         // 33: codevaldwork.v1.DeleteProjectResponse
-	(*ListProjectsRequest)(nil),           // 34: codevaldwork.v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),          // 35: codevaldwork.v1.ListProjectsResponse
-	(*AddTaskToProjectRequest)(nil),       // 36: codevaldwork.v1.AddTaskToProjectRequest
-	(*AddTaskToProjectResponse)(nil),      // 37: codevaldwork.v1.AddTaskToProjectResponse
-	(*RemoveTaskFromProjectRequest)(nil),  // 38: codevaldwork.v1.RemoveTaskFromProjectRequest
-	(*RemoveTaskFromProjectResponse)(nil), // 39: codevaldwork.v1.RemoveTaskFromProjectResponse
-	(*ListTasksInProjectRequest)(nil),     // 40: codevaldwork.v1.ListTasksInProjectRequest
-	(*ListTasksInProjectResponse)(nil),    // 41: codevaldwork.v1.ListTasksInProjectResponse
-	(*ListProjectsForTaskRequest)(nil),    // 42: codevaldwork.v1.ListProjectsForTaskRequest
-	(*ListProjectsForTaskResponse)(nil),   // 43: codevaldwork.v1.ListProjectsForTaskResponse
-	(*CreateRelationshipRequest)(nil),     // 44: codevaldwork.v1.CreateRelationshipRequest
-	(*CreateRelationshipResponse)(nil),    // 45: codevaldwork.v1.CreateRelationshipResponse
-	(*DeleteRelationshipRequest)(nil),     // 46: codevaldwork.v1.DeleteRelationshipRequest
-	(*DeleteRelationshipResponse)(nil),    // 47: codevaldwork.v1.DeleteRelationshipResponse
-	(*TraverseRelationshipsRequest)(nil),  // 48: codevaldwork.v1.TraverseRelationshipsRequest
-	(*TraverseRelationshipsResponse)(nil), // 49: codevaldwork.v1.TraverseRelationshipsResponse
-	(*ImportProjectRequest)(nil),          // 50: codevaldwork.v1.ImportProjectRequest
-	(*ImportProjectResponse)(nil),         // 51: codevaldwork.v1.ImportProjectResponse
-	(*Task)(nil),                          // 52: codevaldwork.v1.Task
-	(*TaskFilter)(nil),                    // 53: codevaldwork.v1.TaskFilter
-	(*Agent)(nil),                         // 54: codevaldwork.v1.Agent
-	(*Project)(nil),                       // 55: codevaldwork.v1.Project
-	(*structpb.Struct)(nil),               // 56: google.protobuf.Struct
-	(*Relationship)(nil),                  // 57: codevaldwork.v1.Relationship
-	(Direction)(0),                        // 58: codevaldwork.v1.Direction
+	(*FailTodoRequest)(nil),               // 18: codevaldwork.v1.FailTodoRequest
+	(*FailTodoResponse)(nil),              // 19: codevaldwork.v1.FailTodoResponse
+	(*UpsertAgentRequest)(nil),            // 20: codevaldwork.v1.UpsertAgentRequest
+	(*UpsertAgentResponse)(nil),           // 21: codevaldwork.v1.UpsertAgentResponse
+	(*GetAgentRequest)(nil),               // 22: codevaldwork.v1.GetAgentRequest
+	(*GetAgentResponse)(nil),              // 23: codevaldwork.v1.GetAgentResponse
+	(*ListAgentsRequest)(nil),             // 24: codevaldwork.v1.ListAgentsRequest
+	(*ListAgentsResponse)(nil),            // 25: codevaldwork.v1.ListAgentsResponse
+	(*CreateProjectRequest)(nil),          // 26: codevaldwork.v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),         // 27: codevaldwork.v1.CreateProjectResponse
+	(*GetProjectRequest)(nil),             // 28: codevaldwork.v1.GetProjectRequest
+	(*GetProjectResponse)(nil),            // 29: codevaldwork.v1.GetProjectResponse
+	(*GetProjectByNameRequest)(nil),       // 30: codevaldwork.v1.GetProjectByNameRequest
+	(*GetProjectByNameResponse)(nil),      // 31: codevaldwork.v1.GetProjectByNameResponse
+	(*UpdateProjectRequest)(nil),          // 32: codevaldwork.v1.UpdateProjectRequest
+	(*UpdateProjectResponse)(nil),         // 33: codevaldwork.v1.UpdateProjectResponse
+	(*DeleteProjectRequest)(nil),          // 34: codevaldwork.v1.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),         // 35: codevaldwork.v1.DeleteProjectResponse
+	(*ListProjectsRequest)(nil),           // 36: codevaldwork.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),          // 37: codevaldwork.v1.ListProjectsResponse
+	(*AddTaskToProjectRequest)(nil),       // 38: codevaldwork.v1.AddTaskToProjectRequest
+	(*AddTaskToProjectResponse)(nil),      // 39: codevaldwork.v1.AddTaskToProjectResponse
+	(*RemoveTaskFromProjectRequest)(nil),  // 40: codevaldwork.v1.RemoveTaskFromProjectRequest
+	(*RemoveTaskFromProjectResponse)(nil), // 41: codevaldwork.v1.RemoveTaskFromProjectResponse
+	(*ListTasksInProjectRequest)(nil),     // 42: codevaldwork.v1.ListTasksInProjectRequest
+	(*ListTasksInProjectResponse)(nil),    // 43: codevaldwork.v1.ListTasksInProjectResponse
+	(*ListProjectsForTaskRequest)(nil),    // 44: codevaldwork.v1.ListProjectsForTaskRequest
+	(*ListProjectsForTaskResponse)(nil),   // 45: codevaldwork.v1.ListProjectsForTaskResponse
+	(*CreateRelationshipRequest)(nil),     // 46: codevaldwork.v1.CreateRelationshipRequest
+	(*CreateRelationshipResponse)(nil),    // 47: codevaldwork.v1.CreateRelationshipResponse
+	(*DeleteRelationshipRequest)(nil),     // 48: codevaldwork.v1.DeleteRelationshipRequest
+	(*DeleteRelationshipResponse)(nil),    // 49: codevaldwork.v1.DeleteRelationshipResponse
+	(*TraverseRelationshipsRequest)(nil),  // 50: codevaldwork.v1.TraverseRelationshipsRequest
+	(*TraverseRelationshipsResponse)(nil), // 51: codevaldwork.v1.TraverseRelationshipsResponse
+	(*ImportProjectRequest)(nil),          // 52: codevaldwork.v1.ImportProjectRequest
+	(*ImportProjectResponse)(nil),         // 53: codevaldwork.v1.ImportProjectResponse
+	(*Task)(nil),                          // 54: codevaldwork.v1.Task
+	(*TaskFilter)(nil),                    // 55: codevaldwork.v1.TaskFilter
+	(*Agent)(nil),                         // 56: codevaldwork.v1.Agent
+	(*Project)(nil),                       // 57: codevaldwork.v1.Project
+	(*structpb.Struct)(nil),               // 58: google.protobuf.Struct
+	(*Relationship)(nil),                  // 59: codevaldwork.v1.Relationship
+	(Direction)(0),                        // 60: codevaldwork.v1.Direction
 }
 var file_codevaldwork_v1_service_proto_depIdxs = []int32{
-	52, // 0: codevaldwork.v1.CreateTaskRequest.task:type_name -> codevaldwork.v1.Task
-	52, // 1: codevaldwork.v1.CreateTaskResponse.task:type_name -> codevaldwork.v1.Task
-	52, // 2: codevaldwork.v1.GetTaskResponse.task:type_name -> codevaldwork.v1.Task
-	52, // 3: codevaldwork.v1.UpdateTaskRequest.task:type_name -> codevaldwork.v1.Task
-	52, // 4: codevaldwork.v1.UpdateTaskResponse.task:type_name -> codevaldwork.v1.Task
-	53, // 5: codevaldwork.v1.ListTasksRequest.filter:type_name -> codevaldwork.v1.TaskFilter
-	52, // 6: codevaldwork.v1.ListTasksResponse.tasks:type_name -> codevaldwork.v1.Task
-	52, // 7: codevaldwork.v1.GetTaskByNameResponse.task:type_name -> codevaldwork.v1.Task
-	52, // 8: codevaldwork.v1.CreateTaskInProjectRequest.task:type_name -> codevaldwork.v1.Task
-	52, // 9: codevaldwork.v1.CreateTaskInProjectResponse.task:type_name -> codevaldwork.v1.Task
-	54, // 10: codevaldwork.v1.UpsertAgentRequest.agent:type_name -> codevaldwork.v1.Agent
-	54, // 11: codevaldwork.v1.UpsertAgentResponse.agent:type_name -> codevaldwork.v1.Agent
-	54, // 12: codevaldwork.v1.GetAgentResponse.agent:type_name -> codevaldwork.v1.Agent
-	54, // 13: codevaldwork.v1.ListAgentsResponse.agents:type_name -> codevaldwork.v1.Agent
-	55, // 14: codevaldwork.v1.CreateProjectRequest.project:type_name -> codevaldwork.v1.Project
-	55, // 15: codevaldwork.v1.CreateProjectResponse.project:type_name -> codevaldwork.v1.Project
-	55, // 16: codevaldwork.v1.GetProjectResponse.project:type_name -> codevaldwork.v1.Project
-	55, // 17: codevaldwork.v1.GetProjectByNameResponse.project:type_name -> codevaldwork.v1.Project
-	55, // 18: codevaldwork.v1.UpdateProjectRequest.project:type_name -> codevaldwork.v1.Project
-	55, // 19: codevaldwork.v1.UpdateProjectResponse.project:type_name -> codevaldwork.v1.Project
-	55, // 20: codevaldwork.v1.ListProjectsResponse.projects:type_name -> codevaldwork.v1.Project
-	52, // 21: codevaldwork.v1.ListTasksInProjectResponse.tasks:type_name -> codevaldwork.v1.Task
-	55, // 22: codevaldwork.v1.ListProjectsForTaskResponse.projects:type_name -> codevaldwork.v1.Project
-	56, // 23: codevaldwork.v1.CreateRelationshipRequest.properties:type_name -> google.protobuf.Struct
-	57, // 24: codevaldwork.v1.CreateRelationshipResponse.relationship:type_name -> codevaldwork.v1.Relationship
-	58, // 25: codevaldwork.v1.TraverseRelationshipsRequest.direction:type_name -> codevaldwork.v1.Direction
-	57, // 26: codevaldwork.v1.TraverseRelationshipsResponse.relationships:type_name -> codevaldwork.v1.Relationship
-	55, // 27: codevaldwork.v1.ImportProjectResponse.project:type_name -> codevaldwork.v1.Project
-	52, // 28: codevaldwork.v1.ImportProjectResponse.tasks:type_name -> codevaldwork.v1.Task
+	54, // 0: codevaldwork.v1.CreateTaskRequest.task:type_name -> codevaldwork.v1.Task
+	54, // 1: codevaldwork.v1.CreateTaskResponse.task:type_name -> codevaldwork.v1.Task
+	54, // 2: codevaldwork.v1.GetTaskResponse.task:type_name -> codevaldwork.v1.Task
+	54, // 3: codevaldwork.v1.UpdateTaskRequest.task:type_name -> codevaldwork.v1.Task
+	54, // 4: codevaldwork.v1.UpdateTaskResponse.task:type_name -> codevaldwork.v1.Task
+	55, // 5: codevaldwork.v1.ListTasksRequest.filter:type_name -> codevaldwork.v1.TaskFilter
+	54, // 6: codevaldwork.v1.ListTasksResponse.tasks:type_name -> codevaldwork.v1.Task
+	54, // 7: codevaldwork.v1.GetTaskByNameResponse.task:type_name -> codevaldwork.v1.Task
+	54, // 8: codevaldwork.v1.CreateTaskInProjectRequest.task:type_name -> codevaldwork.v1.Task
+	54, // 9: codevaldwork.v1.CreateTaskInProjectResponse.task:type_name -> codevaldwork.v1.Task
+	56, // 10: codevaldwork.v1.UpsertAgentRequest.agent:type_name -> codevaldwork.v1.Agent
+	56, // 11: codevaldwork.v1.UpsertAgentResponse.agent:type_name -> codevaldwork.v1.Agent
+	56, // 12: codevaldwork.v1.GetAgentResponse.agent:type_name -> codevaldwork.v1.Agent
+	56, // 13: codevaldwork.v1.ListAgentsResponse.agents:type_name -> codevaldwork.v1.Agent
+	57, // 14: codevaldwork.v1.CreateProjectRequest.project:type_name -> codevaldwork.v1.Project
+	57, // 15: codevaldwork.v1.CreateProjectResponse.project:type_name -> codevaldwork.v1.Project
+	57, // 16: codevaldwork.v1.GetProjectResponse.project:type_name -> codevaldwork.v1.Project
+	57, // 17: codevaldwork.v1.GetProjectByNameResponse.project:type_name -> codevaldwork.v1.Project
+	57, // 18: codevaldwork.v1.UpdateProjectRequest.project:type_name -> codevaldwork.v1.Project
+	57, // 19: codevaldwork.v1.UpdateProjectResponse.project:type_name -> codevaldwork.v1.Project
+	57, // 20: codevaldwork.v1.ListProjectsResponse.projects:type_name -> codevaldwork.v1.Project
+	54, // 21: codevaldwork.v1.ListTasksInProjectResponse.tasks:type_name -> codevaldwork.v1.Task
+	57, // 22: codevaldwork.v1.ListProjectsForTaskResponse.projects:type_name -> codevaldwork.v1.Project
+	58, // 23: codevaldwork.v1.CreateRelationshipRequest.properties:type_name -> google.protobuf.Struct
+	59, // 24: codevaldwork.v1.CreateRelationshipResponse.relationship:type_name -> codevaldwork.v1.Relationship
+	60, // 25: codevaldwork.v1.TraverseRelationshipsRequest.direction:type_name -> codevaldwork.v1.Direction
+	59, // 26: codevaldwork.v1.TraverseRelationshipsResponse.relationships:type_name -> codevaldwork.v1.Relationship
+	57, // 27: codevaldwork.v1.ImportProjectResponse.project:type_name -> codevaldwork.v1.Project
+	54, // 28: codevaldwork.v1.ImportProjectResponse.tasks:type_name -> codevaldwork.v1.Task
 	0,  // 29: codevaldwork.v1.TaskService.CreateTask:input_type -> codevaldwork.v1.CreateTaskRequest
 	2,  // 30: codevaldwork.v1.TaskService.GetTask:input_type -> codevaldwork.v1.GetTaskRequest
 	10, // 31: codevaldwork.v1.TaskService.GetTaskByName:input_type -> codevaldwork.v1.GetTaskByNameRequest
@@ -2963,52 +3069,54 @@ var file_codevaldwork_v1_service_proto_depIdxs = []int32{
 	8,  // 34: codevaldwork.v1.TaskService.ListTasks:input_type -> codevaldwork.v1.ListTasksRequest
 	14, // 35: codevaldwork.v1.TaskService.AssignTask:input_type -> codevaldwork.v1.AssignTaskRequest
 	16, // 36: codevaldwork.v1.TaskService.UnassignTask:input_type -> codevaldwork.v1.UnassignTaskRequest
-	18, // 37: codevaldwork.v1.TaskService.UpsertAgent:input_type -> codevaldwork.v1.UpsertAgentRequest
-	20, // 38: codevaldwork.v1.TaskService.GetAgent:input_type -> codevaldwork.v1.GetAgentRequest
-	22, // 39: codevaldwork.v1.TaskService.ListAgents:input_type -> codevaldwork.v1.ListAgentsRequest
-	12, // 40: codevaldwork.v1.TaskService.CreateTaskInProject:input_type -> codevaldwork.v1.CreateTaskInProjectRequest
-	24, // 41: codevaldwork.v1.TaskService.CreateProject:input_type -> codevaldwork.v1.CreateProjectRequest
-	26, // 42: codevaldwork.v1.TaskService.GetProject:input_type -> codevaldwork.v1.GetProjectRequest
-	28, // 43: codevaldwork.v1.TaskService.GetProjectByName:input_type -> codevaldwork.v1.GetProjectByNameRequest
-	30, // 44: codevaldwork.v1.TaskService.UpdateProject:input_type -> codevaldwork.v1.UpdateProjectRequest
-	32, // 45: codevaldwork.v1.TaskService.DeleteProject:input_type -> codevaldwork.v1.DeleteProjectRequest
-	34, // 46: codevaldwork.v1.TaskService.ListProjects:input_type -> codevaldwork.v1.ListProjectsRequest
-	36, // 47: codevaldwork.v1.TaskService.AddTaskToProject:input_type -> codevaldwork.v1.AddTaskToProjectRequest
-	38, // 48: codevaldwork.v1.TaskService.RemoveTaskFromProject:input_type -> codevaldwork.v1.RemoveTaskFromProjectRequest
-	40, // 49: codevaldwork.v1.TaskService.ListTasksInProject:input_type -> codevaldwork.v1.ListTasksInProjectRequest
-	42, // 50: codevaldwork.v1.TaskService.ListProjectsForTask:input_type -> codevaldwork.v1.ListProjectsForTaskRequest
-	44, // 51: codevaldwork.v1.TaskService.CreateRelationship:input_type -> codevaldwork.v1.CreateRelationshipRequest
-	46, // 52: codevaldwork.v1.TaskService.DeleteRelationship:input_type -> codevaldwork.v1.DeleteRelationshipRequest
-	48, // 53: codevaldwork.v1.TaskService.TraverseRelationships:input_type -> codevaldwork.v1.TraverseRelationshipsRequest
-	50, // 54: codevaldwork.v1.TaskService.ImportProject:input_type -> codevaldwork.v1.ImportProjectRequest
-	1,  // 55: codevaldwork.v1.TaskService.CreateTask:output_type -> codevaldwork.v1.CreateTaskResponse
-	3,  // 56: codevaldwork.v1.TaskService.GetTask:output_type -> codevaldwork.v1.GetTaskResponse
-	11, // 57: codevaldwork.v1.TaskService.GetTaskByName:output_type -> codevaldwork.v1.GetTaskByNameResponse
-	5,  // 58: codevaldwork.v1.TaskService.UpdateTask:output_type -> codevaldwork.v1.UpdateTaskResponse
-	7,  // 59: codevaldwork.v1.TaskService.DeleteTask:output_type -> codevaldwork.v1.DeleteTaskResponse
-	9,  // 60: codevaldwork.v1.TaskService.ListTasks:output_type -> codevaldwork.v1.ListTasksResponse
-	15, // 61: codevaldwork.v1.TaskService.AssignTask:output_type -> codevaldwork.v1.AssignTaskResponse
-	17, // 62: codevaldwork.v1.TaskService.UnassignTask:output_type -> codevaldwork.v1.UnassignTaskResponse
-	19, // 63: codevaldwork.v1.TaskService.UpsertAgent:output_type -> codevaldwork.v1.UpsertAgentResponse
-	21, // 64: codevaldwork.v1.TaskService.GetAgent:output_type -> codevaldwork.v1.GetAgentResponse
-	23, // 65: codevaldwork.v1.TaskService.ListAgents:output_type -> codevaldwork.v1.ListAgentsResponse
-	13, // 66: codevaldwork.v1.TaskService.CreateTaskInProject:output_type -> codevaldwork.v1.CreateTaskInProjectResponse
-	25, // 67: codevaldwork.v1.TaskService.CreateProject:output_type -> codevaldwork.v1.CreateProjectResponse
-	27, // 68: codevaldwork.v1.TaskService.GetProject:output_type -> codevaldwork.v1.GetProjectResponse
-	29, // 69: codevaldwork.v1.TaskService.GetProjectByName:output_type -> codevaldwork.v1.GetProjectByNameResponse
-	31, // 70: codevaldwork.v1.TaskService.UpdateProject:output_type -> codevaldwork.v1.UpdateProjectResponse
-	33, // 71: codevaldwork.v1.TaskService.DeleteProject:output_type -> codevaldwork.v1.DeleteProjectResponse
-	35, // 72: codevaldwork.v1.TaskService.ListProjects:output_type -> codevaldwork.v1.ListProjectsResponse
-	37, // 73: codevaldwork.v1.TaskService.AddTaskToProject:output_type -> codevaldwork.v1.AddTaskToProjectResponse
-	39, // 74: codevaldwork.v1.TaskService.RemoveTaskFromProject:output_type -> codevaldwork.v1.RemoveTaskFromProjectResponse
-	41, // 75: codevaldwork.v1.TaskService.ListTasksInProject:output_type -> codevaldwork.v1.ListTasksInProjectResponse
-	43, // 76: codevaldwork.v1.TaskService.ListProjectsForTask:output_type -> codevaldwork.v1.ListProjectsForTaskResponse
-	45, // 77: codevaldwork.v1.TaskService.CreateRelationship:output_type -> codevaldwork.v1.CreateRelationshipResponse
-	47, // 78: codevaldwork.v1.TaskService.DeleteRelationship:output_type -> codevaldwork.v1.DeleteRelationshipResponse
-	49, // 79: codevaldwork.v1.TaskService.TraverseRelationships:output_type -> codevaldwork.v1.TraverseRelationshipsResponse
-	51, // 80: codevaldwork.v1.TaskService.ImportProject:output_type -> codevaldwork.v1.ImportProjectResponse
-	55, // [55:81] is the sub-list for method output_type
-	29, // [29:55] is the sub-list for method input_type
+	18, // 37: codevaldwork.v1.TaskService.FailTodo:input_type -> codevaldwork.v1.FailTodoRequest
+	20, // 38: codevaldwork.v1.TaskService.UpsertAgent:input_type -> codevaldwork.v1.UpsertAgentRequest
+	22, // 39: codevaldwork.v1.TaskService.GetAgent:input_type -> codevaldwork.v1.GetAgentRequest
+	24, // 40: codevaldwork.v1.TaskService.ListAgents:input_type -> codevaldwork.v1.ListAgentsRequest
+	12, // 41: codevaldwork.v1.TaskService.CreateTaskInProject:input_type -> codevaldwork.v1.CreateTaskInProjectRequest
+	26, // 42: codevaldwork.v1.TaskService.CreateProject:input_type -> codevaldwork.v1.CreateProjectRequest
+	28, // 43: codevaldwork.v1.TaskService.GetProject:input_type -> codevaldwork.v1.GetProjectRequest
+	30, // 44: codevaldwork.v1.TaskService.GetProjectByName:input_type -> codevaldwork.v1.GetProjectByNameRequest
+	32, // 45: codevaldwork.v1.TaskService.UpdateProject:input_type -> codevaldwork.v1.UpdateProjectRequest
+	34, // 46: codevaldwork.v1.TaskService.DeleteProject:input_type -> codevaldwork.v1.DeleteProjectRequest
+	36, // 47: codevaldwork.v1.TaskService.ListProjects:input_type -> codevaldwork.v1.ListProjectsRequest
+	38, // 48: codevaldwork.v1.TaskService.AddTaskToProject:input_type -> codevaldwork.v1.AddTaskToProjectRequest
+	40, // 49: codevaldwork.v1.TaskService.RemoveTaskFromProject:input_type -> codevaldwork.v1.RemoveTaskFromProjectRequest
+	42, // 50: codevaldwork.v1.TaskService.ListTasksInProject:input_type -> codevaldwork.v1.ListTasksInProjectRequest
+	44, // 51: codevaldwork.v1.TaskService.ListProjectsForTask:input_type -> codevaldwork.v1.ListProjectsForTaskRequest
+	46, // 52: codevaldwork.v1.TaskService.CreateRelationship:input_type -> codevaldwork.v1.CreateRelationshipRequest
+	48, // 53: codevaldwork.v1.TaskService.DeleteRelationship:input_type -> codevaldwork.v1.DeleteRelationshipRequest
+	50, // 54: codevaldwork.v1.TaskService.TraverseRelationships:input_type -> codevaldwork.v1.TraverseRelationshipsRequest
+	52, // 55: codevaldwork.v1.TaskService.ImportProject:input_type -> codevaldwork.v1.ImportProjectRequest
+	1,  // 56: codevaldwork.v1.TaskService.CreateTask:output_type -> codevaldwork.v1.CreateTaskResponse
+	3,  // 57: codevaldwork.v1.TaskService.GetTask:output_type -> codevaldwork.v1.GetTaskResponse
+	11, // 58: codevaldwork.v1.TaskService.GetTaskByName:output_type -> codevaldwork.v1.GetTaskByNameResponse
+	5,  // 59: codevaldwork.v1.TaskService.UpdateTask:output_type -> codevaldwork.v1.UpdateTaskResponse
+	7,  // 60: codevaldwork.v1.TaskService.DeleteTask:output_type -> codevaldwork.v1.DeleteTaskResponse
+	9,  // 61: codevaldwork.v1.TaskService.ListTasks:output_type -> codevaldwork.v1.ListTasksResponse
+	15, // 62: codevaldwork.v1.TaskService.AssignTask:output_type -> codevaldwork.v1.AssignTaskResponse
+	17, // 63: codevaldwork.v1.TaskService.UnassignTask:output_type -> codevaldwork.v1.UnassignTaskResponse
+	19, // 64: codevaldwork.v1.TaskService.FailTodo:output_type -> codevaldwork.v1.FailTodoResponse
+	21, // 65: codevaldwork.v1.TaskService.UpsertAgent:output_type -> codevaldwork.v1.UpsertAgentResponse
+	23, // 66: codevaldwork.v1.TaskService.GetAgent:output_type -> codevaldwork.v1.GetAgentResponse
+	25, // 67: codevaldwork.v1.TaskService.ListAgents:output_type -> codevaldwork.v1.ListAgentsResponse
+	13, // 68: codevaldwork.v1.TaskService.CreateTaskInProject:output_type -> codevaldwork.v1.CreateTaskInProjectResponse
+	27, // 69: codevaldwork.v1.TaskService.CreateProject:output_type -> codevaldwork.v1.CreateProjectResponse
+	29, // 70: codevaldwork.v1.TaskService.GetProject:output_type -> codevaldwork.v1.GetProjectResponse
+	31, // 71: codevaldwork.v1.TaskService.GetProjectByName:output_type -> codevaldwork.v1.GetProjectByNameResponse
+	33, // 72: codevaldwork.v1.TaskService.UpdateProject:output_type -> codevaldwork.v1.UpdateProjectResponse
+	35, // 73: codevaldwork.v1.TaskService.DeleteProject:output_type -> codevaldwork.v1.DeleteProjectResponse
+	37, // 74: codevaldwork.v1.TaskService.ListProjects:output_type -> codevaldwork.v1.ListProjectsResponse
+	39, // 75: codevaldwork.v1.TaskService.AddTaskToProject:output_type -> codevaldwork.v1.AddTaskToProjectResponse
+	41, // 76: codevaldwork.v1.TaskService.RemoveTaskFromProject:output_type -> codevaldwork.v1.RemoveTaskFromProjectResponse
+	43, // 77: codevaldwork.v1.TaskService.ListTasksInProject:output_type -> codevaldwork.v1.ListTasksInProjectResponse
+	45, // 78: codevaldwork.v1.TaskService.ListProjectsForTask:output_type -> codevaldwork.v1.ListProjectsForTaskResponse
+	47, // 79: codevaldwork.v1.TaskService.CreateRelationship:output_type -> codevaldwork.v1.CreateRelationshipResponse
+	49, // 80: codevaldwork.v1.TaskService.DeleteRelationship:output_type -> codevaldwork.v1.DeleteRelationshipResponse
+	51, // 81: codevaldwork.v1.TaskService.TraverseRelationships:output_type -> codevaldwork.v1.TraverseRelationshipsResponse
+	53, // 82: codevaldwork.v1.TaskService.ImportProject:output_type -> codevaldwork.v1.ImportProjectResponse
+	56, // [56:83] is the sub-list for method output_type
+	29, // [29:56] is the sub-list for method input_type
 	29, // [29:29] is the sub-list for extension type_name
 	29, // [29:29] is the sub-list for extension extendee
 	0,  // [0:29] is the sub-list for field type_name
@@ -3026,7 +3134,7 @@ func file_codevaldwork_v1_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codevaldwork_v1_service_proto_rawDesc), len(file_codevaldwork_v1_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   52,
+			NumMessages:   54,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

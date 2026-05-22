@@ -55,6 +55,21 @@ service TaskService {
   // Idempotent. Error: NOT_FOUND only if the task itself is missing.
   rpc UnassignTask(UnassignTaskRequest) returns (UnassignTaskResponse);
 
+  // ── Todo lifecycle ─────────────────────────────────────────────────────────
+
+  // FailTodo marks a TaskTodo as failed and runs the full cascade:
+  //   • blockDependentTodos — cascade-fails every blocked todo that
+  //     (transitively) depended on this one.
+  //   • maybeCompleteParentTask — marks the parent Task failed once all
+  //     child todos are terminal.
+  //
+  // This is the same logic CodeValdWork executes when it receives
+  // ai.task.failed from CodeValdAI, but exposed as a direct RPC for
+  // operational use (manual override, QA testing).
+  //
+  // Error: NOT_FOUND if the todo does not exist.
+  rpc FailTodo(FailTodoRequest) returns (FailTodoResponse);
+
   // UpsertAgent creates or merges an Agent vertex keyed by the natural key
   // (agency_id, agent.agent_id).
   rpc UpsertAgent(UpsertAgentRequest) returns (UpsertAgentResponse);
@@ -226,6 +241,15 @@ message UnassignTaskRequest {
   string project_name = 4;  // required when resolving by task_name
 }
 message UnassignTaskResponse {}
+
+message FailTodoRequest {
+  string agency_id = 1;
+  string todo_id   = 2;
+  // reason is an optional human-readable description forwarded to the
+  // cascade log (e.g. "manual override by operator").
+  string reason    = 3;
+}
+message FailTodoResponse {}
 
 message UpsertAgentRequest {
   string agency_id = 1;

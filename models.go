@@ -204,6 +204,12 @@ const (
 	// is waiting to be picked up by a CodeValdAI agent via work.task.todo.
 	TodoStatusPending TodoStatus = "pending"
 
+	// TodoStatusBlocked is a holding state — the todo was created but has
+	// unfulfilled depends_on entries. It will not be dispatched until every
+	// predecessor todo reaches TodoStatusCompleted. If any predecessor fails,
+	// all of its blocked dependents are cascade-failed.
+	TodoStatusBlocked TodoStatus = "blocked"
+
 	// TodoStatusDispatched means a CodeValdAI agent has started an AgentRun
 	// for this todo (ai.task.in_progress received).
 	TodoStatusDispatched TodoStatus = "dispatched"

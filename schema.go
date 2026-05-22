@@ -6,7 +6,7 @@
 //
 // The schema declares six TypeDefinitions:
 //   - Task              — a unit of work assigned to an AI Agent (mutable)
-//   - TaskTodo          — a decomposed sub-task produced by an AI decomposition run (mutable)
+//   - TaskTodo          — a decomposed sub-task produced by an AI decomposition run; carries todo_type and max_runs for per-type run-count enforcement (mutable)
 //   - Project           — optional container that groups related Tasks via `member_of` edges
 //   - Agent             — Work-domain projection of an AI agent; vertex for `assigned_to` edges
 //   - Tag               — free-form label attached to Tasks via `has_tag` edges
@@ -222,6 +222,14 @@ func DefaultWorkSchema() types.Schema {
 					// the agent runs. Each spec targets a specific service (e.g. "git") and
 					// operation (e.g. "blob_search") with typed parameters.
 					{Name: "precalls", Type: types.PropertyTypeString},
+					// todo_type is the semantic type of this todo (e.g. "compile-fix").
+					// CodeValdWork tracks run_count per (parent_task_id, todo_type) and enforces
+					// max_runs at creation time — rejecting the injection when the limit is reached.
+					{Name: "todo_type", Type: types.PropertyTypeString},
+					// max_runs is the maximum number of todos of this todo_type that may be created
+					// for the parent task. Enforced by CodeValdWork at creation time.
+					// Zero means no limit.
+					{Name: "max_runs", Type: types.PropertyTypeInteger},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},

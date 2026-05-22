@@ -188,8 +188,19 @@ type TaskManager interface {
 
 	// CreateTaskTodo creates a new TaskTodo entity for a decomposed sub-task.
 	// Required fields: Title, Instructions, ParentTaskID. Returns [ErrInvalidTask]
-	// if any required field is empty. Also publishes [TopicTaskTodo] on success.
+	// if any required field is empty.
+	// Todos with non-empty DependsOn are created with [TodoStatusBlocked] and
+	// are NOT dispatched — call [DispatchTaskTodo] once their predecessors complete.
+	// Todos with no dependencies start as [TodoStatusPending]; callers should
+	// immediately call [DispatchTaskTodo] for them.
 	CreateTaskTodo(ctx context.Context, agencyID string, todo TaskTodo) (TaskTodo, error)
+
+	// DispatchTaskTodo publishes [TopicTodoDispatched] for an existing todo,
+	// making it available to CodeValdAI agents via their work plans.
+	// If the todo is currently [TodoStatusBlocked], it is first transitioned to
+	// [TodoStatusPending] before the event is published.
+	// Returns [ErrTaskTodoNotFound] if the todo does not exist.
+	DispatchTaskTodo(ctx context.Context, agencyID, todoID string) error
 
 	// GetTaskTodo retrieves a single TaskTodo by its entity ID within the given agency.
 	// Returns [ErrTaskTodoNotFound] if no matching todo exists.

@@ -93,13 +93,15 @@ func Run(cfg config.Config) error {
 	}
 
 	grpcServer, _ := serverutil.NewGRPCServer()
-	pb.RegisterTaskServiceServer(grpcServer, server.New(mgr))
-	entitygraphpb.RegisterEntityServiceServer(grpcServer, server.NewEntityServer(backend))
-	healthpb.RegisterHealthServiceServer(grpcServer, health.New("codevaldwork"))
+	taskServer := server.New(mgr)
 	if cfg.AgencyID != "" {
 		dispatcher := server.NewTaskEventDispatcher(mgr, cfg.AgencyID, pub)
+		taskServer.WithDispatcher(dispatcher)
 		sharedev1.RegisterEventReceiverServiceServer(grpcServer, server.NewEventReceiver(backend, cfg.AgencyID, dispatcher))
 	}
+	pb.RegisterTaskServiceServer(grpcServer, taskServer)
+	entitygraphpb.RegisterEntityServiceServer(grpcServer, server.NewEntityServer(backend))
+	healthpb.RegisterHealthServiceServer(grpcServer, health.New("codevaldwork"))
 
 	// ── Signal handling ───────────────────────────────────────────────────────
 	quit := make(chan os.Signal, 1)
