@@ -162,7 +162,7 @@ func taskRoutes() []types.RouteInfo {
 			IsWrite:    true,
 			PathBindings: []types.PathBinding{
 				agencyBinding,
-				{URLParam: "taskId", Field: "task_id"},
+				{URLParam: "taskId", Field: "task.id"},
 			},
 		},
 		{
