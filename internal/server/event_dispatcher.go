@@ -178,6 +178,21 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 	if updated.ParentTaskID == "" {
 		return
 	}
+
+	if status == codevaldwork.TodoStatusCompleted || status == codevaldwork.TodoStatusFailed {
+		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+			Topic:    codevaldwork.TopicTodoCompleted,
+			AgencyID: d.agencyID,
+			Payload: codevaldwork.TodoCompletedPayload{
+				TodoID:       updated.ID,
+				ParentTaskID: updated.ParentTaskID,
+				Title:        updated.Title,
+				Status:       string(status),
+			},
+		})
+		log.Printf("codevaldwork: TaskEventDispatcher: published %s todo=%s task=%s", codevaldwork.TopicTodoCompleted, updated.ID, updated.ParentTaskID)
+	}
+
 	switch status {
 	case codevaldwork.TodoStatusCompleted:
 		// Unblock any todos that were waiting on this one.

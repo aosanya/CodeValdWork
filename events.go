@@ -160,13 +160,13 @@ type TodoDispatchedPayload struct {
 // TodoCompletedPayload is the [Event.Payload] for [TopicTodoCompleted].
 // Published when a TaskTodo reaches a terminal status (completed or failed).
 type TodoCompletedPayload struct {
-	TodoID       string
-	ParentTaskID string
-	Title        string
-	Status       string // "completed" or "failed"
-	TodoType     string // forwarded from the TaskTodo entity; empty when no type was set
-	MaxRuns      int    // forwarded from the TaskTodo entity; 0 means no limit
-	RunCount     int    // current count of todos of this TodoType for the parent task at the time of completion
+	TodoID       string `json:"todo_id"`
+	ParentTaskID string `json:"task_id"`    // keyed "task_id" so CodeValdFunctions' dispatcher can extract it
+	Title        string `json:"title"`
+	Status       string `json:"status"`     // "completed" or "failed"
+	TodoType     string `json:"todo_type"`  // forwarded from the TaskTodo entity; empty when no type was set
+	MaxRuns      int    `json:"max_runs,omitempty"`  // forwarded from the TaskTodo entity; 0 means no limit
+	RunCount     int    `json:"run_count,omitempty"` // current count of todos of this TodoType for the parent task at the time of completion
 }
 
 // TaskUpdatePayload is the [Event.Payload] for [TopicTaskUpdate].
