@@ -137,6 +137,11 @@ type Task struct {
 
 	// BranchName is the git branch to create/use for this task (e.g. "feature/SF-001_scaffolding").
 	BranchName string `json:"branch_name,omitempty"`
+
+	// AssignedTo is the entity ID of the Agent currently responsible for this
+	// task. Empty string means unassigned. Populated from the assigned_to graph
+	// edge at read time; mutated via AssignTask / UnassignTask.
+	AssignedTo string `json:"assigned_to,omitempty"`
 }
 
 // ImportResult is returned by [TaskManager.ImportProject].

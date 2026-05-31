@@ -67,6 +67,10 @@ message Task {
   bool                      separate_branch = 18;
   // branch_name is the git branch to create/use for this task (e.g. "feature/SF-001_scaffolding").
   string                    branch_name     = 19;
+  // assigned_to is the entity ID of the Agent currently responsible for this
+  // task. Empty string means unassigned. Populated from the `assigned_to`
+  // graph edge at query time; set via AssignTask / UnassignTask RPCs.
+  string                    assigned_to     = 20;
 }
 
 // TaskFilter is used in ListTasks to constrain results.

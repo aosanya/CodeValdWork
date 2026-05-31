@@ -65,6 +65,7 @@ func (m *taskManager) GetTask(ctx context.Context, agencyID, taskID string) (Tas
 	}
 	t := taskFromEntity(e)
 	t.Tags = m.loadTagNames(ctx, agencyID, t.ID)
+	t.AssignedTo = m.loadAssigneeID(ctx, agencyID, t.ID)
 	return t, nil
 }
 
@@ -175,6 +176,7 @@ func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter Tas
 	for _, e := range entities {
 		t := taskFromEntity(e)
 		t.Tags = m.loadTagNames(ctx, agencyID, t.ID)
+		t.AssignedTo = m.loadAssigneeID(ctx, agencyID, t.ID)
 		tasks = append(tasks, t)
 	}
 	return tasks, nil
@@ -199,6 +201,16 @@ func (m *taskManager) loadTagNames(ctx context.Context, agencyID, taskID string)
 		}
 	}
 	return names
+}
+
+// loadAssigneeID traverses the outbound assigned_to edge from taskID and
+// returns the agent entity ID. Returns empty string when unassigned or on error.
+func (m *taskManager) loadAssigneeID(ctx context.Context, agencyID, taskID string) string {
+	edges, err := m.TraverseRelationships(ctx, agencyID, taskID, RelLabelAssignedTo, DirectionOutbound)
+	if err != nil || len(edges) == 0 {
+		return ""
+	}
+	return edges[0].ToID
 }
 
 // publish emits a typed [eventbus.Event] via the optional Publisher.
