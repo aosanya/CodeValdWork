@@ -90,6 +90,51 @@ func TestGetAgent_RoundTrip(t *testing.T) {
 	}
 }
 
+func TestGetAgent_AcceptsSlug(t *testing.T) {
+	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
+	ctx := context.Background()
+	created, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "developer-01", DisplayName: "Dev"})
+
+	got, err := mgr.GetAgent(ctx, "ag", "developer-01")
+	if err != nil {
+		t.Fatalf("GetAgent by slug: %v", err)
+	}
+	if got.ID != created.ID {
+		t.Errorf("slug resolved to wrong entity: got %s want %s", got.ID, created.ID)
+	}
+}
+
+func TestGetAgentByAgentID_NotFound(t *testing.T) {
+	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
+	_, err := mgr.GetAgentByAgentID(context.Background(), "ag", "missing-slug")
+	if !errors.Is(err, codevaldwork.ErrAgentNotFound) {
+		t.Fatalf("got %v, want ErrAgentNotFound", err)
+	}
+}
+
+func TestAssignTask_AcceptsAgentSlug_EdgeUsesUUID(t *testing.T) {
+	fake := newFakeDataManager()
+	mgr, _ := codevaldwork.NewTaskManager(fake, nil)
+	ctx := context.Background()
+	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
+	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "developer-01"})
+
+	if err := mgr.AssignTask(ctx, "ag", task.ID, "developer-01"); err != nil {
+		t.Fatalf("AssignTask with slug: %v", err)
+	}
+
+	edges, err := mgr.TraverseRelationships(ctx, "ag", task.ID, codevaldwork.RelLabelAssignedTo, codevaldwork.DirectionOutbound)
+	if err != nil {
+		t.Fatalf("traverse: %v", err)
+	}
+	if len(edges) != 1 {
+		t.Fatalf("want 1 assigned_to edge, got %d", len(edges))
+	}
+	if edges[0].ToID != agent.ID {
+		t.Errorf("edge ToID = %q, want resolved UUID %q (not the slug)", edges[0].ToID, agent.ID)
+	}
+}
+
 func TestListAgents_AgencyIsolation(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()

@@ -30,6 +30,10 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 	if err != nil {
 		return err
 	}
+	// GetAgent accepts either the entity UUID or the AgentID slug; downstream
+	// edge writes + the work.task.assigned payload need the entity UUID so
+	// subscribers can resolve the agent via GetEntity without slug knowledge.
+	resolvedAgentID := agent.ID
 
 	existing, err := m.TraverseRelationships(ctx, agencyID, taskID, RelLabelAssignedTo, DirectionOutbound)
 	if err != nil {
@@ -45,7 +49,7 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 		AgencyID: agencyID,
 		Name:     RelLabelAssignedTo,
 		FromID:   taskID,
-		ToID:     agentID,
+		ToID:     resolvedAgentID,
 		Properties: map[string]any{
 			"assigned_at": time.Now().UTC().Format(time.RFC3339),
 		},
@@ -77,7 +81,7 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 
 	m.publish(ctx, TopicTaskAssigned, agencyID, TaskAssignedPayload{
 		TaskID:      taskID,
-		AgentID:     agentID,
+		AgentID:     resolvedAgentID,
 		RoleName:    agent.RoleName,
 		TaskCode:    task.TaskName,
 		Title:       task.Title,

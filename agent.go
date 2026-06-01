@@ -29,21 +29,46 @@ func (m *taskManager) UpsertAgent(ctx context.Context, agencyID string, agent Ag
 	return agentFromEntity(upserted), nil
 }
 
-// GetAgent reads an Agent vertex by its entity ID (the storage key, not the
-// external AgentID). Returns [ErrAgentNotFound] if the entity does not exist
-// or is not an Agent.
-func (m *taskManager) GetAgent(ctx context.Context, agencyID, entityID string) (Agent, error) {
-	e, err := m.dm.GetEntity(ctx, agencyID, entityID)
-	if err != nil {
-		if errors.Is(err, entitygraph.ErrEntityNotFound) {
+// GetAgent reads an Agent vertex by either its entity ID (the storage UUID) or
+// its external AgentID slug (e.g. "developer-01"). UUID lookup is tried first;
+// on NotFound it falls back to a slug match against the agency's Agents. This
+// mirrors UpsertAgent's slug-first semantics so HTTP routes that bind
+// {agentId} can be passed either form without the caller knowing which.
+// Returns [ErrAgentNotFound] if no match is found.
+func (m *taskManager) GetAgent(ctx context.Context, agencyID, idOrSlug string) (Agent, error) {
+	e, err := m.dm.GetEntity(ctx, agencyID, idOrSlug)
+	if err == nil {
+		if e.AgencyID != agencyID || e.TypeID != agentTypeID {
 			return Agent{}, ErrAgentNotFound
 		}
+		return agentFromEntity(e), nil
+	}
+	if !errors.Is(err, entitygraph.ErrEntityNotFound) {
 		return Agent{}, fmt.Errorf("GetAgent: %w", err)
 	}
-	if e.AgencyID != agencyID || e.TypeID != agentTypeID {
+	// Fallback: treat the argument as the AgentID slug.
+	return m.GetAgentByAgentID(ctx, agencyID, idOrSlug)
+}
+
+// GetAgentByAgentID reads an Agent vertex by its external AgentID slug
+// (e.g. "developer-01") — the same field UpsertAgent uses as the natural key.
+// Returns [ErrAgentNotFound] if no Agent in the agency has that slug.
+func (m *taskManager) GetAgentByAgentID(ctx context.Context, agencyID, agentIDSlug string) (Agent, error) {
+	if agentIDSlug == "" {
 		return Agent{}, ErrAgentNotFound
 	}
-	return agentFromEntity(e), nil
+	entities, err := m.dm.ListEntities(ctx, entitygraph.EntityFilter{
+		AgencyID:   agencyID,
+		TypeID:     agentTypeID,
+		Properties: map[string]any{"agent_id": agentIDSlug},
+	})
+	if err != nil {
+		return Agent{}, fmt.Errorf("GetAgentByAgentID: %w", err)
+	}
+	if len(entities) == 0 {
+		return Agent{}, ErrAgentNotFound
+	}
+	return agentFromEntity(entities[0]), nil
 }
 
 // ListAgents returns all non-deleted Agents in the agency.

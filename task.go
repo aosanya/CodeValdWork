@@ -101,9 +101,16 @@ type TaskManager interface {
 	// and capability are updated; agent_id is immutable.
 	UpsertAgent(ctx context.Context, agencyID string, agent Agent) (Agent, error)
 
-	// GetAgent retrieves a single Agent by its entity ID within the given
-	// agency. Returns [ErrAgentNotFound] if no matching entity exists.
-	GetAgent(ctx context.Context, agencyID, entityID string) (Agent, error)
+	// GetAgent retrieves a single Agent by either its entity UUID or its
+	// AgentID slug (e.g. "developer-01"). UUID lookup is tried first; on
+	// NotFound it falls back to a slug match. Returns [ErrAgentNotFound] if
+	// neither form resolves.
+	GetAgent(ctx context.Context, agencyID, idOrSlug string) (Agent, error)
+
+	// GetAgentByAgentID retrieves an Agent by its external slug
+	// (the same `agent_id` UpsertAgent uses as the natural key). Returns
+	// [ErrAgentNotFound] when no Agent in the agency has the slug.
+	GetAgentByAgentID(ctx context.Context, agencyID, agentIDSlug string) (Agent, error)
 
 	// ListAgents returns all non-deleted Agents in the agency. Returns an
 	// empty slice (not an error) when none exist.
