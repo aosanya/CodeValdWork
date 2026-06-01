@@ -1,10 +1,23 @@
 # BUG-09-024 — Auto-unblock listener for BLOCKED tasks when dependencies complete
 
-**Status:** 📋 Open
+**Status:** ✅ Fixed (2026-06-01, main)
 **Severity:** Medium — operators currently have to manually re-assign every blocked task once its dependency completes; pipeline doesn't self-progress
 **Owner:** CodeValdWork
 **Estimated effort:** ~1 day (event subscriber + a couple of edge traversals)
 **Source finding:** [`/4-QA/agencies/utility-app-builder/bugs/09-mvp-sf-pipeline-findings.md`](../../../../CodeValdCross/documentation/4-QA/agencies/utility-app-builder/bugs/09-mvp-sf-pipeline-findings.md)
+
+## Resolution
+
+Implemented the inverse trigger as outlined in the fix plan below. CodeValdWork now self-subscribes to `work.task.completed` and drives the auto-unblock cascade through the dispatcher.
+
+- New [`assignment_unblock.go`](../../../assignment_unblock.go) — `taskManager.UnblockDependents` walks every inbound `depends_on` edge from the completed task, re-evaluates each dependent's full `depends_on` set via the existing `findUnmetDependencies` helper, then flips `blocked → pending` and re-publishes both `work.task.status.changed` and `work.task.assigned` (using the cached `assigned_to` agent) for any dependent whose gating is fully satisfied. Dependents with no cached assignee are left blocked.
+- [`task.go`](../../../task.go) — `UnblockDependents` added to the `TaskManager` interface so the dispatcher can invoke it without reaching into the concrete type.
+- [`internal/server/event_dispatcher.go`](../../../internal/server/event_dispatcher.go) — `Dispatch` now routes `codevaldwork.TopicTaskCompleted` to a new `handleWorkTaskCompleted` that unmarshals `TaskCompletedPayload`, filters to `TerminalStatus == completed` (failed/cancelled deliberately leave dependents blocked — separate follow-up will decide cascade-fail vs release), then calls `UnblockDependents`. Self-loop receipts are safe — the `status != blocked` check inside the manager makes the handler idempotent.
+- [`events.go`](../../../events.go) — `ConsumedTopics` now returns `TopicTaskCompleted` alongside `TopicTaskUpdate`, plus a comment documenting the self-subscription pattern.
+- [`internal/config/config.go`](../../../internal/config/config.go) — `WORK_SUBSCRIBE_TOPICS` default extended with `work.task.completed` so the registrar advertises the self-subscription on startup.
+- Tests: [`assignment_unblock_test.go`](../../../assignment_unblock_test.go) covers happy path (blocked → pending + republished events), the partial-deps case (still blocked when another dep is unmet), the no-assignee case (stays blocked, nothing to dispatch), idempotency on redelivery, and unknown-task error.
+
+Cascade unblocks (001 completes → 002 unblocks → 002 completes → 003 unblocks) fall out of the dispatcher firing per-event — no recursion needed inside the manager.
 
 ---
 
