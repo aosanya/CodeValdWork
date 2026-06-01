@@ -380,6 +380,94 @@ type Project struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+// WorkflowRunStatus represents the lifecycle state of a [WorkflowRun].
+type WorkflowRunStatus string
+
+const (
+	// WorkflowRunStatusPending is the initial state — the run has been created
+	// but no Task has yet started executing.
+	WorkflowRunStatusPending WorkflowRunStatus = "pending"
+
+	// WorkflowRunStatusInProgress means at least one Task in the run is
+	// executing.
+	WorkflowRunStatusInProgress WorkflowRunStatus = "in_progress"
+
+	// WorkflowRunStatusCompleted is a terminal state — every Task in the run
+	// finished successfully.
+	WorkflowRunStatusCompleted WorkflowRunStatus = "completed"
+
+	// WorkflowRunStatusFailed is a terminal state — at least one Task in the
+	// run failed.
+	WorkflowRunStatusFailed WorkflowRunStatus = "failed"
+
+	// WorkflowRunStatusRolledBack is a terminal state — the rollback action
+	// (out of scope for v1) has compensated the run.
+	WorkflowRunStatusRolledBack WorkflowRunStatus = "rolled_back"
+)
+
+// WorkflowRun anchors the closure of a single orchestrated execution.
+// Created by a producer (e.g. the next-task function) at run start; linked
+// to every Task / TaskTodo it produces via started_task / started_todo edges.
+type WorkflowRun struct {
+	// ID is the entity-graph storage key — opaque to callers.
+	ID string `json:"id"`
+
+	// AgencyID is the agency that owns this run.
+	AgencyID string `json:"agency_id"`
+
+	// Status is the current lifecycle state.
+	Status WorkflowRunStatus `json:"status"`
+
+	// TriggerEvent names the event that started the run
+	// (e.g. "work.next.requested"). Empty when not known.
+	TriggerEvent string `json:"trigger_event,omitempty"`
+
+	// Initiator is an opaque caller identifier. Empty when not set.
+	Initiator string `json:"initiator,omitempty"`
+
+	// Notes is free-form human-readable context.
+	Notes string `json:"notes,omitempty"`
+
+	// AgentRunIDs are CodeValdAI AgentRun IDs linked to this run.
+	// Opaque strings — CodeValdWork does not validate them.
+	AgentRunIDs []string `json:"agent_run_ids,omitempty"`
+
+	// FunctionJobIDs are CodeValdFunctions job IDs linked to this run.
+	FunctionJobIDs []string `json:"function_job_ids,omitempty"`
+
+	// BranchNames are git branch names linked to this run.
+	BranchNames []string `json:"branch_names,omitempty"`
+
+	// StartedAt is the RFC 3339 timestamp the run began execution.
+	StartedAt string `json:"started_at,omitempty"`
+
+	// CompletedAt is the RFC 3339 timestamp the run reached a terminal status.
+	CompletedAt string `json:"completed_at,omitempty"`
+
+	// CreatedAt is the RFC 3339 timestamp the run vertex was first created.
+	CreatedAt string `json:"created_at"`
+
+	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.
+	UpdatedAt string `json:"updated_at"`
+}
+
+// WorkflowRunClosure is the full read returned by GetWorkflowRunClosure —
+// the run anchor plus every Task / TaskTodo / Relationship in its closure
+// and the IDs of foreign (cross-service) entities it referenced.
+//
+// Edges include every relationship whose endpoints sit in the closure,
+// including edges to entities OUTSIDE the closure — the caller needs this
+// to compensate cross-closure links during rollback.
+type WorkflowRunClosure struct {
+	Run            WorkflowRun    `json:"run"`
+	Tasks          []Task         `json:"tasks"`
+	Todos          []TaskTodo     `json:"todos"`
+	Edges          []Relationship `json:"edges"`
+	AgentRunIDs    []string       `json:"agent_run_ids,omitempty"`
+	FunctionJobIDs []string       `json:"function_job_ids,omitempty"`
+	BranchNames    []string       `json:"branch_names,omitempty"`
+}
+
 // Tag is a free-form label that can be attached to Tasks via `has_tag` graph
 // edges. Tags are unique by name within an agency (UniqueKey: ["name"]).
 type Tag struct {

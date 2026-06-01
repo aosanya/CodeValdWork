@@ -105,6 +105,7 @@ func workRoutes() []types.RouteInfo {
 	routes = append(routes, agentRoutes()...)
 	routes = append(routes, projectRoutes()...)
 	routes = append(routes, relationshipRoutes()...)
+	routes = append(routes, workflowRunRoutes()...)
 	routes = append(routes, schemaroutes.RoutesFromSchema(
 		codevaldwork.DefaultWorkSchema(),
 		"/work/{agencyId}",
@@ -444,6 +445,32 @@ func projectRoutes() []types.RouteInfo {
 			GrpcMethod:   "/codevaldwork.v1.TaskService/ImportProject",
 			IsWrite:      true,
 			PathBindings: []types.PathBinding{agencyBinding},
+		},
+	}
+}
+
+// workflowRunRoutes exposes the FEAT-20260601-001 endpoints: list and detail
+// (the closure read). The detail route mounts on the same agency-scoped
+// path the schema-derived generic CRUD route would use, but routes to the
+// custom GetWorkflowRun RPC so callers always receive the full closure.
+func workflowRunRoutes() []types.RouteInfo {
+	return []types.RouteInfo{
+		{
+			Method:       "GET",
+			Pattern:      "/work/{agencyId}/workflow-runs",
+			Capability:   "list_workflow_runs",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/ListWorkflowRuns",
+			PathBindings: []types.PathBinding{agencyBinding},
+		},
+		{
+			Method:     "GET",
+			Pattern:    "/work/{agencyId}/workflow-runs/{workflowRunId}",
+			Capability: "get_workflow_run",
+			GrpcMethod: "/codevaldwork.v1.TaskService/GetWorkflowRun",
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "workflowRunId", Field: "workflow_run_id"},
+			},
 		},
 	}
 }

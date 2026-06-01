@@ -187,6 +187,14 @@ func DefaultWorkSchema() types.Schema {
 						ToMany:      true,
 						Inverse:     "todo_of",
 					},
+					{
+						Name:        RelLabelPartOfRun,
+						Label:       "Part of run",
+						PathSegment: "workflow-run",
+						ToType:      "WorkflowRun",
+						ToMany:      false,
+						Inverse:     RelLabelStartedTask,
+					},
 				},
 			},
 			{
@@ -250,6 +258,14 @@ func DefaultWorkSchema() types.Schema {
 						ToType:      "Agent",
 						ToMany:      false,
 						Inverse:     "todo_assigned_tasks",
+					},
+					{
+						Name:        RelLabelPartOfRun,
+						Label:       "Part of run",
+						PathSegment: "workflow-run",
+						ToType:      "WorkflowRun",
+						ToMany:      false,
+						Inverse:     RelLabelStartedTodo,
 					},
 				},
 			},
@@ -355,6 +371,63 @@ func DefaultWorkSchema() types.Schema {
 						ToType:      "Task",
 						ToMany:      true,
 						Inverse:     RelLabelHasTag,
+					},
+				},
+			},
+			{
+				Name:        "WorkflowRun",
+				DisplayName: "Workflow Run",
+				// PathSegment / EntityIDParam intentionally omitted — the
+				// schema-derived generic CRUD routes would collide with the
+				// explicit closure endpoint in
+				// internal/registrar/registrar.go::workflowRunRoutes.
+				StorageCollection: "work_workflow_runs",
+				PublishEvents:     true,
+				Properties: []types.PropertyDefinition{
+					// status is the run lifecycle state: pending, in_progress,
+					// completed, failed, rolled_back.
+					{Name: "status", Type: types.PropertyTypeString},
+					// trigger_event names the event that started the run
+					// (e.g. "work.next.requested").
+					{Name: "trigger_event", Type: types.PropertyTypeString},
+					// initiator is an opaque caller identifier (operator email,
+					// service name, etc.). May be empty.
+					{Name: "initiator", Type: types.PropertyTypeString},
+					// notes is free-form human-readable context.
+					{Name: "notes", Type: types.PropertyTypeString},
+					// agent_run_ids, function_job_ids, branch_names are stored
+					// as JSON-encoded string arrays — the cross-service references
+					// the closure endpoint surfaces.
+					{Name: "agent_run_ids", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
+					{Name: "function_job_ids", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
+					{Name: "branch_names", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
+					{Name: "started_at", Type: types.PropertyTypeString},
+					{Name: "completed_at", Type: types.PropertyTypeString},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
+				},
+				Relationships: []types.RelationshipDefinition{
+					{
+						Name:        RelLabelStartedTask,
+						Label:       "Started task",
+						PathSegment: "tasks",
+						ToType:      "Task",
+						ToMany:      true,
+						Inverse:     RelLabelPartOfRun,
+						Properties: []types.PropertyDefinition{
+							{Name: "created_at", Type: types.PropertyTypeString},
+						},
+					},
+					{
+						Name:        RelLabelStartedTodo,
+						Label:       "Started todo",
+						PathSegment: "todos",
+						ToType:      "TaskTodo",
+						ToMany:      true,
+						Inverse:     RelLabelPartOfRun,
+						Properties: []types.PropertyDefinition{
+							{Name: "created_at", Type: types.PropertyTypeString},
+						},
 					},
 				},
 			},

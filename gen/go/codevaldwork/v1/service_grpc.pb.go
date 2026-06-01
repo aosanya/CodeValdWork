@@ -45,6 +45,8 @@ const (
 	TaskService_CreateRelationship_FullMethodName    = "/codevaldwork.v1.TaskService/CreateRelationship"
 	TaskService_DeleteRelationship_FullMethodName    = "/codevaldwork.v1.TaskService/DeleteRelationship"
 	TaskService_TraverseRelationships_FullMethodName = "/codevaldwork.v1.TaskService/TraverseRelationships"
+	TaskService_GetWorkflowRun_FullMethodName        = "/codevaldwork.v1.TaskService/GetWorkflowRun"
+	TaskService_ListWorkflowRuns_FullMethodName      = "/codevaldwork.v1.TaskService/ListWorkflowRuns"
 	TaskService_ImportProject_FullMethodName         = "/codevaldwork.v1.TaskService/ImportProject"
 )
 
@@ -157,6 +159,13 @@ type TaskServiceClient interface {
 	// matching the given label and direction. Returns an empty list (not an
 	// error) when no edges match.
 	TraverseRelationships(ctx context.Context, in *TraverseRelationshipsRequest, opts ...grpc.CallOption) (*TraverseRelationshipsResponse, error)
+	// GetWorkflowRun reads the run vertex plus its full closure: every Task,
+	// TaskTodo, and edge reachable from the run, plus the IDs of foreign
+	// (cross-service) entities the run referenced.
+	// Error: NOT_FOUND if the run does not exist.
+	GetWorkflowRun(ctx context.Context, in *GetWorkflowRunRequest, opts ...grpc.CallOption) (*GetWorkflowRunResponse, error)
+	// ListWorkflowRuns returns every WorkflowRun in the agency, newest first.
+	ListWorkflowRuns(ctx context.Context, in *ListWorkflowRunsRequest, opts ...grpc.CallOption) (*ListWorkflowRunsResponse, error)
 	// ImportProject parses a JSON document describing a project and creates a
 	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
 	// from every Task to the Project, and depends_on edges for each entry in a
@@ -436,6 +445,26 @@ func (c *taskServiceClient) TraverseRelationships(ctx context.Context, in *Trave
 	return out, nil
 }
 
+func (c *taskServiceClient) GetWorkflowRun(ctx context.Context, in *GetWorkflowRunRequest, opts ...grpc.CallOption) (*GetWorkflowRunResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWorkflowRunResponse)
+	err := c.cc.Invoke(ctx, TaskService_GetWorkflowRun_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) ListWorkflowRuns(ctx context.Context, in *ListWorkflowRunsRequest, opts ...grpc.CallOption) (*ListWorkflowRunsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListWorkflowRunsResponse)
+	err := c.cc.Invoke(ctx, TaskService_ListWorkflowRuns_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *taskServiceClient) ImportProject(ctx context.Context, in *ImportProjectRequest, opts ...grpc.CallOption) (*ImportProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ImportProjectResponse)
@@ -555,6 +584,13 @@ type TaskServiceServer interface {
 	// matching the given label and direction. Returns an empty list (not an
 	// error) when no edges match.
 	TraverseRelationships(context.Context, *TraverseRelationshipsRequest) (*TraverseRelationshipsResponse, error)
+	// GetWorkflowRun reads the run vertex plus its full closure: every Task,
+	// TaskTodo, and edge reachable from the run, plus the IDs of foreign
+	// (cross-service) entities the run referenced.
+	// Error: NOT_FOUND if the run does not exist.
+	GetWorkflowRun(context.Context, *GetWorkflowRunRequest) (*GetWorkflowRunResponse, error)
+	// ListWorkflowRuns returns every WorkflowRun in the agency, newest first.
+	ListWorkflowRuns(context.Context, *ListWorkflowRunsRequest) (*ListWorkflowRunsResponse, error)
 	// ImportProject parses a JSON document describing a project and creates a
 	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
 	// from every Task to the Project, and depends_on edges for each entry in a
@@ -651,6 +687,12 @@ func (UnimplementedTaskServiceServer) DeleteRelationship(context.Context, *Delet
 }
 func (UnimplementedTaskServiceServer) TraverseRelationships(context.Context, *TraverseRelationshipsRequest) (*TraverseRelationshipsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TraverseRelationships not implemented")
+}
+func (UnimplementedTaskServiceServer) GetWorkflowRun(context.Context, *GetWorkflowRunRequest) (*GetWorkflowRunResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWorkflowRun not implemented")
+}
+func (UnimplementedTaskServiceServer) ListWorkflowRuns(context.Context, *ListWorkflowRunsRequest) (*ListWorkflowRunsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListWorkflowRuns not implemented")
 }
 func (UnimplementedTaskServiceServer) ImportProject(context.Context, *ImportProjectRequest) (*ImportProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ImportProject not implemented")
@@ -1144,6 +1186,42 @@ func _TaskService_TraverseRelationships_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaskService_GetWorkflowRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorkflowRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).GetWorkflowRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_GetWorkflowRun_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).GetWorkflowRun(ctx, req.(*GetWorkflowRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_ListWorkflowRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkflowRunsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).ListWorkflowRuns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_ListWorkflowRuns_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).ListWorkflowRuns(ctx, req.(*ListWorkflowRunsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TaskService_ImportProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ImportProjectRequest)
 	if err := dec(in); err != nil {
@@ -1272,6 +1350,14 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TraverseRelationships",
 			Handler:    _TaskService_TraverseRelationships_Handler,
+		},
+		{
+			MethodName: "GetWorkflowRun",
+			Handler:    _TaskService_GetWorkflowRun_Handler,
+		},
+		{
+			MethodName: "ListWorkflowRuns",
+			Handler:    _TaskService_ListWorkflowRuns_Handler,
 		},
 		{
 			MethodName: "ImportProject",

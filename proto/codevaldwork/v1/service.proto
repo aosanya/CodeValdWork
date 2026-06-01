@@ -150,6 +150,17 @@ service TaskService {
   // error) when no edges match.
   rpc TraverseRelationships(TraverseRelationshipsRequest) returns (TraverseRelationshipsResponse);
 
+  // ── Workflow runs (FEAT-20260601-001) ──────────────────────────────────────
+
+  // GetWorkflowRun reads the run vertex plus its full closure: every Task,
+  // TaskTodo, and edge reachable from the run, plus the IDs of foreign
+  // (cross-service) entities the run referenced.
+  // Error: NOT_FOUND if the run does not exist.
+  rpc GetWorkflowRun(GetWorkflowRunRequest) returns (GetWorkflowRunResponse);
+
+  // ListWorkflowRuns returns every WorkflowRun in the agency, newest first.
+  rpc ListWorkflowRuns(ListWorkflowRunsRequest) returns (ListWorkflowRunsResponse);
+
   // ── Markdown import ────────────────────────────────────────────────────────
 
   // ImportProject parses a JSON document describing a project and creates a
@@ -392,6 +403,32 @@ message TraverseRelationshipsRequest {
 }
 message TraverseRelationshipsResponse {
   repeated Relationship relationships = 1;
+}
+
+// ── Workflow run messages (FEAT-20260601-001) ─────────────────────────────────
+
+message GetWorkflowRunRequest {
+  string agency_id       = 1;
+  string workflow_run_id = 2;
+}
+// GetWorkflowRunResponse carries the full closure: the run anchor plus every
+// Task / TaskTodo / Relationship reachable from it, and the IDs of foreign
+// cross-service entities the run referenced.
+message GetWorkflowRunResponse {
+  WorkflowRun           run              = 1;
+  repeated Task         tasks            = 2;
+  repeated TaskTodo     todos            = 3;
+  repeated Relationship edges            = 4;
+  repeated string       agent_run_ids    = 5;
+  repeated string       function_job_ids = 6;
+  repeated string       branch_names     = 7;
+}
+
+message ListWorkflowRunsRequest {
+  string agency_id = 1;
+}
+message ListWorkflowRunsResponse {
+  repeated WorkflowRun runs = 1;
 }
 
 // ── Markdown import messages ──────────────────────────────────────────────────

@@ -40,6 +40,11 @@ const tagTypeID = "Tag"
 // taskTodoTypeID is the TypeDefinition.Name used for TaskTodo entities.
 const taskTodoTypeID = "TaskTodo"
 
+// workflowRunTypeID is the TypeDefinition.Name used for WorkflowRun entities —
+// the anchor that names every Task / TaskTodo in a single orchestrated run
+// (FEAT-20260601-001).
+const workflowRunTypeID = "WorkflowRun"
+
 // TaskManager is the primary interface for task lifecycle management.
 // All operations are scoped to the manager's agencyID, fixed at construction.
 //
@@ -220,6 +225,33 @@ type TaskManager interface {
 	// UpdateTaskTodoStatus transitions a TaskTodo to a new [TodoStatus].
 	// Returns [ErrTaskTodoNotFound] if the todo does not exist.
 	UpdateTaskTodoStatus(ctx context.Context, agencyID, todoID string, status TodoStatus) (TaskTodo, error)
+
+	// CreateWorkflowRun anchors a new orchestrated execution. The returned
+	// run is in [WorkflowRunStatusPending]; producers transition it to
+	// in_progress / completed / failed via UpdateWorkflowRunStatus.
+	CreateWorkflowRun(ctx context.Context, agencyID, triggerEvent, initiator string) (WorkflowRun, error)
+
+	// GetWorkflowRun reads a single WorkflowRun by entity ID within the
+	// given agency. Returns [ErrWorkflowRunNotFound] when no matching
+	// entity exists.
+	GetWorkflowRun(ctx context.Context, agencyID, runID string) (WorkflowRun, error)
+
+	// ListWorkflowRuns returns every WorkflowRun in the agency, newest first.
+	// Used by the frontend list view (FEAT-20260601-002).
+	ListWorkflowRuns(ctx context.Context, agencyID string) ([]WorkflowRun, error)
+
+	// LinkTaskToRun writes the `started_task` edge from runID to taskID
+	// (and relies on the schema-declared inverse `part_of_run` for reverse
+	// lookups). Idempotent — re-linking is a no-op.
+	LinkTaskToRun(ctx context.Context, agencyID, runID, taskID string) error
+
+	// LinkTodoToRun writes the `started_todo` edge from runID to todoID.
+	// Idempotent.
+	LinkTodoToRun(ctx context.Context, agencyID, runID, todoID string) error
+
+	// GetWorkflowRunClosure returns the run plus every entity and edge
+	// reachable from it. See [WorkflowRunClosure] for the closure semantics.
+	GetWorkflowRunClosure(ctx context.Context, agencyID, runID string) (WorkflowRunClosure, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].

@@ -87,6 +87,19 @@ const (
 	// RelLabelTodoAssignedTo links a TaskTodo to the Agent responsible for executing it.
 	// Separate from RelLabelAssignedTo (Task → Agent) to keep endpoint validation clean.
 	RelLabelTodoAssignedTo = "todo_assigned_to"
+
+	// RelLabelStartedTask links a WorkflowRun to a Task it produced. One-to-many;
+	// a single run may anchor multiple tasks (e.g. parent + decomposition spawn).
+	RelLabelStartedTask = "started_task"
+
+	// RelLabelStartedTodo links a WorkflowRun to a TaskTodo it produced. Optional —
+	// usually the Todo is reachable from the Task via has_todo, but linking directly
+	// lets producers attribute orphan todos to the run.
+	RelLabelStartedTodo = "started_todo"
+
+	// RelLabelPartOfRun is the inverse of started_task / started_todo: lets callers
+	// look up "which run created this Task/Todo?" without scanning every run.
+	RelLabelPartOfRun = "part_of_run"
 )
 
 // relationshipFromEntitygraph adapts a SharedLib edge into the Work-domain
@@ -125,6 +138,8 @@ var relationshipEndpointTypes = map[string]struct {
 	RelLabelHasTag:     {fromType: taskTypeID, toType: tagTypeID},
 	RelLabelHasTodo:        {fromType: taskTypeID, toType: taskTodoTypeID},
 	RelLabelTodoAssignedTo: {fromType: taskTodoTypeID, toType: agentTypeID},
+	RelLabelStartedTask:    {fromType: workflowRunTypeID, toType: taskTypeID},
+	RelLabelStartedTodo:    {fromType: workflowRunTypeID, toType: taskTodoTypeID},
 }
 
 // notFoundForType returns the typed sentinel error for a vertex TypeID.
@@ -140,6 +155,8 @@ func notFoundForType(typeID string) error {
 		return ErrTagNotFound
 	case taskTodoTypeID:
 		return ErrTaskTodoNotFound
+	case workflowRunTypeID:
+		return ErrWorkflowRunNotFound
 	default:
 		return entitygraph.ErrEntityNotFound
 	}
@@ -151,7 +168,8 @@ func notFoundForType(typeID string) error {
 // return false (the caller supplies the timestamp on the Properties map).
 func labelHasCreatedAt(label string) bool {
 	switch label {
-	case RelLabelBlocks, RelLabelSubtaskOf, RelLabelDependsOn:
+	case RelLabelBlocks, RelLabelSubtaskOf, RelLabelDependsOn,
+		RelLabelStartedTask, RelLabelStartedTodo:
 		return true
 	default:
 		return false

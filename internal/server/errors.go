@@ -23,7 +23,9 @@ func mapError(err error) error {
 	case errors.Is(err, codevaldwork.ErrTaskNotFound),
 		errors.Is(err, codevaldwork.ErrAgentNotFound),
 		errors.Is(err, codevaldwork.ErrProjectNotFound),
-		errors.Is(err, codevaldwork.ErrRelationshipNotFound):
+		errors.Is(err, codevaldwork.ErrRelationshipNotFound),
+		errors.Is(err, codevaldwork.ErrTaskTodoNotFound),
+		errors.Is(err, codevaldwork.ErrWorkflowRunNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, codevaldwork.ErrTaskAlreadyExists),
 		errors.Is(err, codevaldwork.ErrAgentAlreadyExists),

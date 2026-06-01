@@ -12,14 +12,11 @@ import (
 
 func TestDefaultWorkSchema_TypeNames(t *testing.T) {
 	s := DefaultWorkSchema()
-	if got, want := len(s.Types), 4; got != want {
-		t.Fatalf("len(Types) = %d, want %d", got, want)
-	}
 	got := make(map[string]bool, len(s.Types))
 	for _, td := range s.Types {
 		got[td.Name] = true
 	}
-	for _, want := range []string{"Task", "Project", "Agent", "ImportProjectJob"} {
+	for _, want := range []string{"Task", "TaskTodo", "Project", "Agent", "Tag", "WorkflowRun", "ImportProjectJob"} {
 		if !got[want] {
 			t.Errorf("missing TypeDefinition %q", want)
 		}
@@ -40,6 +37,8 @@ func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 		"completed_at":    types.PropertyTypeString,
 		"task_name":       types.PropertyTypeString,
 		"project_name":    types.PropertyTypeString,
+		"separate_branch": types.PropertyTypeBoolean,
+		"branch_name":     types.PropertyTypeString,
 		"created_at":      types.PropertyTypeString,
 		"updated_at":      types.PropertyTypeString,
 	}
@@ -70,6 +69,7 @@ func TestDefaultWorkSchema_ProjectShape(t *testing.T) {
 		"name":         types.PropertyTypeString,
 		"project_name": types.PropertyTypeString,
 		"description":  types.PropertyTypeString,
+		"repo_name":    types.PropertyTypeString,
 		"github_repo":  types.PropertyTypeString,
 		"task_prefix":  types.PropertyTypeString,
 		"created_at":   types.PropertyTypeString,
@@ -95,6 +95,7 @@ func TestDefaultWorkSchema_AgentShape(t *testing.T) {
 		"agent_id":     types.PropertyTypeString,
 		"display_name": types.PropertyTypeString,
 		"capability":   types.PropertyTypeString,
+		"role_name":    types.PropertyTypeString,
 		"created_at":   types.PropertyTypeString,
 		"updated_at":   types.PropertyTypeString,
 	}

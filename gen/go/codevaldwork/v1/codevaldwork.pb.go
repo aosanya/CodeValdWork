@@ -191,6 +191,125 @@ func (Direction) EnumDescriptor() ([]byte, []int) {
 	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{2}
 }
 
+// TodoStatus mirrors the Go [TodoStatus] enumeration.
+type TodoStatus int32
+
+const (
+	TodoStatus_TODO_STATUS_UNSPECIFIED TodoStatus = 0
+	TodoStatus_TODO_STATUS_PENDING     TodoStatus = 1
+	TodoStatus_TODO_STATUS_BLOCKED     TodoStatus = 2
+	TodoStatus_TODO_STATUS_DISPATCHED  TodoStatus = 3
+	TodoStatus_TODO_STATUS_COMPLETED   TodoStatus = 4
+	TodoStatus_TODO_STATUS_FAILED      TodoStatus = 5
+)
+
+// Enum value maps for TodoStatus.
+var (
+	TodoStatus_name = map[int32]string{
+		0: "TODO_STATUS_UNSPECIFIED",
+		1: "TODO_STATUS_PENDING",
+		2: "TODO_STATUS_BLOCKED",
+		3: "TODO_STATUS_DISPATCHED",
+		4: "TODO_STATUS_COMPLETED",
+		5: "TODO_STATUS_FAILED",
+	}
+	TodoStatus_value = map[string]int32{
+		"TODO_STATUS_UNSPECIFIED": 0,
+		"TODO_STATUS_PENDING":     1,
+		"TODO_STATUS_BLOCKED":     2,
+		"TODO_STATUS_DISPATCHED":  3,
+		"TODO_STATUS_COMPLETED":   4,
+		"TODO_STATUS_FAILED":      5,
+	}
+)
+
+func (x TodoStatus) Enum() *TodoStatus {
+	p := new(TodoStatus)
+	*p = x
+	return p
+}
+
+func (x TodoStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TodoStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_codevaldwork_v1_codevaldwork_proto_enumTypes[3].Descriptor()
+}
+
+func (TodoStatus) Type() protoreflect.EnumType {
+	return &file_codevaldwork_v1_codevaldwork_proto_enumTypes[3]
+}
+
+func (x TodoStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TodoStatus.Descriptor instead.
+func (TodoStatus) EnumDescriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{3}
+}
+
+// WorkflowRunStatus mirrors the Go [WorkflowRunStatus] enumeration.
+// Anchors the lifecycle of a single orchestrated execution (FEAT-20260601-001).
+type WorkflowRunStatus int32
+
+const (
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_UNSPECIFIED WorkflowRunStatus = 0
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_PENDING     WorkflowRunStatus = 1
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_IN_PROGRESS WorkflowRunStatus = 2
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_COMPLETED   WorkflowRunStatus = 3
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_FAILED      WorkflowRunStatus = 4
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLED_BACK WorkflowRunStatus = 5
+)
+
+// Enum value maps for WorkflowRunStatus.
+var (
+	WorkflowRunStatus_name = map[int32]string{
+		0: "WORKFLOW_RUN_STATUS_UNSPECIFIED",
+		1: "WORKFLOW_RUN_STATUS_PENDING",
+		2: "WORKFLOW_RUN_STATUS_IN_PROGRESS",
+		3: "WORKFLOW_RUN_STATUS_COMPLETED",
+		4: "WORKFLOW_RUN_STATUS_FAILED",
+		5: "WORKFLOW_RUN_STATUS_ROLLED_BACK",
+	}
+	WorkflowRunStatus_value = map[string]int32{
+		"WORKFLOW_RUN_STATUS_UNSPECIFIED": 0,
+		"WORKFLOW_RUN_STATUS_PENDING":     1,
+		"WORKFLOW_RUN_STATUS_IN_PROGRESS": 2,
+		"WORKFLOW_RUN_STATUS_COMPLETED":   3,
+		"WORKFLOW_RUN_STATUS_FAILED":      4,
+		"WORKFLOW_RUN_STATUS_ROLLED_BACK": 5,
+	}
+)
+
+func (x WorkflowRunStatus) Enum() *WorkflowRunStatus {
+	p := new(WorkflowRunStatus)
+	*p = x
+	return p
+}
+
+func (x WorkflowRunStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WorkflowRunStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_codevaldwork_v1_codevaldwork_proto_enumTypes[4].Descriptor()
+}
+
+func (WorkflowRunStatus) Type() protoreflect.EnumType {
+	return &file_codevaldwork_v1_codevaldwork_proto_enumTypes[4]
+}
+
+func (x WorkflowRunStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use WorkflowRunStatus.Descriptor instead.
+func (WorkflowRunStatus) EnumDescriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{4}
+}
+
 // Task is the core domain entity managed by the TaskService.
 //
 // Field 7 was previously a string `assigned_to`; it was removed in MVP-WORK-010
@@ -666,6 +785,315 @@ func (x *Project) GetTaskPrefix() string {
 	return ""
 }
 
+// TaskTodo is a decomposed sub-task — the projection used by the
+// WorkflowRun closure response (FEAT-20260601-001). Mirrors the
+// codevaldwork.TaskTodo Go type, less storage-only metadata.
+type TaskTodo struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AgencyId       string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Description    string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Instructions   string                 `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	Ordinality     int32                  `protobuf:"varint,6,opt,name=ordinality,proto3" json:"ordinality,omitempty"`
+	CanRunParallel bool                   `protobuf:"varint,7,opt,name=can_run_parallel,json=canRunParallel,proto3" json:"can_run_parallel,omitempty"`
+	DependsOn      []int32                `protobuf:"varint,8,rep,packed,name=depends_on,json=dependsOn,proto3" json:"depends_on,omitempty"`
+	Status         TodoStatus             `protobuf:"varint,9,opt,name=status,proto3,enum=codevaldwork.v1.TodoStatus" json:"status,omitempty"`
+	ParentTaskId   string                 `protobuf:"bytes,10,opt,name=parent_task_id,json=parentTaskId,proto3" json:"parent_task_id,omitempty"`
+	DecompRunId    string                 `protobuf:"bytes,11,opt,name=decomp_run_id,json=decompRunId,proto3" json:"decomp_run_id,omitempty"`
+	AgentId        string                 `protobuf:"bytes,12,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+	Precalls       string                 `protobuf:"bytes,13,opt,name=precalls,proto3" json:"precalls,omitempty"`
+	TodoType       string                 `protobuf:"bytes,14,opt,name=todo_type,json=todoType,proto3" json:"todo_type,omitempty"`
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *TaskTodo) Reset() {
+	*x = TaskTodo{}
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TaskTodo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaskTodo) ProtoMessage() {}
+
+func (x *TaskTodo) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaskTodo.ProtoReflect.Descriptor instead.
+func (*TaskTodo) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *TaskTodo) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetAgencyId() string {
+	if x != nil {
+		return x.AgencyId
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetInstructions() string {
+	if x != nil {
+		return x.Instructions
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetOrdinality() int32 {
+	if x != nil {
+		return x.Ordinality
+	}
+	return 0
+}
+
+func (x *TaskTodo) GetCanRunParallel() bool {
+	if x != nil {
+		return x.CanRunParallel
+	}
+	return false
+}
+
+func (x *TaskTodo) GetDependsOn() []int32 {
+	if x != nil {
+		return x.DependsOn
+	}
+	return nil
+}
+
+func (x *TaskTodo) GetStatus() TodoStatus {
+	if x != nil {
+		return x.Status
+	}
+	return TodoStatus_TODO_STATUS_UNSPECIFIED
+}
+
+func (x *TaskTodo) GetParentTaskId() string {
+	if x != nil {
+		return x.ParentTaskId
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetDecompRunId() string {
+	if x != nil {
+		return x.DecompRunId
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetAgentId() string {
+	if x != nil {
+		return x.AgentId
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetPrecalls() string {
+	if x != nil {
+		return x.Precalls
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetTodoType() string {
+	if x != nil {
+		return x.TodoType
+	}
+	return ""
+}
+
+func (x *TaskTodo) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *TaskTodo) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+// WorkflowRun anchors the closure of a single orchestrated execution.
+// Linked to every Task / TaskTodo it produced via started_task / started_todo edges.
+type WorkflowRun struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AgencyId       string                 `protobuf:"bytes,2,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	Status         WorkflowRunStatus      `protobuf:"varint,3,opt,name=status,proto3,enum=codevaldwork.v1.WorkflowRunStatus" json:"status,omitempty"`
+	TriggerEvent   string                 `protobuf:"bytes,4,opt,name=trigger_event,json=triggerEvent,proto3" json:"trigger_event,omitempty"`
+	Initiator      string                 `protobuf:"bytes,5,opt,name=initiator,proto3" json:"initiator,omitempty"`
+	Notes          string                 `protobuf:"bytes,6,opt,name=notes,proto3" json:"notes,omitempty"`
+	AgentRunIds    []string               `protobuf:"bytes,7,rep,name=agent_run_ids,json=agentRunIds,proto3" json:"agent_run_ids,omitempty"`
+	FunctionJobIds []string               `protobuf:"bytes,8,rep,name=function_job_ids,json=functionJobIds,proto3" json:"function_job_ids,omitempty"`
+	BranchNames    []string               `protobuf:"bytes,9,rep,name=branch_names,json=branchNames,proto3" json:"branch_names,omitempty"`
+	StartedAt      *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	CompletedAt    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *WorkflowRun) Reset() {
+	*x = WorkflowRun{}
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkflowRun) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkflowRun) ProtoMessage() {}
+
+func (x *WorkflowRun) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkflowRun.ProtoReflect.Descriptor instead.
+func (*WorkflowRun) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *WorkflowRun) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetAgencyId() string {
+	if x != nil {
+		return x.AgencyId
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetStatus() WorkflowRunStatus {
+	if x != nil {
+		return x.Status
+	}
+	return WorkflowRunStatus_WORKFLOW_RUN_STATUS_UNSPECIFIED
+}
+
+func (x *WorkflowRun) GetTriggerEvent() string {
+	if x != nil {
+		return x.TriggerEvent
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetInitiator() string {
+	if x != nil {
+		return x.Initiator
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetNotes() string {
+	if x != nil {
+		return x.Notes
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetAgentRunIds() []string {
+	if x != nil {
+		return x.AgentRunIds
+	}
+	return nil
+}
+
+func (x *WorkflowRun) GetFunctionJobIds() []string {
+	if x != nil {
+		return x.FunctionJobIds
+	}
+	return nil
+}
+
+func (x *WorkflowRun) GetBranchNames() []string {
+	if x != nil {
+		return x.BranchNames
+	}
+	return nil
+}
+
+func (x *WorkflowRun) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartedAt
+	}
+	return nil
+}
+
+func (x *WorkflowRun) GetCompletedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CompletedAt
+	}
+	return nil
+}
+
+func (x *WorkflowRun) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *WorkflowRun) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
 // Relationship is the Work-domain projection of a directed graph edge.
 // label must be one of the whitelist values: assigned_to, blocks, subtask_of,
 // depends_on, member_of.
@@ -687,7 +1115,7 @@ type Relationship struct {
 
 func (x *Relationship) Reset() {
 	*x = Relationship{}
-	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[4]
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -699,7 +1127,7 @@ func (x *Relationship) String() string {
 func (*Relationship) ProtoMessage() {}
 
 func (x *Relationship) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[4]
+	mi := &file_codevaldwork_v1_codevaldwork_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -712,7 +1140,7 @@ func (x *Relationship) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Relationship.ProtoReflect.Descriptor instead.
 func (*Relationship) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{4}
+	return file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Relationship) GetId() string {
@@ -824,7 +1252,48 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\fproject_name\x18\t \x01(\tR\vprojectName\x12\x1f\n" +
 	"\vtask_prefix\x18\n" +
 	" \x01(\tR\n" +
-	"taskPrefixJ\x04\b\x05\x10\x06R\x06due_at\"\xf3\x01\n" +
+	"taskPrefixJ\x04\b\x05\x10\x06R\x06due_at\"\xc5\x04\n" +
+	"\bTaskTodo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
+	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\"\n" +
+	"\finstructions\x18\x05 \x01(\tR\finstructions\x12\x1e\n" +
+	"\n" +
+	"ordinality\x18\x06 \x01(\x05R\n" +
+	"ordinality\x12(\n" +
+	"\x10can_run_parallel\x18\a \x01(\bR\x0ecanRunParallel\x12\x1d\n" +
+	"\n" +
+	"depends_on\x18\b \x03(\x05R\tdependsOn\x123\n" +
+	"\x06status\x18\t \x01(\x0e2\x1b.codevaldwork.v1.TodoStatusR\x06status\x12$\n" +
+	"\x0eparent_task_id\x18\n" +
+	" \x01(\tR\fparentTaskId\x12\"\n" +
+	"\rdecomp_run_id\x18\v \x01(\tR\vdecompRunId\x12\x19\n" +
+	"\bagent_id\x18\f \x01(\tR\aagentId\x12\x1a\n" +
+	"\bprecalls\x18\r \x01(\tR\bprecalls\x12\x1b\n" +
+	"\ttodo_type\x18\x0e \x01(\tR\btodoType\x129\n" +
+	"\n" +
+	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xb0\x04\n" +
+	"\vWorkflowRun\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
+	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12:\n" +
+	"\x06status\x18\x03 \x01(\x0e2\".codevaldwork.v1.WorkflowRunStatusR\x06status\x12#\n" +
+	"\rtrigger_event\x18\x04 \x01(\tR\ftriggerEvent\x12\x1c\n" +
+	"\tinitiator\x18\x05 \x01(\tR\tinitiator\x12\x14\n" +
+	"\x05notes\x18\x06 \x01(\tR\x05notes\x12\"\n" +
+	"\ragent_run_ids\x18\a \x03(\tR\vagentRunIds\x12(\n" +
+	"\x10function_job_ids\x18\b \x03(\tR\x0efunctionJobIds\x12!\n" +
+	"\fbranch_names\x18\t \x03(\tR\vbranchNames\x129\n" +
+	"\n" +
+	"started_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12=\n" +
+	"\fcompleted_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x129\n" +
+	"\n" +
+	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xf3\x01\n" +
 	"\fRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
@@ -854,7 +1323,22 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\tDirection\x12\x19\n" +
 	"\x15DIRECTION_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12DIRECTION_OUTBOUND\x10\x01\x12\x15\n" +
-	"\x11DIRECTION_INBOUND\x10\x02BGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
+	"\x11DIRECTION_INBOUND\x10\x02*\xaa\x01\n" +
+	"\n" +
+	"TodoStatus\x12\x1b\n" +
+	"\x17TODO_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13TODO_STATUS_PENDING\x10\x01\x12\x17\n" +
+	"\x13TODO_STATUS_BLOCKED\x10\x02\x12\x1a\n" +
+	"\x16TODO_STATUS_DISPATCHED\x10\x03\x12\x19\n" +
+	"\x15TODO_STATUS_COMPLETED\x10\x04\x12\x16\n" +
+	"\x12TODO_STATUS_FAILED\x10\x05*\xe6\x01\n" +
+	"\x11WorkflowRunStatus\x12#\n" +
+	"\x1fWORKFLOW_RUN_STATUS_UNSPECIFIED\x10\x00\x12\x1f\n" +
+	"\x1bWORKFLOW_RUN_STATUS_PENDING\x10\x01\x12#\n" +
+	"\x1fWORKFLOW_RUN_STATUS_IN_PROGRESS\x10\x02\x12!\n" +
+	"\x1dWORKFLOW_RUN_STATUS_COMPLETED\x10\x03\x12\x1e\n" +
+	"\x1aWORKFLOW_RUN_STATUS_FAILED\x10\x04\x12#\n" +
+	"\x1fWORKFLOW_RUN_STATUS_ROLLED_BACK\x10\x05BGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
 
 var (
 	file_codevaldwork_v1_codevaldwork_proto_rawDescOnce sync.Once
@@ -868,40 +1352,52 @@ func file_codevaldwork_v1_codevaldwork_proto_rawDescGZIP() []byte {
 	return file_codevaldwork_v1_codevaldwork_proto_rawDescData
 }
 
-var file_codevaldwork_v1_codevaldwork_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_codevaldwork_v1_codevaldwork_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_codevaldwork_v1_codevaldwork_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_codevaldwork_v1_codevaldwork_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_codevaldwork_v1_codevaldwork_proto_goTypes = []any{
 	(TaskStatus)(0),               // 0: codevaldwork.v1.TaskStatus
 	(TaskPriority)(0),             // 1: codevaldwork.v1.TaskPriority
 	(Direction)(0),                // 2: codevaldwork.v1.Direction
-	(*Task)(nil),                  // 3: codevaldwork.v1.Task
-	(*TaskFilter)(nil),            // 4: codevaldwork.v1.TaskFilter
-	(*Agent)(nil),                 // 5: codevaldwork.v1.Agent
-	(*Project)(nil),               // 6: codevaldwork.v1.Project
-	(*Relationship)(nil),          // 7: codevaldwork.v1.Relationship
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),       // 9: google.protobuf.Struct
+	(TodoStatus)(0),               // 3: codevaldwork.v1.TodoStatus
+	(WorkflowRunStatus)(0),        // 4: codevaldwork.v1.WorkflowRunStatus
+	(*Task)(nil),                  // 5: codevaldwork.v1.Task
+	(*TaskFilter)(nil),            // 6: codevaldwork.v1.TaskFilter
+	(*Agent)(nil),                 // 7: codevaldwork.v1.Agent
+	(*Project)(nil),               // 8: codevaldwork.v1.Project
+	(*TaskTodo)(nil),              // 9: codevaldwork.v1.TaskTodo
+	(*WorkflowRun)(nil),           // 10: codevaldwork.v1.WorkflowRun
+	(*Relationship)(nil),          // 11: codevaldwork.v1.Relationship
+	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 13: google.protobuf.Struct
 }
 var file_codevaldwork_v1_codevaldwork_proto_depIdxs = []int32{
 	0,  // 0: codevaldwork.v1.Task.status:type_name -> codevaldwork.v1.TaskStatus
 	1,  // 1: codevaldwork.v1.Task.priority:type_name -> codevaldwork.v1.TaskPriority
-	8,  // 2: codevaldwork.v1.Task.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 3: codevaldwork.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
-	8,  // 4: codevaldwork.v1.Task.completed_at:type_name -> google.protobuf.Timestamp
-	8,  // 5: codevaldwork.v1.Task.due_at:type_name -> google.protobuf.Timestamp
+	12, // 2: codevaldwork.v1.Task.created_at:type_name -> google.protobuf.Timestamp
+	12, // 3: codevaldwork.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 4: codevaldwork.v1.Task.completed_at:type_name -> google.protobuf.Timestamp
+	12, // 5: codevaldwork.v1.Task.due_at:type_name -> google.protobuf.Timestamp
 	0,  // 6: codevaldwork.v1.TaskFilter.status:type_name -> codevaldwork.v1.TaskStatus
 	1,  // 7: codevaldwork.v1.TaskFilter.priority:type_name -> codevaldwork.v1.TaskPriority
-	8,  // 8: codevaldwork.v1.Agent.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 9: codevaldwork.v1.Agent.updated_at:type_name -> google.protobuf.Timestamp
-	8,  // 10: codevaldwork.v1.Project.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 11: codevaldwork.v1.Project.updated_at:type_name -> google.protobuf.Timestamp
-	9,  // 12: codevaldwork.v1.Relationship.properties:type_name -> google.protobuf.Struct
-	8,  // 13: codevaldwork.v1.Relationship.created_at:type_name -> google.protobuf.Timestamp
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	12, // 8: codevaldwork.v1.Agent.created_at:type_name -> google.protobuf.Timestamp
+	12, // 9: codevaldwork.v1.Agent.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 10: codevaldwork.v1.Project.created_at:type_name -> google.protobuf.Timestamp
+	12, // 11: codevaldwork.v1.Project.updated_at:type_name -> google.protobuf.Timestamp
+	3,  // 12: codevaldwork.v1.TaskTodo.status:type_name -> codevaldwork.v1.TodoStatus
+	12, // 13: codevaldwork.v1.TaskTodo.created_at:type_name -> google.protobuf.Timestamp
+	12, // 14: codevaldwork.v1.TaskTodo.updated_at:type_name -> google.protobuf.Timestamp
+	4,  // 15: codevaldwork.v1.WorkflowRun.status:type_name -> codevaldwork.v1.WorkflowRunStatus
+	12, // 16: codevaldwork.v1.WorkflowRun.started_at:type_name -> google.protobuf.Timestamp
+	12, // 17: codevaldwork.v1.WorkflowRun.completed_at:type_name -> google.protobuf.Timestamp
+	12, // 18: codevaldwork.v1.WorkflowRun.created_at:type_name -> google.protobuf.Timestamp
+	12, // 19: codevaldwork.v1.WorkflowRun.updated_at:type_name -> google.protobuf.Timestamp
+	13, // 20: codevaldwork.v1.Relationship.properties:type_name -> google.protobuf.Struct
+	12, // 21: codevaldwork.v1.Relationship.created_at:type_name -> google.protobuf.Timestamp
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_codevaldwork_v1_codevaldwork_proto_init() }
@@ -914,8 +1410,8 @@ func file_codevaldwork_v1_codevaldwork_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codevaldwork_v1_codevaldwork_proto_rawDesc), len(file_codevaldwork_v1_codevaldwork_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   5,
+			NumEnums:      5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

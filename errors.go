@@ -40,6 +40,10 @@ var ErrTagNotFound = errors.New("tag not found")
 // for the given agencyID and entity ID.
 var ErrTaskTodoNotFound = errors.New("task todo not found")
 
+// ErrWorkflowRunNotFound is returned when a WorkflowRun vertex does not
+// exist for the given agencyID and entity ID.
+var ErrWorkflowRunNotFound = errors.New("workflow run not found")
+
 // ErrProjectAlreadyExists is returned by [TaskManager.CreateProject]
 // when a Project with the same ID already exists in the agency.
 var ErrProjectAlreadyExists = errors.New("project already exists")

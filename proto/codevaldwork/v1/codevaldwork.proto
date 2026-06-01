@@ -124,6 +124,67 @@ message Project {
   string task_prefix   = 10;
 }
 
+// TodoStatus mirrors the Go [TodoStatus] enumeration.
+enum TodoStatus {
+  TODO_STATUS_UNSPECIFIED = 0;
+  TODO_STATUS_PENDING     = 1;
+  TODO_STATUS_BLOCKED     = 2;
+  TODO_STATUS_DISPATCHED  = 3;
+  TODO_STATUS_COMPLETED   = 4;
+  TODO_STATUS_FAILED      = 5;
+}
+
+// TaskTodo is a decomposed sub-task — the projection used by the
+// WorkflowRun closure response (FEAT-20260601-001). Mirrors the
+// codevaldwork.TaskTodo Go type, less storage-only metadata.
+message TaskTodo {
+  string                    id              = 1;
+  string                    agency_id       = 2;
+  string                    title           = 3;
+  string                    description     = 4;
+  string                    instructions    = 5;
+  int32                     ordinality      = 6;
+  bool                      can_run_parallel = 7;
+  repeated int32            depends_on      = 8;
+  TodoStatus                status          = 9;
+  string                    parent_task_id  = 10;
+  string                    decomp_run_id   = 11;
+  string                    agent_id        = 12;
+  string                    precalls        = 13;
+  string                    todo_type       = 14;
+  google.protobuf.Timestamp created_at      = 15;
+  google.protobuf.Timestamp updated_at      = 16;
+}
+
+// WorkflowRunStatus mirrors the Go [WorkflowRunStatus] enumeration.
+// Anchors the lifecycle of a single orchestrated execution (FEAT-20260601-001).
+enum WorkflowRunStatus {
+  WORKFLOW_RUN_STATUS_UNSPECIFIED  = 0;
+  WORKFLOW_RUN_STATUS_PENDING      = 1;
+  WORKFLOW_RUN_STATUS_IN_PROGRESS  = 2;
+  WORKFLOW_RUN_STATUS_COMPLETED    = 3;
+  WORKFLOW_RUN_STATUS_FAILED       = 4;
+  WORKFLOW_RUN_STATUS_ROLLED_BACK  = 5;
+}
+
+// WorkflowRun anchors the closure of a single orchestrated execution.
+// Linked to every Task / TaskTodo it produced via started_task / started_todo edges.
+message WorkflowRun {
+  string                    id              = 1;
+  string                    agency_id       = 2;
+  WorkflowRunStatus         status          = 3;
+  string                    trigger_event   = 4;
+  string                    initiator       = 5;
+  string                    notes           = 6;
+  repeated string           agent_run_ids   = 7;
+  repeated string           function_job_ids = 8;
+  repeated string           branch_names    = 9;
+  google.protobuf.Timestamp started_at      = 10;
+  google.protobuf.Timestamp completed_at    = 11;
+  google.protobuf.Timestamp created_at      = 12;
+  google.protobuf.Timestamp updated_at      = 13;
+}
+
 // Relationship is the Work-domain projection of a directed graph edge.
 // label must be one of the whitelist values: assigned_to, blocks, subtask_of,
 // depends_on, member_of.

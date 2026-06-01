@@ -1,6 +1,6 @@
 # FEAT-20260601-001 — WorkflowRun rollup endpoint (transactional rollback closure)
 
-**Status:** 📋 Not Started
+**Status:** ✅ Phase 1+2+4 complete (2026-06-01, main) — Phase 3 producer wiring still optional
 **Severity:** Medium — enables transactional rollback semantics for orchestrated pipelines; without it, partial-failure cleanup is a manual graph walk per service
 **Owner:** CodeValdWork
 **Estimated effort:** ~3–5 days (schema addition + traversal RPC + HTTP route + tests)
@@ -170,4 +170,4 @@ None blocking. Lands cleanly alongside existing schema; no breaking changes to e
 ## Future follow-ups
 
 - Rollback action — given a `WorkflowRun`, execute compensating events for every entity in the closure (delete TaskTodos, unset branch on Task, revert git branch via CodeValdGit, fail AgentRuns, etc.). Separate feature; this endpoint is its prerequisite.
-- Frontend visualisation — a "Run Detail" page in CodeValdWorkFrontend that renders the closure as a graph.
+- Frontend visualisation — tracked separately as [FEAT-20260601-002](../../../../CodeValdWorkFrontend/documentation/3-SofwareDevelopment/mvp-details/FEAT-20260601-002_workflow_run_visualization.md). Renders the closure (tasks, todos, edges, foreign refs) under `/agencies/{id}/workflow-runs`.
