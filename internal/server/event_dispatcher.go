@@ -16,14 +16,19 @@ const (
 	topicTaskFailed    = "ai.task.failed"
 	topicTodoCreated   = "ai.todo.created"
 	topicTaskUpdate    = codevaldwork.TopicTaskUpdate
+	// topicFileWritten is consumed from CodeValdGit to close the BUG-09-020
+	// flush-race gate on work.todo.completed. String literal (not imported)
+	// to keep CodeValdWork's no-cross-service-import rule intact.
+	topicFileWritten = "git.file.written"
 )
 
 // aiTaskPayload is the common shape of ai.task.started/completed/failed payloads.
 type aiTaskPayload struct {
-	TaskID      string `json:"TaskID"`
-	RunID       string `json:"RunID"`
-	Reason      string `json:"Reason"`
-	HasSubtasks bool   `json:"has_subtasks,omitempty"`
+	TaskID        string   `json:"TaskID"`
+	RunID         string   `json:"RunID"`
+	Reason        string   `json:"Reason"`
+	HasSubtasks   bool     `json:"has_subtasks,omitempty"`
+	EmittedWrites []string `json:"emitted_writes,omitempty"`
 }
 
 // aiTodoCreatedPayload mirrors the CodeValdAI TodoCreatedPayload — the ai.todo.created event body.
@@ -54,12 +59,18 @@ type TaskEventDispatcher struct {
 	mgr      codevaldwork.TaskManager
 	agencyID string
 	pub      eventbus.Publisher // optional; nil = skip work.task.failed bridging
+	writes   *writeTracker      // gates ai.task.completed on git.file.written (BUG-09-020 Phase 2)
 }
 
 // NewTaskEventDispatcher constructs a TaskEventDispatcher.
 // pub may be nil — work.task.failed bridging is skipped when no publisher is set.
 func NewTaskEventDispatcher(mgr codevaldwork.TaskManager, agencyID string, pub eventbus.Publisher) *TaskEventDispatcher {
-	return &TaskEventDispatcher{mgr: mgr, agencyID: agencyID, pub: pub}
+	return &TaskEventDispatcher{
+		mgr:      mgr,
+		agencyID: agencyID,
+		pub:      pub,
+		writes:   newWriteTracker(writeGateTimeout),
+	}
 }
 
 // Dispatch handles an incoming event by topic.
@@ -73,6 +84,8 @@ func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload strin
 		d.handleAITaskStatus(ctx, topic, payload)
 	case codevaldwork.TopicTaskCompleted:
 		d.handleWorkTaskCompleted(ctx, payload)
+	case topicFileWritten:
+		d.handleFileWritten(ctx, payload)
 	}
 }
 
@@ -103,6 +116,11 @@ func (d *TaskEventDispatcher) handleWorkTaskCompleted(ctx context.Context, paylo
 
 // handleAITaskStatus routes ai.task.started/completed/failed to a Task or
 // TaskTodo status update depending on which entity the TaskID refers to.
+//
+// For ai.task.completed payloads that carry EmittedWrites, the actual status
+// transition is deferred until every emitted path has been confirmed by a
+// matching git.file.written event (BUG-09-020 Phase 2). A timeout falls back
+// to firing anyway with a warning so the pipeline cannot stall.
 func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, payloadStr string) {
 	var p aiTaskPayload
 	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.TaskID == "" {
@@ -110,6 +128,23 @@ func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, pay
 		return
 	}
 
+	if topic == topicTaskCompleted && len(p.EmittedWrites) > 0 && p.RunID != "" && d.writes != nil {
+		log.Printf("codevaldwork: TaskEventDispatcher: gating ai.task.completed task=%s run=%s on %d emitted write(s)",
+			p.TaskID, p.RunID, len(p.EmittedWrites))
+		d.writes.WaitForWrites(p.RunID, p.EmittedWrites, func() {
+			d.applyAITaskStatus(context.Background(), topic, p)
+		})
+		return
+	}
+
+	d.applyAITaskStatus(ctx, topic, p)
+}
+
+// applyAITaskStatus performs the actual Task/Todo status transition described
+// by an ai.task.* event. It is called either directly from handleAITaskStatus
+// (no writes to wait for) or by writeTracker once all emitted writes have been
+// confirmed (or the 30 s gate timeout has expired).
+func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic string, p aiTaskPayload) {
 	var nextStatus codevaldwork.TaskStatus
 	switch topic {
 	case topicTaskStarted:
