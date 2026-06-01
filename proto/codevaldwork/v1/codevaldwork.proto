@@ -15,13 +15,7 @@ enum TaskStatus {
   TASK_STATUS_COMPLETED   = 3;
   TASK_STATUS_FAILED      = 4;
   TASK_STATUS_CANCELLED   = 5;
-  // TODO: add TASK_STATUS_BLOCKED = 6 once the pre-existing
-  // `reserved "assigned_to"` vs `string assigned_to = 20` collision in the
-  // Task message is resolved (buf generate fails until then). The Go side
-  // already uses TaskStatusBlocked = "blocked"; until the proto enum is
-  // regenerated, GET responses return TASK_STATUS_UNSPECIFIED for blocked
-  // tasks (the entity property is correct; only the protojson serialization
-  // is missing the mapping).
+  TASK_STATUS_BLOCKED     = 6;
 }
 
 // TaskPriority mirrors the Go [TaskPriority] enumeration.
@@ -42,9 +36,11 @@ enum Direction {
 
 // Task is the core domain entity managed by the TaskService.
 //
-// assigned_to (string, field 7) was removed in MVP-WORK-010 — task assignment
-// is now an `assigned_to` graph edge from Task to Agent, set via AssignTask.
-// The field number is reserved to prevent silent reuse.
+// Field 7 was previously a string `assigned_to`; it was removed in MVP-WORK-010
+// because task assignment moved to an `assigned_to` graph edge, set via
+// AssignTask. Field number 7 stays reserved to prevent silent reuse. The name
+// `assigned_to` was later reintroduced at field 20 as a read-only projection
+// of that graph edge.
 message Task {
   string        id              = 1;
   string        agency_id       = 2;
@@ -53,7 +49,6 @@ message Task {
   TaskStatus    status          = 5;
   TaskPriority  priority        = 6;
   reserved 7;
-  reserved "assigned_to";
   google.protobuf.Timestamp created_at      = 8;
   google.protobuf.Timestamp updated_at      = 9;
   google.protobuf.Timestamp completed_at    = 10;

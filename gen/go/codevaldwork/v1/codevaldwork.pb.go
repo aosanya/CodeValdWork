@@ -33,6 +33,7 @@ const (
 	TaskStatus_TASK_STATUS_COMPLETED   TaskStatus = 3
 	TaskStatus_TASK_STATUS_FAILED      TaskStatus = 4
 	TaskStatus_TASK_STATUS_CANCELLED   TaskStatus = 5
+	TaskStatus_TASK_STATUS_BLOCKED     TaskStatus = 6
 )
 
 // Enum value maps for TaskStatus.
@@ -44,6 +45,7 @@ var (
 		3: "TASK_STATUS_COMPLETED",
 		4: "TASK_STATUS_FAILED",
 		5: "TASK_STATUS_CANCELLED",
+		6: "TASK_STATUS_BLOCKED",
 	}
 	TaskStatus_value = map[string]int32{
 		"TASK_STATUS_UNSPECIFIED": 0,
@@ -52,6 +54,7 @@ var (
 		"TASK_STATUS_COMPLETED":   3,
 		"TASK_STATUS_FAILED":      4,
 		"TASK_STATUS_CANCELLED":   5,
+		"TASK_STATUS_BLOCKED":     6,
 	}
 )
 
@@ -190,9 +193,11 @@ func (Direction) EnumDescriptor() ([]byte, []int) {
 
 // Task is the core domain entity managed by the TaskService.
 //
-// assigned_to (string, field 7) was removed in MVP-WORK-010 — task assignment
-// is now an `assigned_to` graph edge from Task to Agent, set via AssignTask.
-// The field number is reserved to prevent silent reuse.
+// Field 7 was previously a string `assigned_to`; it was removed in MVP-WORK-010
+// because task assignment moved to an `assigned_to` graph edge, set via
+// AssignTask. Field number 7 stays reserved to prevent silent reuse. The name
+// `assigned_to` was later reintroduced at field 20 as a read-only projection
+// of that graph edge.
 type Task struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -219,7 +224,11 @@ type Task struct {
 	// separate_branch indicates whether this task should be worked on in its own git branch.
 	SeparateBranch bool `protobuf:"varint,18,opt,name=separate_branch,json=separateBranch,proto3" json:"separate_branch,omitempty"`
 	// branch_name is the git branch to create/use for this task (e.g. "feature/SF-001_scaffolding").
-	BranchName    string `protobuf:"bytes,19,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
+	BranchName string `protobuf:"bytes,19,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
+	// assigned_to is the entity ID of the Agent currently responsible for this
+	// task. Empty string means unassigned. Populated from the `assigned_to`
+	// graph edge at query time; set via AssignTask / UnassignTask RPCs.
+	AssignedTo    string `protobuf:"bytes,20,opt,name=assigned_to,json=assignedTo,proto3" json:"assigned_to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -369,6 +378,13 @@ func (x *Task) GetSeparateBranch() bool {
 func (x *Task) GetBranchName() string {
 	if x != nil {
 		return x.BranchName
+	}
+	return ""
+}
+
+func (x *Task) GetAssignedTo() string {
+	if x != nil {
+		return x.AssignedTo
 	}
 	return ""
 }
@@ -752,7 +768,7 @@ var File_codevaldwork_v1_codevaldwork_proto protoreflect.FileDescriptor
 
 const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
-	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xbd\x05\n" +
+	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xd1\x05\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12 \n" +
@@ -774,7 +790,9 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x05title\x18\x11 \x01(\tR\x05title\x12'\n" +
 	"\x0fseparate_branch\x18\x12 \x01(\bR\x0eseparateBranch\x12\x1f\n" +
 	"\vbranch_name\x18\x13 \x01(\tR\n" +
-	"branchNameJ\x04\b\x03\x10\x04J\x04\b\a\x10\bR\vassigned_to\"\x8f\x01\n" +
+	"branchName\x12\x1f\n" +
+	"\vassigned_to\x18\x14 \x01(\tR\n" +
+	"assignedToJ\x04\b\x03\x10\x04J\x04\b\a\x10\b\"\x8f\x01\n" +
 	"\n" +
 	"TaskFilter\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +
@@ -817,7 +835,7 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"properties\x18\x06 \x01(\v2\x17.google.protobuf.StructR\n" +
 	"properties\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt*\xad\x01\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt*\xc6\x01\n" +
 	"\n" +
 	"TaskStatus\x12\x1b\n" +
 	"\x17TASK_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
@@ -825,7 +843,8 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x17TASK_STATUS_IN_PROGRESS\x10\x02\x12\x19\n" +
 	"\x15TASK_STATUS_COMPLETED\x10\x03\x12\x16\n" +
 	"\x12TASK_STATUS_FAILED\x10\x04\x12\x19\n" +
-	"\x15TASK_STATUS_CANCELLED\x10\x05*\x92\x01\n" +
+	"\x15TASK_STATUS_CANCELLED\x10\x05\x12\x17\n" +
+	"\x13TASK_STATUS_BLOCKED\x10\x06*\x92\x01\n" +
 	"\fTaskPriority\x12\x1d\n" +
 	"\x19TASK_PRIORITY_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11TASK_PRIORITY_LOW\x10\x01\x12\x18\n" +

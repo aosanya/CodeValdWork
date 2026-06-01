@@ -5,6 +5,7 @@ package codevaldwork.v1;
 option go_package = "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1";
 
 import "codevaldwork/v1/codevaldwork.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 
 // TaskService is the single gRPC service exposed by CodeValdWork.
@@ -184,6 +185,12 @@ message UpdateTaskRequest {
   string agency_id    = 1;
   Task   task         = 2;
   string project_name = 3;    // required when resolving by task.task_name
+  // update_mask names the snake_case fields of `task` that the caller intends
+  // to overwrite. Fields not listed are preserved from the stored entity.
+  // When empty the server falls back to replace-all behaviour (deprecated):
+  // every mutable Task property is rewritten from `task`, so omitted fields
+  // are silently zeroed. New callers MUST set update_mask.
+  google.protobuf.FieldMask update_mask = 4;
 }
 message UpdateTaskResponse {
   Task task = 1;

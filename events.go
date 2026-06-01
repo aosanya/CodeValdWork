@@ -180,6 +180,11 @@ type TaskUpdatePayload struct {
 }
 
 // ConsumedTopics is the closed list of topics CodeValdWork subscribes to.
+//
+// TopicTaskCompleted is a self-subscription: CodeValdWork publishes
+// work.task.completed and also consumes it to drive the auto-unblock cascade
+// in [server.TaskEventDispatcher]. The handler is idempotent so re-delivery
+// (and self-receipts) are safely no-op.
 func ConsumedTopics() []string {
-	return []string{TopicTaskUpdate}
+	return []string{TopicTaskUpdate, TopicTaskCompleted}
 }

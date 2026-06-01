@@ -114,6 +114,17 @@ type TaskManager interface {
 	// Idempotent — returns nil whether or not an edge was present.
 	UnassignTask(ctx context.Context, agencyID, taskID string) error
 
+	// UnblockDependents transitions every Task with an inbound `depends_on`
+	// edge from completedTaskID out of [TaskStatusBlocked] when all of its
+	// outbound `depends_on` edges now point to terminal Tasks, and re-fires
+	// [TopicTaskAssigned] for the cached assignee so CodeValdAI sees the
+	// dispatch it previously missed. Tasks without an `assigned_to` edge
+	// are left blocked (nothing to dispatch). Idempotent — invoking it on
+	// the same completedTaskID a second time is a no-op once each dependent
+	// has already moved out of blocked. Per-dependent failures are logged
+	// and other dependents continue.
+	UnblockDependents(ctx context.Context, agencyID, completedTaskID string) error
+
 	// CreateProject creates a new Project vertex. Returns
 	// [ErrInvalidTask] when Name is empty and [ErrProjectAlreadyExists]
 	// when the underlying store reports a duplicate.

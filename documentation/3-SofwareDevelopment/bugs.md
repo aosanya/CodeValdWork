@@ -29,22 +29,7 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 
 | Bug ID | Title | Severity | Status | Depends On |
 |--------|-------|----------|--------|------------|
-| [BUG-09-023](bug-details/BUG-09-023_proto3_put_wipes_fields.md) | proto3 replace-all on PUT task silently wipes omitted fields | High | 📋 Open | — |
-| [BUG-09-024](bug-details/BUG-09-024_auto_unblock_listener.md) | Auto-unblock listener for BLOCKED tasks when dependencies complete | Medium | 📋 Open | BUG-09-023 (cleaner with FieldMask, not strictly required) |
-
----
-
-## BUG-09-023 — proto3 replace-all on PUT task wipes omitted fields
-
-**Status**: 📋 Open · **Severity**: High · **Estimated effort**: ~1 day
-
-`UpdateTaskRequest.task` is a full `Task` message; proto3 cannot distinguish "not sent" from "zero value". Any sparse PUT (e.g. `{ id, status, branch_name }`) writes empty strings back over `title`, `description`, `taskName`. Live evidence: AI received `Title: ""` and emitted a 4362-char `<think>` block of confusion instead of an actions block.
-
-**Recommended fix**: add `google.protobuf.FieldMask update_mask` to `UpdateTaskRequest`; walk the mask in `task_impl_task.go:UpdateTask` instead of replacing the full property map. Keep replace-all behaviour when the mask is empty (deprecation period), then migrate internal callers and remove the fallback. Audit `UpdateAgent` (same pattern) and `UpdateRole`/`UpdateGoal`/`UpdateWorkflow` in CodeValdAgency.
-
-**Workaround**: always GET → modify → PUT the full task body. Never send sparse PUTs.
-
-See: [bug-details/BUG-09-023_proto3_put_wipes_fields.md](bug-details/BUG-09-023_proto3_put_wipes_fields.md)
+| [BUG-09-024](bug-details/BUG-09-024_auto_unblock_listener.md) | Auto-unblock listener for BLOCKED tasks when dependencies complete | Medium | 📋 Open | — |
 
 ---
 

@@ -6,6 +6,7 @@ package server
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -67,18 +68,78 @@ func (s *Server) resolveTaskID(ctx context.Context, agencyID, taskID, taskName, 
 }
 
 // UpdateTask implements pb.TaskServiceServer.
+//
+// When req.update_mask is set, only the listed fields are overwritten on the
+// stored task — every other field is preserved from the current entity. When
+// update_mask is empty, the handler falls back to the legacy replace-all
+// behaviour: every mutable field of the incoming task is written, so omitted
+// fields are silently zeroed (the proto3 footgun that BUG-09-023 documents).
+// The fallback emits a deprecation log line so the call site can be migrated.
 func (s *Server) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*pb.UpdateTaskResponse, error) {
-	t := protoToTask(req.Task)
-	taskID, err := s.resolveTaskID(ctx, req.AgencyId, t.ID, t.TaskName, req.ProjectName)
+	incoming := protoToTask(req.Task)
+	taskID, err := s.resolveTaskID(ctx, req.AgencyId, incoming.ID, incoming.TaskName, req.ProjectName)
 	if err != nil {
 		return nil, mapError(err)
 	}
-	t.ID = taskID
-	task, err := s.mgr.UpdateTask(ctx, req.AgencyId, t)
+	incoming.ID = taskID
+
+	toUpdate := incoming
+	if paths := req.GetUpdateMask().GetPaths(); len(paths) > 0 {
+		current, err := s.mgr.GetTask(ctx, req.AgencyId, taskID)
+		if err != nil {
+			return nil, mapError(err)
+		}
+		toUpdate = applyTaskMask(current, incoming, paths)
+	} else {
+		log.Printf("codevaldwork: UpdateTask: update_mask not set on task=%s — replace-all behaviour is deprecated and will be removed once all callers migrate", taskID)
+	}
+
+	task, err := s.mgr.UpdateTask(ctx, req.AgencyId, toUpdate)
 	if err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.UpdateTaskResponse{Task: taskToProto(task)}, nil
+}
+
+// applyTaskMask returns current with only the masked fields overwritten from
+// incoming. Path names match the snake_case proto field names of the Task
+// message. Unknown paths are logged and skipped — consistent with FieldMask's
+// forward-compat semantics and the gRPC API design guide.
+func applyTaskMask(current, incoming codevaldwork.Task, paths []string) codevaldwork.Task {
+	out := current
+	for _, p := range paths {
+		switch p {
+		case "title":
+			out.Title = incoming.Title
+		case "description":
+			out.Description = incoming.Description
+		case "status":
+			out.Status = incoming.Status
+		case "priority":
+			out.Priority = incoming.Priority
+		case "tags":
+			out.Tags = append([]string(nil), incoming.Tags...)
+		case "estimated_hours":
+			out.EstimatedHours = incoming.EstimatedHours
+		case "context":
+			out.Context = incoming.Context
+		case "task_name":
+			out.TaskName = incoming.TaskName
+		case "project_name":
+			out.ProjectName = incoming.ProjectName
+		case "separate_branch":
+			out.SeparateBranch = incoming.SeparateBranch
+		case "branch_name":
+			out.BranchName = incoming.BranchName
+		case "due_at":
+			out.DueAt = incoming.DueAt
+		case "completed_at":
+			out.CompletedAt = incoming.CompletedAt
+		default:
+			log.Printf("codevaldwork: UpdateTask: ignoring unknown update_mask path %q", p)
+		}
+	}
+	return out
 }
 
 // DeleteTask implements pb.TaskServiceServer.
@@ -199,6 +260,8 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 		Context:        pt.Context,
 		TaskName:       pt.TaskName,
 		ProjectName:    pt.ProjectName,
+		SeparateBranch: pt.SeparateBranch,
+		BranchName:     pt.BranchName,
 	}
 	if pt.CreatedAt != nil {
 		t.CreatedAt = pt.CreatedAt.AsTime().UTC().Format(time.RFC3339)

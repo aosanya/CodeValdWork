@@ -71,7 +71,34 @@ func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload strin
 		d.handleTaskUpdate(ctx, payload)
 	case topicTaskStarted, topicTaskCompleted, topicTaskFailed:
 		d.handleAITaskStatus(ctx, topic, payload)
+	case codevaldwork.TopicTaskCompleted:
+		d.handleWorkTaskCompleted(ctx, payload)
 	}
+}
+
+// handleWorkTaskCompleted runs the auto-unblock cascade when a Task lands in a
+// terminal status. Only the `completed` terminus opens dependent gates —
+// `failed` and `cancelled` leave dependents blocked (a follow-up gap will
+// decide whether to cascade-fail or release them).
+//
+// Self-loop safety: CodeValdWork publishes work.task.completed too, so this
+// handler will receive its own emissions. UnblockDependents is idempotent —
+// dependents already pending/in-progress are filtered by the status==blocked
+// check — so re-delivery and self-receipts are no-ops.
+func (d *TaskEventDispatcher) handleWorkTaskCompleted(ctx context.Context, payloadStr string) {
+	var p codevaldwork.TaskCompletedPayload
+	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.TaskID == "" {
+		log.Printf("codevaldwork: handleWorkTaskCompleted: bad payload: %v", err)
+		return
+	}
+	if p.TerminalStatus != codevaldwork.TaskStatusCompleted {
+		return
+	}
+	if err := d.mgr.UnblockDependents(ctx, d.agencyID, p.TaskID); err != nil {
+		log.Printf("codevaldwork: handleWorkTaskCompleted: UnblockDependents %s: %v", p.TaskID, err)
+		return
+	}
+	log.Printf("codevaldwork: handleWorkTaskCompleted: ran unblock cascade for task=%s", p.TaskID)
 }
 
 // handleAITaskStatus routes ai.task.started/completed/failed to a Task or

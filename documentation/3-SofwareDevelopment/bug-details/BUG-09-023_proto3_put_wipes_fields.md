@@ -1,10 +1,26 @@
 # BUG-09-023 — proto3 replace-all on PUT task silently wipes omitted fields
 
-**Status:** 📋 Open
+**Status:** ✅ Fixed (2026-06-01, main)
 **Severity:** High — operator/agent partial updates destroy unsent fields with no warning
 **Owner:** CodeValdWork
 **Estimated effort:** ~1 day (proto schema + handler + a couple of consumers)
 **Source finding:** [`/4-QA/agencies/utility-app-builder/bugs/09-mvp-sf-pipeline-findings.md`](../../../../CodeValdCross/documentation/4-QA/agencies/utility-app-builder/bugs/09-mvp-sf-pipeline-findings.md)
+
+## Resolution
+
+Implemented Option A (FieldMask) at the gRPC server boundary, leaving the manager interface unchanged so internal callers keep their existing GET-then-PUT pattern unmodified.
+
+- `proto/codevaldwork/v1/service.proto` — added `google.protobuf.FieldMask update_mask = 4;` to `UpdateTaskRequest`.
+- `internal/server/server.go:UpdateTask` — when `update_mask` is set, the handler reads the current task, copies only the listed fields from the incoming `Task` onto the current value (via `applyTaskMask`), and writes that merged task. When the mask is empty, the legacy replace-all path runs with a deprecation log so call sites can be migrated.
+- Side fixes uncovered by the work:
+  - `protoToTask` was missing `SeparateBranch` / `BranchName` — added.
+  - `proto/codevaldwork/v1/codevaldwork.proto` had a stale `reserved "assigned_to";` that collided with the live `assigned_to = 20` field and blocked `make proto`; removed (the field-number reservation `reserved 7;` is unchanged).
+  - `TASK_STATUS_BLOCKED = 6` was added to the proto enum now that codegen runs again — the Go side already used the matching `"blocked"` constant.
+- Tests: `internal/server/update_task_mask_test.go` covers the reproducer (`TestUpdateTask_WithMask_PreservesUnlistedFields`), the explicit-clear case, the legacy fallback, and unknown-path tolerance.
+
+Pending follow-ups (separate issues, intentionally out of scope here):
+- Migrate every internal `UpdateTask` caller to send an explicit `update_mask` and then delete the deprecation fallback.
+- Apply the same FieldMask pattern to `UpdateAgent` (CodeValdWork) and `UpdateRole` / `UpdateGoal` / `UpdateWorkflow` (CodeValdAgency).
 
 ---
 

@@ -4,5 +4,4 @@ Bugs marked Fixed are removed from `bugs.md` and recorded here with their resolu
 
 | Bug ID | Title | Severity | Fixed Date | Commit / Branch | Detail |
 |--------|-------|----------|------------|-----------------|--------|
-
-_None yet._
+| BUG-09-023 | proto3 replace-all on PUT task silently wipes omitted fields | High | 2026-06-01 | main | [bug-details/BUG-09-023_proto3_put_wipes_fields.md](bug-details/BUG-09-023_proto3_put_wipes_fields.md) |

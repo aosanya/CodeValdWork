@@ -81,7 +81,7 @@ func Load() Config {
 		AgencyID:       serverutil.EnvOrDefault("CODEVALDWORK_AGENCY_ID", ""),
 		PingInterval:    serverutil.ParseDurationString("CROSS_PING_INTERVAL", 10*time.Second),
 		PingTimeout:     serverutil.ParseDurationString("CROSS_PING_TIMEOUT", 5*time.Second),
-		SubscribeTopics: parseTopics(serverutil.EnvOrDefault("WORK_SUBSCRIBE_TOPICS", "ai.task.started,ai.task.completed,ai.task.failed,ai.todo.created,work.task.update")),
+		SubscribeTopics: parseTopics(serverutil.EnvOrDefault("WORK_SUBSCRIBE_TOPICS", "ai.task.started,ai.task.completed,ai.task.failed,ai.todo.created,work.task.update,work.task.completed")),
 	}
 }
 
