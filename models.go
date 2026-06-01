@@ -33,6 +33,13 @@ const (
 	// TaskStatusCancelled is a terminal state — the task was abandoned
 	// before completion, either by the agent or by an operator.
 	TaskStatusCancelled TaskStatus = "cancelled"
+
+	// TaskStatusBlocked means the task has been assigned but is waiting on
+	// at least one unfulfilled depends_on edge to a non-terminal source
+	// task. Dispatch (work.task.assigned publish) is held until every
+	// dependency reaches a terminal state, at which point the task
+	// transitions back to pending and the assignment fires for real.
+	TaskStatusBlocked TaskStatus = "blocked"
 )
 
 // CanTransitionTo reports whether transitioning from the receiver status to
@@ -40,7 +47,8 @@ const (
 //
 // Allowed transitions:
 //
-//	pending     → in_progress, cancelled
+//	pending     → in_progress, cancelled, blocked
+//	blocked     → pending, cancelled
 //	in_progress → completed, failed, cancelled
 //	completed   → (none — terminal)
 //	failed      → (none — terminal)
@@ -48,7 +56,12 @@ const (
 func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
 	switch s {
 	case TaskStatusPending:
-		return next == TaskStatusInProgress || next == TaskStatusCancelled
+		return next == TaskStatusInProgress || next == TaskStatusCancelled || next == TaskStatusBlocked
+	case TaskStatusBlocked:
+		// On dependency completion the dispatch flow flips back to pending,
+		// re-publishes work.task.assigned, and then UpdateTask transitions
+		// to in_progress. Cancel is always allowed as an escape hatch.
+		return next == TaskStatusPending || next == TaskStatusCancelled
 	case TaskStatusInProgress:
 		return next == TaskStatusCompleted || next == TaskStatusFailed || next == TaskStatusCancelled
 	default:
