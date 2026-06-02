@@ -415,6 +415,16 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 
 	agentEntityID, externalAgentID := d.resolveAgentForTask(ctx, p.ParentTaskID, p.AgentID)
 
+	// Inherit workflow_run_id from the parent Task per FEAT-20260602-002
+	// chain-through rule. Prefer the event payload's explicit value when
+	// present; otherwise read the parent.
+	inheritedRunID := p.WorkflowRunID
+	if inheritedRunID == "" {
+		if parent, err := d.mgr.GetTask(ctx, d.agencyID, p.ParentTaskID); err == nil {
+			inheritedRunID = parent.WorkflowRunID
+		}
+	}
+
 	for _, item := range p.Todos {
 		todo := codevaldwork.TaskTodo{
 			Title:          item.Title,
@@ -427,6 +437,7 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 			DecompRunID:    p.RunID,
 			AgentID:        externalAgentID,
 			Precalls:       item.Precalls,
+			WorkflowRunID:  inheritedRunID,
 		}
 
 		ct, err := d.mgr.CreateTaskTodo(ctx, d.agencyID, todo)
