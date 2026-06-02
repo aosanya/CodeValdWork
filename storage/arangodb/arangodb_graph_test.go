@@ -136,7 +136,7 @@ func TestArangoDB_AgentAssignment_RoundTrip(t *testing.T) {
 		t.Fatalf("CreateTask: %v", err)
 	}
 
-	if err := mgr.AssignTask(ctx, agency, task.ID, a1.ID); err != nil {
+	if err := mgr.AssignTask(ctx, agency, task.ID, a1.ID, ""); err != nil {
 		t.Fatalf("AssignTask a1: %v", err)
 	}
 	edges, err := mgr.TraverseRelationships(ctx, agency, task.ID, codevaldwork.RelLabelAssignedTo, codevaldwork.DirectionOutbound)
@@ -148,7 +148,7 @@ func TestArangoDB_AgentAssignment_RoundTrip(t *testing.T) {
 	}
 
 	// Reassign to a2 — should replace the prior edge.
-	if err := mgr.AssignTask(ctx, agency, task.ID, a2.ID); err != nil {
+	if err := mgr.AssignTask(ctx, agency, task.ID, a2.ID, ""); err != nil {
 		t.Fatalf("AssignTask a2: %v", err)
 	}
 	edges, err = mgr.TraverseRelationships(ctx, agency, task.ID, codevaldwork.RelLabelAssignedTo, codevaldwork.DirectionOutbound)

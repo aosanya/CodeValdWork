@@ -20,6 +20,11 @@ import (
 )
 
 // CreateTask creates a Task entity in the agency graph.
+//
+// When task.WorkflowRunID is non-empty, the task is also linked to the named
+// run via the started_task edge (denormalised + graph edge — see
+// FEAT-20260602-002 §Chain-through behaviour). The edge write is best-effort:
+// a failure is logged but does not roll back the task creation.
 func (m *taskManager) CreateTask(ctx context.Context, agencyID string, task Task) (Task, error) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	task.AgencyID = agencyID
@@ -44,9 +49,16 @@ func (m *taskManager) CreateTask(ctx context.Context, agencyID string, task Task
 	}
 
 	out := taskFromEntity(created)
+	if task.WorkflowRunID != "" {
+		if err := m.LinkTaskToRun(ctx, agencyID, task.WorkflowRunID, out.ID); err != nil {
+			log.Printf("codevaldwork: CreateTask: LinkTaskToRun run=%s task=%s: %v",
+				task.WorkflowRunID, out.ID, err)
+		}
+	}
 	m.publish(ctx, TopicTaskCreated, agencyID, TaskCreatedPayload{
-		TaskID:   out.ID,
-		Priority: out.Priority,
+		TaskID:        out.ID,
+		Priority:      out.Priority,
+		WorkflowRunID: out.WorkflowRunID,
 	})
 	return out, nil
 }
@@ -115,13 +127,15 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 		m.publish(ctx, TopicTaskUpdated, agencyID, TaskUpdatedPayload{
 			TaskID:        out.ID,
 			ChangedFields: changed,
+			WorkflowRunID: out.WorkflowRunID,
 		})
 	}
 	if current.Status != out.Status {
 		m.publish(ctx, TopicTaskStatusChanged, agencyID, TaskStatusChangedPayload{
-			TaskID: out.ID,
-			From:   current.Status,
-			To:     out.Status,
+			TaskID:        out.ID,
+			From:          current.Status,
+			To:            out.Status,
+			WorkflowRunID: out.WorkflowRunID,
 		})
 		if isTerminalStatus(out.Status) {
 			completedAt := out.CompletedAt
@@ -132,6 +146,7 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 				TaskID:         out.ID,
 				TerminalStatus: out.Status,
 				CompletedAt:    completedAt,
+				WorkflowRunID:  out.WorkflowRunID,
 			})
 		}
 	}
@@ -161,6 +176,9 @@ func (m *taskManager) ListTasks(ctx context.Context, agencyID string, filter Tas
 	}
 	if filter.Priority != "" {
 		props["priority"] = string(filter.Priority)
+	}
+	if filter.WorkflowRunID != "" {
+		props["workflow_run_id"] = filter.WorkflowRunID
 	}
 
 	entities, err := m.dm.ListEntities(ctx, entitygraph.EntityFilter{

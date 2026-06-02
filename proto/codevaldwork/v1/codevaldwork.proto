@@ -73,6 +73,10 @@ message Task {
   // task. Empty string means unassigned. Populated from the `assigned_to`
   // graph edge at query time; set via AssignTask / UnassignTask RPCs.
   string                    assigned_to     = 20;
+  // workflow_run_id denormalises the WorkflowRun anchor onto the Task so
+  // queries can filter by run-id without traversing the started_task edge.
+  // Empty for tasks not produced under a run (FEAT-20260602-002).
+  string                    workflow_run_id = 21;
 }
 
 // TaskFilter is used in ListTasks to constrain results.
@@ -85,6 +89,9 @@ message TaskFilter {
   TaskPriority priority = 2;
   reserved 3;
   reserved "assigned_to";
+  // workflow_run_id filters tasks to a specific WorkflowRun anchor when
+  // non-empty (FEAT-20260602-002). Empty matches all.
+  string       workflow_run_id = 4;
 }
 
 // Agent is the Work-domain projection of an AI agent. Each Agent is a graph
@@ -154,6 +161,9 @@ message TaskTodo {
   string                    todo_type       = 14;
   google.protobuf.Timestamp created_at      = 15;
   google.protobuf.Timestamp updated_at      = 16;
+  // workflow_run_id is inherited from the parent Task at creation time so
+  // the todo carries the run anchor of its parent (FEAT-20260602-002).
+  string                    workflow_run_id = 17;
 }
 
 // WorkflowRunStatus mirrors the Go [WorkflowRunStatus] enumeration.

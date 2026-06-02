@@ -29,14 +29,16 @@ type aiTaskPayload struct {
 	Reason        string   `json:"Reason"`
 	HasSubtasks   bool     `json:"has_subtasks,omitempty"`
 	EmittedWrites []string `json:"emitted_writes,omitempty"`
+	WorkflowRunID string   `json:"workflow_run_id,omitempty"`
 }
 
 // aiTodoCreatedPayload mirrors the CodeValdAI TodoCreatedPayload — the ai.todo.created event body.
 type aiTodoCreatedPayload struct {
-	ParentTaskID string        `json:"parent_task_id"`
-	RunID        string        `json:"run_id"`
-	AgentID      string        `json:"agent_id"`
-	Todos        []aiTodoItem  `json:"todos"`
+	ParentTaskID  string       `json:"parent_task_id"`
+	RunID         string       `json:"run_id"`
+	AgentID       string       `json:"agent_id"`
+	WorkflowRunID string       `json:"workflow_run_id,omitempty"`
+	Todos         []aiTodoItem `json:"todos"`
 }
 
 type aiTodoItem struct {
@@ -187,13 +189,18 @@ func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic strin
 	// Published regardless of whether the status update succeeded — a failed run always
 	// warrants the operations-officer review even if the task was already in a terminal state.
 	if topic == topicTaskFailed {
+		runID := p.WorkflowRunID
+		if runID == "" {
+			runID = task.WorkflowRunID
+		}
 		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
 			Topic:    codevaldwork.TopicTaskFailed,
 			AgencyID: d.agencyID,
 			Payload: codevaldwork.TaskFailedPayload{
-				TaskID: p.TaskID,
-				RunID:  p.RunID,
-				Reason: p.Reason,
+				TaskID:        p.TaskID,
+				RunID:         p.RunID,
+				Reason:        p.Reason,
+				WorkflowRunID: runID,
 			},
 		})
 		log.Printf("codevaldwork: TaskEventDispatcher: bridged work.task.failed for task=%s run=%s", p.TaskID, p.RunID)
@@ -246,10 +253,11 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 			Topic:    codevaldwork.TopicTodoCompleted,
 			AgencyID: d.agencyID,
 			Payload: codevaldwork.TodoCompletedPayload{
-				TodoID:       updated.ID,
-				ParentTaskID: updated.ParentTaskID,
-				Title:        updated.Title,
-				Status:       string(status),
+				TodoID:        updated.ID,
+				ParentTaskID:  updated.ParentTaskID,
+				Title:         updated.Title,
+				Status:        string(status),
+				WorkflowRunID: updated.WorkflowRunID,
 			},
 		})
 		log.Printf("codevaldwork: TaskEventDispatcher: published %s todo=%s task=%s", codevaldwork.TopicTodoCompleted, updated.ID, updated.ParentTaskID)
@@ -413,6 +421,16 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 
 	agentEntityID, externalAgentID := d.resolveAgentForTask(ctx, p.ParentTaskID, p.AgentID)
 
+	// Inherit workflow_run_id from the parent Task per FEAT-20260602-002
+	// chain-through rule. Prefer the event payload's explicit value when
+	// present; otherwise read the parent.
+	inheritedRunID := p.WorkflowRunID
+	if inheritedRunID == "" {
+		if parent, err := d.mgr.GetTask(ctx, d.agencyID, p.ParentTaskID); err == nil {
+			inheritedRunID = parent.WorkflowRunID
+		}
+	}
+
 	for _, item := range p.Todos {
 		todo := codevaldwork.TaskTodo{
 			Title:          item.Title,
@@ -425,6 +443,7 @@ func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadSt
 			DecompRunID:    p.RunID,
 			AgentID:        externalAgentID,
 			Precalls:       item.Precalls,
+			WorkflowRunID:  inheritedRunID,
 		}
 
 		ct, err := d.mgr.CreateTaskTodo(ctx, d.agencyID, todo)

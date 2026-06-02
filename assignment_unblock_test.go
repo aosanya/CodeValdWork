@@ -21,7 +21,7 @@ func seedDependentScenario(t *testing.T, mgr codevaldwork.TaskManager) (a, b cod
 		t.Fatalf("CreateRelationship depends_on: %v", err)
 	}
 	agent, _ = mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "worker", RoleName: "engineer"})
-	if err := mgr.AssignTask(ctx, "ag", b.ID, agent.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", b.ID, agent.ID, ""); err != nil {
 		t.Fatalf("AssignTask: %v", err)
 	}
 	b, _ = mgr.GetTask(ctx, "ag", b.ID)
@@ -100,7 +100,7 @@ func TestUnblockDependents_LeavesBlockedWhenOtherDepUnmet(t *testing.T) {
 		}
 	}
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "w"})
-	if err := mgr.AssignTask(ctx, "ag", b.ID, agent.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", b.ID, agent.ID, ""); err != nil {
 		t.Fatalf("AssignTask: %v", err)
 	}
 

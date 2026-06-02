@@ -259,6 +259,14 @@ message AssignTaskRequest {
   string agent_id     = 3;  // entity ID of the Agent vertex
   string task_name    = 4;  // project-scoped name; used when task_id is empty
   string project_name = 5;  // required when resolving by task_name
+  // workflow_run_id propagates the WorkflowRun anchor from the inbound event
+  // (e.g. work.next.requested) onto the Task. Empty preserves the stored
+  // value; non-empty is set on a task with empty stored value (and writes
+  // the started_task edge), and a non-empty value that differs from the
+  // stored one is rejected with FAILED_PRECONDITION
+  // (codevaldwork.ErrWorkflowRunMismatch) — a task belonging to two runs
+  // breaks the rollback invariant (FEAT-20260602-002).
+  string workflow_run_id = 6;
 }
 message AssignTaskResponse {}
 

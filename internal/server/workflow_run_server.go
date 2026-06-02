@@ -136,6 +136,7 @@ func taskTodoToProto(t codevaldwork.TaskTodo) *pb.TaskTodo {
 		DecompRunId:    t.DecompRunID,
 		AgentId:        t.AgentID,
 		Precalls:       t.Precalls,
+		WorkflowRunId:  t.WorkflowRunID,
 	}
 	for _, d := range t.DependsOn {
 		pt.DependsOn = append(pt.DependsOn, int32(d))

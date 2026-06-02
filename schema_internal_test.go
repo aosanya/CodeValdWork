@@ -39,6 +39,7 @@ func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 		"project_name":    types.PropertyTypeString,
 		"separate_branch": types.PropertyTypeBoolean,
 		"branch_name":     types.PropertyTypeString,
+		"workflow_run_id": types.PropertyTypeString,
 		"created_at":      types.PropertyTypeString,
 		"updated_at":      types.PropertyTypeString,
 	}

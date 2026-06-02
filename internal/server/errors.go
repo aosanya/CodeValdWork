@@ -36,7 +36,8 @@ func mapError(err error) error {
 		return blockedStatus(blocked)
 	case errors.Is(err, codevaldwork.ErrInvalidRelationship):
 		return invalidRelationshipStatus(err)
-	case errors.Is(err, codevaldwork.ErrInvalidStatusTransition):
+	case errors.Is(err, codevaldwork.ErrInvalidStatusTransition),
+		errors.Is(err, codevaldwork.ErrWorkflowRunMismatch):
 		return status.Error(codes.FailedPrecondition, err.Error())
 	case errors.Is(err, codevaldwork.ErrInvalidTask),
 		errors.Is(err, codevaldwork.ErrInvalidImport):
