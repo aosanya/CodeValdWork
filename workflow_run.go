@@ -360,6 +360,22 @@ func (m *taskManager) publishRunStatusEvent(ctx context.Context, agencyID string
 	case WorkflowRunStatusRollbackFailed:
 		topic = TopicRunRollbackFailed
 		payload = WorkflowRunRollbackFailedPayload{WorkflowRunID: run.ID, FailedAt: run.UpdatedAt, FailureReason: reason}
+	case WorkflowRunStatusCancelling:
+		topic = TopicRunCancelling
+		payload = WorkflowRunCancellingPayload{
+			WorkflowRunID:   run.ID,
+			Reason:          run.CancelReason,
+			CancelledBy:     run.CancelledBy,
+			QuiesceDeadline: run.CancellingUntil,
+		}
+	case WorkflowRunStatusCancelled:
+		topic = TopicRunCancelled
+		payload = WorkflowRunCancelledPayload{
+			WorkflowRunID: run.ID,
+			CancelledAt:   run.CompletedAt,
+			Reason:        run.CancelReason,
+			CancelledBy:   run.CancelledBy,
+		}
 	default:
 		return
 	}
@@ -387,6 +403,9 @@ func workflowRunToProperties(r WorkflowRun) map[string]any {
 		"root_workflow_run_id":    r.RootWorkflowRunID,
 		"failure_pipeline_budget": r.FailurePipelineBudget,
 		"failure_pipelines_used":  r.FailurePipelinesUsed,
+		"cancelled_by":            r.CancelledBy,
+		"cancel_reason":           r.CancelReason,
+		"cancelling_until":        r.CancellingUntil,
 	}
 	if len(r.AgentRunIDs) > 0 {
 		props["agent_run_ids"] = append([]string(nil), r.AgentRunIDs...)
@@ -422,6 +441,9 @@ func workflowRunFromEntity(e entitygraph.Entity) WorkflowRun {
 		RootWorkflowRunID:     entitygraph.StringProp(e.Properties, "root_workflow_run_id"),
 		FailurePipelineBudget: intProp(e.Properties, "failure_pipeline_budget"),
 		FailurePipelinesUsed:  intProp(e.Properties, "failure_pipelines_used"),
+		CancelledBy:           entitygraph.StringProp(e.Properties, "cancelled_by"),
+		CancelReason:          entitygraph.StringProp(e.Properties, "cancel_reason"),
+		CancellingUntil:       entitygraph.StringProp(e.Properties, "cancelling_until"),
 	}
 	r.AgentRunIDs = stringSliceProp(e.Properties, "agent_run_ids")
 	r.FunctionJobIDs = stringSliceProp(e.Properties, "function_job_ids")

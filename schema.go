@@ -453,6 +453,13 @@ func DefaultWorkSchema() types.Schema {
 					// same child_run_id returns the current counter without
 					// double-incrementing. Stored JSON-encoded.
 					{Name: "counted_child_run_ids", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
+					// cancelled_by, cancel_reason, cancelling_until carry the
+					// FEAT-20260602-008 cancellation envelope onto the run row
+					// so it survives process restart and is visible to the
+					// closure SSE / list views.
+					{Name: "cancelled_by", Type: types.PropertyTypeString},
+					{Name: "cancel_reason", Type: types.PropertyTypeString},
+					{Name: "cancelling_until", Type: types.PropertyTypeString},
 				},
 				Relationships: []types.RelationshipDefinition{
 					{

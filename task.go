@@ -20,6 +20,7 @@ package codevaldwork
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
 	"github.com/aosanya/CodeValdSharedLib/eventbus"
@@ -343,6 +344,34 @@ type TaskManager interface {
 	// Returns [ErrWorkflowRunNotFound] when the run does not exist.
 	// A run with no Tasks is a valid no-op.
 	DeleteWorkflowRunArtifacts(ctx context.Context, agencyID, runID string) error
+
+	// CancelWorkflowRun flips an in_progress WorkflowRun to the cancelling
+	// transient state, persists the (cancelledBy, reason, quiesceDeadline)
+	// envelope on the run row, cascades work.task.cancelled to every
+	// non-terminal Task in the run, and publishes work.run.cancelling
+	// (FEAT-20260602-008).
+	//
+	// Idempotent: a repeated call on an already-cancelling run returns the
+	// stored cancellation envelope without re-firing events or shifting the
+	// quiesce deadline.
+	//
+	// Returns:
+	//   - [ErrWorkflowRunNotFound] when the run does not exist.
+	//   - [ErrCannotCancelTerminalRun] when the run is in any status other than
+	//     in_progress or cancelling.
+	CancelWorkflowRun(ctx context.Context, agencyID, runID, reason, cancelledBy string, quiesceDeadline time.Time) (WorkflowRun, error)
+
+	// FinalizeWorkflowRunCancellation transitions a cancelling WorkflowRun to
+	// the cancelled terminal state and publishes work.run.cancelled
+	// (FEAT-20260602-008). Best-effort: called by the gRPC handler's
+	// finalization goroutine after the quiesce deadline elapses, but may be
+	// called directly by tests.
+	//
+	// Idempotent: a call on a run that is no longer in cancelling status (e.g.
+	// already cancelled) returns the current run without effect.
+	//
+	// Returns [ErrWorkflowRunNotFound] when the run does not exist.
+	FinalizeWorkflowRunCancellation(ctx context.Context, agencyID, runID string) (WorkflowRun, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].

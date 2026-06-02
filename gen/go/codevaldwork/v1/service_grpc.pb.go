@@ -49,6 +49,7 @@ const (
 	TaskService_GetWorkflowRun_FullMethodName         = "/codevaldwork.v1.TaskService/GetWorkflowRun"
 	TaskService_ListWorkflowRuns_FullMethodName       = "/codevaldwork.v1.TaskService/ListWorkflowRuns"
 	TaskService_RollbackWorkflowRun_FullMethodName    = "/codevaldwork.v1.TaskService/RollbackWorkflowRun"
+	TaskService_CancelWorkflowRun_FullMethodName      = "/codevaldwork.v1.TaskService/CancelWorkflowRun"
 	TaskService_IncrementFailureBudget_FullMethodName = "/codevaldwork.v1.TaskService/IncrementFailureBudget"
 	TaskService_ImportProject_FullMethodName          = "/codevaldwork.v1.TaskService/ImportProject"
 )
@@ -186,6 +187,18 @@ type TaskServiceClient interface {
 	// rolling back), ABORTED (foreign run dependency — roll back the dependent
 	// run first).
 	RollbackWorkflowRun(ctx context.Context, in *RollbackWorkflowRunRequest, opts ...grpc.CallOption) (*RollbackWorkflowRunResponse, error)
+	// CancelWorkflowRun flips an in_progress WorkflowRun to the cancelling
+	// transient state, cascades work.task.cancelled to every non-terminal Task
+	// in the run, and publishes work.run.cancelling (FEAT-20260602-008). A
+	// separate finalization step elsewhere transitions the run to cancelled
+	// after the quiesce deadline elapses.
+	//
+	// Idempotent: a repeated call on an already-cancelling run returns the
+	// stored envelope without re-firing events or shifting the deadline.
+	//
+	// Errors: NOT_FOUND, FAILED_PRECONDITION (run is in any status other than
+	// in_progress or cancelling).
+	CancelWorkflowRun(ctx context.Context, in *CancelWorkflowRunRequest, opts ...grpc.CallOption) (*CancelWorkflowRunResponse, error)
 	// IncrementFailureBudget atomically increments the
 	// failure_pipelines_used counter on the root WorkflowRun identified by
 	// workflow_run_id. Cross calls this at failure-dispatch time, before
@@ -514,6 +527,16 @@ func (c *taskServiceClient) RollbackWorkflowRun(ctx context.Context, in *Rollbac
 	return out, nil
 }
 
+func (c *taskServiceClient) CancelWorkflowRun(ctx context.Context, in *CancelWorkflowRunRequest, opts ...grpc.CallOption) (*CancelWorkflowRunResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CancelWorkflowRunResponse)
+	err := c.cc.Invoke(ctx, TaskService_CancelWorkflowRun_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *taskServiceClient) IncrementFailureBudget(ctx context.Context, in *IncrementFailureBudgetRequest, opts ...grpc.CallOption) (*IncrementFailureBudgetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IncrementFailureBudgetResponse)
@@ -667,6 +690,18 @@ type TaskServiceServer interface {
 	// rolling back), ABORTED (foreign run dependency — roll back the dependent
 	// run first).
 	RollbackWorkflowRun(context.Context, *RollbackWorkflowRunRequest) (*RollbackWorkflowRunResponse, error)
+	// CancelWorkflowRun flips an in_progress WorkflowRun to the cancelling
+	// transient state, cascades work.task.cancelled to every non-terminal Task
+	// in the run, and publishes work.run.cancelling (FEAT-20260602-008). A
+	// separate finalization step elsewhere transitions the run to cancelled
+	// after the quiesce deadline elapses.
+	//
+	// Idempotent: a repeated call on an already-cancelling run returns the
+	// stored envelope without re-firing events or shifting the deadline.
+	//
+	// Errors: NOT_FOUND, FAILED_PRECONDITION (run is in any status other than
+	// in_progress or cancelling).
+	CancelWorkflowRun(context.Context, *CancelWorkflowRunRequest) (*CancelWorkflowRunResponse, error)
 	// IncrementFailureBudget atomically increments the
 	// failure_pipelines_used counter on the root WorkflowRun identified by
 	// workflow_run_id. Cross calls this at failure-dispatch time, before
@@ -784,6 +819,9 @@ func (UnimplementedTaskServiceServer) ListWorkflowRuns(context.Context, *ListWor
 }
 func (UnimplementedTaskServiceServer) RollbackWorkflowRun(context.Context, *RollbackWorkflowRunRequest) (*RollbackWorkflowRunResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RollbackWorkflowRun not implemented")
+}
+func (UnimplementedTaskServiceServer) CancelWorkflowRun(context.Context, *CancelWorkflowRunRequest) (*CancelWorkflowRunResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelWorkflowRun not implemented")
 }
 func (UnimplementedTaskServiceServer) IncrementFailureBudget(context.Context, *IncrementFailureBudgetRequest) (*IncrementFailureBudgetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IncrementFailureBudget not implemented")
@@ -1352,6 +1390,24 @@ func _TaskService_RollbackWorkflowRun_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaskService_CancelWorkflowRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelWorkflowRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).CancelWorkflowRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_CancelWorkflowRun_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).CancelWorkflowRun(ctx, req.(*CancelWorkflowRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TaskService_IncrementFailureBudget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IncrementFailureBudgetRequest)
 	if err := dec(in); err != nil {
@@ -1514,6 +1570,10 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RollbackWorkflowRun",
 			Handler:    _TaskService_RollbackWorkflowRun_Handler,
+		},
+		{
+			MethodName: "CancelWorkflowRun",
+			Handler:    _TaskService_CancelWorkflowRun_Handler,
 		},
 		{
 			MethodName: "IncrementFailureBudget",

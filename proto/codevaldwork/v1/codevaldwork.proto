@@ -181,6 +181,15 @@ enum WorkflowRunStatus {
   // ROLLBACK_FAILED indicates a partial rollback failure requiring operator
   // intervention; the rollback may be re-triggered after remediation.
   WORKFLOW_RUN_STATUS_ROLLBACK_FAILED  = 7;
+  // CANCELLING is the transient state entered when an operator-issued
+  // POST /workflow-runs/{id}/cancel quiesces in-flight handlers
+  // (FEAT-20260602-008). The run remains here until the quiesce deadline
+  // elapses and the finalization step transitions it to CANCELLED.
+  WORKFLOW_RUN_STATUS_CANCELLING       = 8;
+  // CANCELLED is the terminal state reached after the quiesce deadline.
+  // Distinct from FAILED so closure SSE and rollback can treat operator-
+  // cancelled runs differently (FEAT-20260602-008).
+  WORKFLOW_RUN_STATUS_CANCELLED        = 9;
 }
 
 // WorkflowRun anchors the closure of a single orchestrated execution.
@@ -220,6 +229,17 @@ message WorkflowRun {
   // failure_pipelines_used is the count of recovery activations charged to
   // this root run so far (FEAT-20260602-007).
   int32                     failure_pipelines_used  = 18;
+
+  // cancelled_by identifies the operator or service that issued the cancel
+  // (FEAT-20260602-008). Empty for runs that have never been cancelled.
+  string                    cancelled_by            = 19;
+  // cancel_reason is the human-readable reason supplied at cancel time
+  // (FEAT-20260602-008).
+  string                    cancel_reason           = 20;
+  // cancelling_until is the quiesce deadline — the finalization step
+  // transitions the run from CANCELLING → CANCELLED at or after this time
+  // (FEAT-20260602-008).
+  google.protobuf.Timestamp cancelling_until        = 21;
 }
 
 // Relationship is the Work-domain projection of a directed graph edge.

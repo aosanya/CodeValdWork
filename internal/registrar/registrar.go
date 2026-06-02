@@ -494,6 +494,20 @@ func workflowRunRoutes() []types.RouteInfo {
 				{URLParam: "workflowRunId", Field: "workflow_run_id"},
 			},
 		},
+		// FEAT-20260602-008: operator-issued mid-flight cancel.
+		// Flips the run to cancelling, cascades work.task.cancelled, then
+		// the server's finalization goroutine completes the cancellation.
+		{
+			Method:     "POST",
+			Pattern:    "/work/{agencyId}/workflow-runs/{workflowRunId}/cancel",
+			Capability: "cancel_workflow_run",
+			GrpcMethod: "/codevaldwork.v1.TaskService/CancelWorkflowRun",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "workflowRunId", Field: "workflow_run_id"},
+			},
+		},
 	}
 }
 

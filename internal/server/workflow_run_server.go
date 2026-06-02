@@ -120,6 +120,13 @@ func workflowRunToProto(r codevaldwork.WorkflowRun) *pb.WorkflowRun {
 		RootWorkflowRunId:     r.RootWorkflowRunID,
 		FailurePipelineBudget: int32(r.FailurePipelineBudget),
 		FailurePipelinesUsed:  int32(r.FailurePipelinesUsed),
+		CancelledBy:           r.CancelledBy,
+		CancelReason:          r.CancelReason,
+	}
+	if r.CancellingUntil != "" {
+		if ts, err := time.Parse(time.RFC3339, r.CancellingUntil); err == nil {
+			pt.CancellingUntil = timestamppb.New(ts)
+		}
 	}
 	if r.StartedAt != "" {
 		if ts, err := time.Parse(time.RFC3339, r.StartedAt); err == nil {
@@ -171,6 +178,10 @@ func workflowRunStatusToProto(s codevaldwork.WorkflowRunStatus) pb.WorkflowRunSt
 		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLING_BACK
 	case codevaldwork.WorkflowRunStatusRollbackFailed:
 		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLBACK_FAILED
+	case codevaldwork.WorkflowRunStatusCancelling:
+		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_CANCELLING
+	case codevaldwork.WorkflowRunStatusCancelled:
+		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_CANCELLED
 	default:
 		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_UNSPECIFIED
 	}

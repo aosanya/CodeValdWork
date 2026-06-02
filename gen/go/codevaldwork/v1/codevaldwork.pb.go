@@ -267,6 +267,15 @@ const (
 	// ROLLBACK_FAILED indicates a partial rollback failure requiring operator
 	// intervention; the rollback may be re-triggered after remediation.
 	WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLBACK_FAILED WorkflowRunStatus = 7
+	// CANCELLING is the transient state entered when an operator-issued
+	// POST /workflow-runs/{id}/cancel quiesces in-flight handlers
+	// (FEAT-20260602-008). The run remains here until the quiesce deadline
+	// elapses and the finalization step transitions it to CANCELLED.
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_CANCELLING WorkflowRunStatus = 8
+	// CANCELLED is the terminal state reached after the quiesce deadline.
+	// Distinct from FAILED so closure SSE and rollback can treat operator-
+	// cancelled runs differently (FEAT-20260602-008).
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_CANCELLED WorkflowRunStatus = 9
 )
 
 // Enum value maps for WorkflowRunStatus.
@@ -280,6 +289,8 @@ var (
 		5: "WORKFLOW_RUN_STATUS_ROLLED_BACK",
 		6: "WORKFLOW_RUN_STATUS_ROLLING_BACK",
 		7: "WORKFLOW_RUN_STATUS_ROLLBACK_FAILED",
+		8: "WORKFLOW_RUN_STATUS_CANCELLING",
+		9: "WORKFLOW_RUN_STATUS_CANCELLED",
 	}
 	WorkflowRunStatus_value = map[string]int32{
 		"WORKFLOW_RUN_STATUS_UNSPECIFIED":     0,
@@ -290,6 +301,8 @@ var (
 		"WORKFLOW_RUN_STATUS_ROLLED_BACK":     5,
 		"WORKFLOW_RUN_STATUS_ROLLING_BACK":    6,
 		"WORKFLOW_RUN_STATUS_ROLLBACK_FAILED": 7,
+		"WORKFLOW_RUN_STATUS_CANCELLING":      8,
+		"WORKFLOW_RUN_STATUS_CANCELLED":       9,
 	}
 )
 
@@ -1027,8 +1040,18 @@ type WorkflowRun struct {
 	// failure_pipelines_used is the count of recovery activations charged to
 	// this root run so far (FEAT-20260602-007).
 	FailurePipelinesUsed int32 `protobuf:"varint,18,opt,name=failure_pipelines_used,json=failurePipelinesUsed,proto3" json:"failure_pipelines_used,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// cancelled_by identifies the operator or service that issued the cancel
+	// (FEAT-20260602-008). Empty for runs that have never been cancelled.
+	CancelledBy string `protobuf:"bytes,19,opt,name=cancelled_by,json=cancelledBy,proto3" json:"cancelled_by,omitempty"`
+	// cancel_reason is the human-readable reason supplied at cancel time
+	// (FEAT-20260602-008).
+	CancelReason string `protobuf:"bytes,20,opt,name=cancel_reason,json=cancelReason,proto3" json:"cancel_reason,omitempty"`
+	// cancelling_until is the quiesce deadline — the finalization step
+	// transitions the run from CANCELLING → CANCELLED at or after this time
+	// (FEAT-20260602-008).
+	CancellingUntil *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=cancelling_until,json=cancellingUntil,proto3" json:"cancelling_until,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *WorkflowRun) Reset() {
@@ -1185,6 +1208,27 @@ func (x *WorkflowRun) GetFailurePipelinesUsed() int32 {
 		return x.FailurePipelinesUsed
 	}
 	return 0
+}
+
+func (x *WorkflowRun) GetCancelledBy() string {
+	if x != nil {
+		return x.CancelledBy
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetCancelReason() string {
+	if x != nil {
+		return x.CancelReason
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetCancellingUntil() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CancellingUntil
+	}
+	return nil
 }
 
 // Relationship is the Work-domain projection of a directed graph edge.
@@ -1371,7 +1415,7 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12&\n" +
-	"\x0fworkflow_run_id\x18\x11 \x01(\tR\rworkflowRunId\"\x98\x06\n" +
+	"\x0fworkflow_run_id\x18\x11 \x01(\tR\rworkflowRunId\"\xa7\a\n" +
 	"\vWorkflowRun\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12:\n" +
@@ -1394,7 +1438,10 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x16parent_workflow_run_id\x18\x0f \x01(\tR\x13parentWorkflowRunId\x12/\n" +
 	"\x14root_workflow_run_id\x18\x10 \x01(\tR\x11rootWorkflowRunId\x126\n" +
 	"\x17failure_pipeline_budget\x18\x11 \x01(\x05R\x15failurePipelineBudget\x124\n" +
-	"\x16failure_pipelines_used\x18\x12 \x01(\x05R\x14failurePipelinesUsed\"\xf3\x01\n" +
+	"\x16failure_pipelines_used\x18\x12 \x01(\x05R\x14failurePipelinesUsed\x12!\n" +
+	"\fcancelled_by\x18\x13 \x01(\tR\vcancelledBy\x12#\n" +
+	"\rcancel_reason\x18\x14 \x01(\tR\fcancelReason\x12E\n" +
+	"\x10cancelling_until\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampR\x0fcancellingUntil\"\xf3\x01\n" +
 	"\fRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
@@ -1432,7 +1479,7 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x13TODO_STATUS_BLOCKED\x10\x02\x12\x1a\n" +
 	"\x16TODO_STATUS_DISPATCHED\x10\x03\x12\x19\n" +
 	"\x15TODO_STATUS_COMPLETED\x10\x04\x12\x16\n" +
-	"\x12TODO_STATUS_FAILED\x10\x05*\xb5\x02\n" +
+	"\x12TODO_STATUS_FAILED\x10\x05*\xfc\x02\n" +
 	"\x11WorkflowRunStatus\x12#\n" +
 	"\x1fWORKFLOW_RUN_STATUS_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bWORKFLOW_RUN_STATUS_PENDING\x10\x01\x12#\n" +
@@ -1441,7 +1488,9 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x1aWORKFLOW_RUN_STATUS_FAILED\x10\x04\x12#\n" +
 	"\x1fWORKFLOW_RUN_STATUS_ROLLED_BACK\x10\x05\x12$\n" +
 	" WORKFLOW_RUN_STATUS_ROLLING_BACK\x10\x06\x12'\n" +
-	"#WORKFLOW_RUN_STATUS_ROLLBACK_FAILED\x10\aBGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
+	"#WORKFLOW_RUN_STATUS_ROLLBACK_FAILED\x10\a\x12\"\n" +
+	"\x1eWORKFLOW_RUN_STATUS_CANCELLING\x10\b\x12!\n" +
+	"\x1dWORKFLOW_RUN_STATUS_CANCELLED\x10\tBGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
 
 var (
 	file_codevaldwork_v1_codevaldwork_proto_rawDescOnce sync.Once
@@ -1494,13 +1543,14 @@ var file_codevaldwork_v1_codevaldwork_proto_depIdxs = []int32{
 	12, // 17: codevaldwork.v1.WorkflowRun.completed_at:type_name -> google.protobuf.Timestamp
 	12, // 18: codevaldwork.v1.WorkflowRun.created_at:type_name -> google.protobuf.Timestamp
 	12, // 19: codevaldwork.v1.WorkflowRun.updated_at:type_name -> google.protobuf.Timestamp
-	13, // 20: codevaldwork.v1.Relationship.properties:type_name -> google.protobuf.Struct
-	12, // 21: codevaldwork.v1.Relationship.created_at:type_name -> google.protobuf.Timestamp
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	12, // 20: codevaldwork.v1.WorkflowRun.cancelling_until:type_name -> google.protobuf.Timestamp
+	13, // 21: codevaldwork.v1.Relationship.properties:type_name -> google.protobuf.Struct
+	12, // 22: codevaldwork.v1.Relationship.created_at:type_name -> google.protobuf.Timestamp
+	23, // [23:23] is the sub-list for method output_type
+	23, // [23:23] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_codevaldwork_v1_codevaldwork_proto_init() }
