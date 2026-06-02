@@ -10,6 +10,18 @@ import (
 	pb "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1"
 )
 
+// CreateWorkflowRun implements pb.TaskServiceServer (FEAT-20260602-001).
+// Mints a new WorkflowRun anchor for an orchestrated execution. When the
+// request name is empty the server generates one; when it collides with
+// an existing run in the same agency the call fails with ALREADY_EXISTS.
+func (s *Server) CreateWorkflowRun(ctx context.Context, req *pb.CreateWorkflowRunRequest) (*pb.CreateWorkflowRunResponse, error) {
+	run, err := s.mgr.CreateWorkflowRun(ctx, req.AgencyId, req.Name, req.TriggerEvent, req.Initiator)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return &pb.CreateWorkflowRunResponse{Run: workflowRunToProto(run)}, nil
+}
+
 // GetWorkflowRun implements pb.TaskServiceServer (FEAT-20260601-001).
 // Returns the run plus its full closure: every Task, TaskTodo, and edge
 // reachable, plus the IDs of foreign (cross-service) entities the run
@@ -42,9 +54,11 @@ func (s *Server) GetWorkflowRun(ctx context.Context, req *pb.GetWorkflowRunReque
 	}, nil
 }
 
-// ListWorkflowRuns implements pb.TaskServiceServer.
+// ListWorkflowRuns implements pb.TaskServiceServer. When req.Name is
+// non-empty the result is filtered to runs whose name matches exactly
+// (at most one row, per the schema UniqueKey on name).
 func (s *Server) ListWorkflowRuns(ctx context.Context, req *pb.ListWorkflowRunsRequest) (*pb.ListWorkflowRunsResponse, error) {
-	runs, err := s.mgr.ListWorkflowRuns(ctx, req.AgencyId)
+	runs, err := s.mgr.ListWorkflowRuns(ctx, req.AgencyId, req.Name)
 	if err != nil {
 		return nil, mapError(err)
 	}
@@ -59,6 +73,7 @@ func workflowRunToProto(r codevaldwork.WorkflowRun) *pb.WorkflowRun {
 	pt := &pb.WorkflowRun{
 		Id:             r.ID,
 		AgencyId:       r.AgencyID,
+		Name:           r.Name,
 		Status:         workflowRunStatusToProto(r.Status),
 		TriggerEvent:   r.TriggerEvent,
 		Initiator:      r.Initiator,

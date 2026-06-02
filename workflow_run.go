@@ -7,25 +7,55 @@ package codevaldwork
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
 )
 
+// runNameSuffixBytes is the number of random bytes that feed the
+// 6-hex-char suffix in [generateRunName].
+const runNameSuffixBytes = 3
+
 // CreateWorkflowRun anchors a new orchestrated execution.
-func (m *taskManager) CreateWorkflowRun(ctx context.Context, agencyID, triggerEvent, initiator string) (WorkflowRun, error) {
-	now := time.Now().UTC().Format(time.RFC3339)
+//
+// If name is empty, the server generates one of the form
+// `pipeline-YYYY-MM-DD-HHMMSS-<6hex>`. If name is set, leading/trailing
+// whitespace is rejected (returns [ErrInvalidTask]); case is preserved.
+//
+// Returns [ErrWorkflowRunNameExists] when a run with the same
+// (agencyID, name) pair already exists — names are immutable, so the
+// caller should append a discriminator and retry.
+func (m *taskManager) CreateWorkflowRun(ctx context.Context, agencyID, name, triggerEvent, initiator string) (WorkflowRun, error) {
+	if name != "" && strings.TrimSpace(name) != name {
+		return WorkflowRun{}, fmt.Errorf("%w: WorkflowRun.Name must not have leading/trailing whitespace", ErrInvalidTask)
+	}
+	now := time.Now().UTC()
+	if name == "" {
+		name = generateRunName(now)
+	}
+	// CreateEntity does not enforce the schema [UniqueKey] (that is the
+	// contract of UpsertEntity). We need exact-match collision detection,
+	// not merge semantics, so explicitly look up by name first.
+	if existing, err := m.GetWorkflowRunByName(ctx, agencyID, name); err == nil && existing.ID != "" {
+		return WorkflowRun{}, ErrWorkflowRunNameExists
+	} else if err != nil && !errors.Is(err, ErrWorkflowRunNotFound) {
+		return WorkflowRun{}, fmt.Errorf("CreateWorkflowRun: name precheck: %w", err)
+	}
 	run := WorkflowRun{
 		AgencyID:     agencyID,
+		Name:         name,
 		Status:       WorkflowRunStatusPending,
 		TriggerEvent: triggerEvent,
 		Initiator:    initiator,
-		StartedAt:    now,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		StartedAt:    now.Format(time.RFC3339),
+		CreatedAt:    now.Format(time.RFC3339),
+		UpdatedAt:    now.Format(time.RFC3339),
 	}
 	created, err := m.dm.CreateEntity(ctx, entitygraph.CreateEntityRequest{
 		AgencyID:   agencyID,
@@ -36,6 +66,22 @@ func (m *taskManager) CreateWorkflowRun(ctx context.Context, agencyID, triggerEv
 		return WorkflowRun{}, fmt.Errorf("CreateWorkflowRun: %w", err)
 	}
 	return workflowRunFromEntity(created), nil
+}
+
+// generateRunName builds a deterministic-looking but collision-resistant
+// label of the form `pipeline-YYYY-MM-DD-HHMMSS-<6hex>`. The 6 hex chars
+// come from 3 random bytes — ~16M possibilities, so collisions across
+// 1k runs/day are negligible. Falls back to a UTC seconds-based suffix
+// if the OS RNG is unavailable.
+func generateRunName(now time.Time) string {
+	var buf [runNameSuffixBytes]byte
+	suffix := ""
+	if _, err := rand.Read(buf[:]); err == nil {
+		suffix = hex.EncodeToString(buf[:])
+	} else {
+		suffix = fmt.Sprintf("%06x", now.UnixNano()&0xFFFFFF)
+	}
+	return fmt.Sprintf("pipeline-%s-%s", now.UTC().Format("2006-01-02-150405"), suffix)
 }
 
 // GetWorkflowRun reads a single WorkflowRun entity.
@@ -55,7 +101,10 @@ func (m *taskManager) GetWorkflowRun(ctx context.Context, agencyID, runID string
 
 // ListWorkflowRuns returns every WorkflowRun in the agency, sorted newest first
 // by created_at. Returns an empty slice (not an error) when none exist.
-func (m *taskManager) ListWorkflowRuns(ctx context.Context, agencyID string) ([]WorkflowRun, error) {
+//
+// When name is non-empty, the result is filtered to runs whose Name field
+// matches exactly — at most one row given the schema [UniqueKey] on name.
+func (m *taskManager) ListWorkflowRuns(ctx context.Context, agencyID, name string) ([]WorkflowRun, error) {
 	entities, err := m.dm.ListEntities(ctx, entitygraph.EntityFilter{
 		AgencyID: agencyID,
 		TypeID:   workflowRunTypeID,
@@ -65,10 +114,30 @@ func (m *taskManager) ListWorkflowRuns(ctx context.Context, agencyID string) ([]
 	}
 	out := make([]WorkflowRun, 0, len(entities))
 	for _, e := range entities {
-		out = append(out, workflowRunFromEntity(e))
+		r := workflowRunFromEntity(e)
+		if name != "" && r.Name != name {
+			continue
+		}
+		out = append(out, r)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].CreatedAt > out[j].CreatedAt })
 	return out, nil
+}
+
+// GetWorkflowRunByName looks up a single run by its unique (agency, name)
+// pair. Returns [ErrWorkflowRunNotFound] when no match exists.
+func (m *taskManager) GetWorkflowRunByName(ctx context.Context, agencyID, name string) (WorkflowRun, error) {
+	if name == "" {
+		return WorkflowRun{}, fmt.Errorf("%w: WorkflowRun.Name is required", ErrInvalidTask)
+	}
+	runs, err := m.ListWorkflowRuns(ctx, agencyID, name)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	if len(runs) == 0 {
+		return WorkflowRun{}, ErrWorkflowRunNotFound
+	}
+	return runs[0], nil
 }
 
 // LinkTaskToRun writes the started_task edge from the run to a task.
@@ -224,6 +293,7 @@ func (m *taskManager) GetWorkflowRunClosure(ctx context.Context, agencyID, runID
 // workflowRunToProperties serialises a WorkflowRun for storage.
 func workflowRunToProperties(r WorkflowRun) map[string]any {
 	props := map[string]any{
+		"name":          r.Name,
 		"status":        string(r.Status),
 		"trigger_event": r.TriggerEvent,
 		"initiator":     r.Initiator,
@@ -250,6 +320,7 @@ func workflowRunFromEntity(e entitygraph.Entity) WorkflowRun {
 	r := WorkflowRun{
 		ID:           e.ID,
 		AgencyID:     e.AgencyID,
+		Name:         entitygraph.StringProp(e.Properties, "name"),
 		Status:       WorkflowRunStatus(entitygraph.StringProp(e.Properties, "status")),
 		TriggerEvent: entitygraph.StringProp(e.Properties, "trigger_event"),
 		Initiator:    entitygraph.StringProp(e.Properties, "initiator"),

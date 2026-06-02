@@ -18,7 +18,6 @@ integration tests remain.
 
 | Task ID | Title | Status | Depends On |
 |---|---|---|---|
-| FEAT-20260602-001 | `WorkflowRun.name` — optional caller-supplied label, server-generated when omitted; correlation handle for parallel runs and human-readable column in the `/workflow-runs` UI | 📋 Not Started | FEAT-20260601-001 |
 | FEAT-20260602-002 | `workflow_run_id` on Task / TaskTodo + every `work.*` event payload (Work sibling of the [Cross umbrella](../../../CodeValdCross/documentation/3-SofwareDevelopment/mvp-details/FEAT-20260602-001_workflow_run_id_propagation_umbrella.md)) | 📋 Not Started | FEAT-20260601-001, FEAT-20260602-001 in Functions (start-pipeline) |
 | FEAT-20260602-003 | `WorkflowRun` status state machine — Work becomes the authoritative writer; transitions on `work.task.assigned`, `*.failed`, declared `terminal_event` | 📋 Not Started | FEAT-20260602-002 |
 | FEAT-20260602-004 | Rollback / compensation semantics — design-only doc capturing the per-service contract for `POST /workflow-runs/{id}/rollback` | 📋 Design only | FEAT-20260602-002, FEAT-20260602-003 |

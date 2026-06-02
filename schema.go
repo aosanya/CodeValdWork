@@ -383,7 +383,15 @@ func DefaultWorkSchema() types.Schema {
 				// internal/registrar/registrar.go::workflowRunRoutes.
 				StorageCollection: "work_workflow_runs",
 				PublishEvents:     true,
+				// UniqueKey on name guarantees one (agency, name) pair maps to
+				// at most one run vertex, so callers can correlate by a
+				// caller-supplied or server-generated label.
+				UniqueKey: []string{"name"},
 				Properties: []types.PropertyDefinition{
+					// name is a caller-supplied or server-generated label
+					// unique per agency. Used as the correlation handle by
+					// test scripts and the headline column in the UI list.
+					{Name: "name", Type: types.PropertyTypeString},
 					// status is the run lifecycle state: pending, in_progress,
 					// completed, failed, rolled_back.
 					{Name: "status", Type: types.PropertyTypeString},

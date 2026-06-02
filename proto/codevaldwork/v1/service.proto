@@ -152,6 +152,14 @@ service TaskService {
 
   // ── Workflow runs (FEAT-20260601-001) ──────────────────────────────────────
 
+  // CreateWorkflowRun anchors a new orchestrated execution. The returned run
+  // is in WORKFLOW_RUN_STATUS_PENDING. When the request name is empty the
+  // server generates one of the form `pipeline-YYYY-MM-DD-HHMMSS-<6hex>`.
+  // Error: ALREADY_EXISTS when (agency_id, name) collides with an existing
+  // run; INVALID_ARGUMENT when name has leading/trailing whitespace
+  // (FEAT-20260602-001).
+  rpc CreateWorkflowRun(CreateWorkflowRunRequest) returns (CreateWorkflowRunResponse);
+
   // GetWorkflowRun reads the run vertex plus its full closure: every Task,
   // TaskTodo, and edge reachable from the run, plus the IDs of foreign
   // (cross-service) entities the run referenced.
@@ -159,6 +167,8 @@ service TaskService {
   rpc GetWorkflowRun(GetWorkflowRunRequest) returns (GetWorkflowRunResponse);
 
   // ListWorkflowRuns returns every WorkflowRun in the agency, newest first.
+  // When request.name is non-empty the result is filtered to runs whose
+  // name matches exactly (at most one row) (FEAT-20260602-001).
   rpc ListWorkflowRuns(ListWorkflowRunsRequest) returns (ListWorkflowRunsResponse);
 
   // ── Markdown import ────────────────────────────────────────────────────────
@@ -407,6 +417,25 @@ message TraverseRelationshipsResponse {
 
 // ── Workflow run messages (FEAT-20260601-001) ─────────────────────────────────
 
+// CreateWorkflowRunRequest mints a new WorkflowRun anchor for an
+// orchestrated execution (FEAT-20260602-001).
+message CreateWorkflowRunRequest {
+  string agency_id     = 1;
+  // name is an optional caller-supplied label, unique per agency.
+  // When empty the server generates one.
+  string name          = 2;
+  // trigger_event names the event that started the run (e.g.
+  // "work.pipeline.requested"). Free-form; persisted as-is.
+  string trigger_event = 3;
+  // initiator is an opaque caller identifier (operator email, service
+  // name, etc.) — may be empty.
+  string initiator     = 4;
+}
+
+message CreateWorkflowRunResponse {
+  WorkflowRun run = 1;
+}
+
 message GetWorkflowRunRequest {
   string agency_id       = 1;
   string workflow_run_id = 2;
@@ -426,6 +455,9 @@ message GetWorkflowRunResponse {
 
 message ListWorkflowRunsRequest {
   string agency_id = 1;
+  // name optionally filters the result to runs whose name matches exactly.
+  // At most one row given the schema UniqueKey on name (FEAT-20260602-001).
+  string name      = 2;
 }
 message ListWorkflowRunsResponse {
   repeated WorkflowRun runs = 1;

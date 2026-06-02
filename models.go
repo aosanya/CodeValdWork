@@ -415,6 +415,13 @@ type WorkflowRun struct {
 	// AgencyID is the agency that owns this run.
 	AgencyID string `json:"agency_id"`
 
+	// Name is a caller-supplied or server-generated human-readable label,
+	// unique per agency. Acts as the correlation handle for test scripts
+	// that publish a trigger event and then need to find the run that
+	// resulted from it; surfaces as the headline column in the
+	// `/workflow-runs` UI list.
+	Name string `json:"name"`
+
 	// Status is the current lifecycle state.
 	Status WorkflowRunStatus `json:"status"`
 

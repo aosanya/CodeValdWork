@@ -183,6 +183,10 @@ message WorkflowRun {
   google.protobuf.Timestamp completed_at    = 11;
   google.protobuf.Timestamp created_at      = 12;
   google.protobuf.Timestamp updated_at      = 13;
+  // name is a caller-supplied or server-generated label unique per agency,
+  // used as the correlation handle by test scripts and the headline column
+  // in the WorkflowRuns UI list (FEAT-20260602-001).
+  string                    name            = 14;
 }
 
 // Relationship is the Work-domain projection of a directed graph edge.
