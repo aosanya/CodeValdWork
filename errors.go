@@ -91,6 +91,19 @@ var ErrImportJobNotFound = errors.New("import job not found")
 // cancelled).
 var ErrImportJobNotCancellable = errors.New("import job is not cancellable")
 
+// ErrRollbackConflict is returned by [TaskManager.RollbackWorkflowRun] when
+// the run is already in the rolling_back transient state (double-rollback).
+// The caller should wait for the current rollback to complete or reach
+// rollback_failed before re-triggering.
+var ErrRollbackConflict = errors.New("workflow run rollback already in progress")
+
+// ErrForeignRunDependency is returned by [TaskManager.RollbackWorkflowRun]
+// when a Task inside the run closure has a depends_on edge pointing to a Task
+// that belongs to a different WorkflowRun. Deleting the Task would break the
+// other run's dependency graph. The caller must roll back the dependent run
+// first, then re-trigger this rollback.
+var ErrForeignRunDependency = errors.New("run closure contains a task depended on by another workflow run")
+
 // ErrBlocked is the sentinel returned by [TaskManager.UpdateTask] when a
 // pending → in_progress transition is rejected because the task has one or
 // more non-terminal `blocks`-inbound predecessors. Match it with

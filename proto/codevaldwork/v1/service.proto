@@ -171,6 +171,15 @@ service TaskService {
   // name matches exactly (at most one row) (FEAT-20260602-001).
   rpc ListWorkflowRuns(ListWorkflowRunsRequest) returns (ListWorkflowRunsResponse);
 
+  // RollbackWorkflowRun initiates the compensation sequence for the given run
+  // (FEAT-20260602-004). Valid only when the run is in failed or completed
+  // status. Transitions: failed/completed → rolling_back → rolled_back (or
+  // rollback_failed on partial failure).
+  // Errors: NOT_FOUND, FAILED_PRECONDITION (wrong source status or already
+  // rolling back), ABORTED (foreign run dependency — roll back the dependent
+  // run first).
+  rpc RollbackWorkflowRun(RollbackWorkflowRunRequest) returns (RollbackWorkflowRunResponse);
+
   // ── Markdown import ────────────────────────────────────────────────────────
 
   // ImportProject parses a JSON document describing a project and creates a
@@ -469,6 +478,23 @@ message ListWorkflowRunsRequest {
 }
 message ListWorkflowRunsResponse {
   repeated WorkflowRun runs = 1;
+}
+
+// ── Rollback messages (FEAT-20260602-004) ────────────────────────────────────
+
+message RollbackWorkflowRunRequest {
+  string agency_id       = 1;
+  string workflow_run_id = 2;
+  // reason is a human-readable explanation stored on the run and included in
+  // the work.run.rolling_back and work.run.rolled_back events.
+  string reason          = 3;
+}
+
+message RollbackWorkflowRunResponse {
+  // run carries the updated WorkflowRun. On success the status is
+  // WORKFLOW_RUN_STATUS_ROLLED_BACK; on partial failure it is
+  // WORKFLOW_RUN_STATUS_ROLLBACK_FAILED.
+  WorkflowRun run = 1;
 }
 
 // ── Markdown import messages ──────────────────────────────────────────────────

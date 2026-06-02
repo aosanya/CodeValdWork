@@ -53,6 +53,10 @@ const (
 	// (e.g. after choosing a branch name). Currently only branch_name is patched.
 	// Payload: [TaskUpdatePayload].
 	TopicTaskUpdate = "work.task.update"
+
+	// TopicTaskRolledBack fires once per Task deleted by [DeleteWorkflowRunArtifacts].
+	// Payload: [TaskRolledBackPayload].
+	TopicTaskRolledBack = "work.task.rolled_back"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -67,6 +71,10 @@ func AllTopics() []string {
 		TopicRelationshipCreated,
 		TopicTodoDispatched,
 		TopicTodoCompleted,
+		TopicTaskRolledBack,
+		TopicRunRollingBack,
+		TopicRunRolledBack,
+		TopicRunRollbackFailed,
 	)
 }
 
@@ -123,6 +131,13 @@ type TaskFailedPayload struct {
 	FailedBy TaskFailedBy
 	// WorkflowRunID propagates the run anchor onto every work.* event payload.
 	WorkflowRunID string `json:"workflow_run_id,omitempty"`
+}
+
+// TaskRolledBackPayload is the [Event.Payload] for [TopicTaskRolledBack].
+// Emitted once per Task deleted by [DeleteWorkflowRunArtifacts].
+type TaskRolledBackPayload struct {
+	TaskID        string `json:"task_id"`
+	WorkflowRunID string `json:"workflow_run_id"`
 }
 
 // TaskAssignedPayload is the [Event.Payload] for [TopicTaskAssigned].
@@ -207,6 +222,12 @@ const (
 	TopicRunFailed = "work.run.failed"
 	// TopicRunRolledBack fires when a WorkflowRun reaches the rolled_back terminal state.
 	TopicRunRolledBack = "work.run.rolled_back"
+	// TopicRunRollingBack fires when the rollback coordinator begins compensating artifacts.
+	// In-flight handlers should check the run status and quiesce on receiving this event.
+	TopicRunRollingBack = "work.run.rolling_back"
+	// TopicRunRollbackFailed fires when the rollback coordinator encountered a partial
+	// failure and the run reached rollback_failed. Operator intervention is required.
+	TopicRunRollbackFailed = "work.run.rollback_failed"
 )
 
 // WorkflowRunInProgressPayload is the Payload for [TopicRunInProgress].
@@ -233,6 +254,22 @@ type WorkflowRunFailedPayload struct {
 type WorkflowRunRolledBackPayload struct {
 	WorkflowRunID string `json:"workflow_run_id"`
 	RolledBackAt  string `json:"rolled_back_at"`
+	Reason        string `json:"reason,omitempty"`
+}
+
+// WorkflowRunRollingBackPayload is the Payload for [TopicRunRollingBack].
+// In-flight handlers that receive this should check the run status and stop
+// further work on behalf of this run.
+type WorkflowRunRollingBackPayload struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	Reason        string `json:"reason,omitempty"`
+}
+
+// WorkflowRunRollbackFailedPayload is the Payload for [TopicRunRollbackFailed].
+type WorkflowRunRollbackFailedPayload struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	FailedAt      string `json:"failed_at"`
+	FailureReason string `json:"failure_reason,omitempty"`
 }
 
 // ConsumedTopics is the closed list of topics CodeValdWork subscribes to.

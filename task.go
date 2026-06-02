@@ -286,14 +286,43 @@ type TaskManager interface {
 	GetWorkflowRunClosure(ctx context.Context, agencyID, runID string) (WorkflowRunClosure, error)
 
 	// UpdateWorkflowRunStatus transitions a WorkflowRun to a new lifecycle status.
-	// Valid transitions:
-	//   pending      → in_progress  (first work.task.assigned for the run)
-	//   in_progress  → completed    (terminal_event matched)
-	//   in_progress  → failed       (any failure event)
-	//   failed       → rolled_back  (explicit rollback request — FEAT-20260602-004)
-	// All other transitions return [ErrInvalidRunStatusTransition].
-	// reason is stored in the failure_reason field when transitioning to failed.
+	// Valid transitions are defined by [WorkflowRunStatus.CanTransitionTo].
+	// reason is stored in the failure_reason field when transitioning to failed
+	// or rollback_failed.
 	UpdateWorkflowRunStatus(ctx context.Context, agencyID, runID string, newStatus WorkflowRunStatus, reason string) (WorkflowRun, error)
+
+	// RollbackWorkflowRun orchestrates the compensation sequence for the given
+	// run. Valid only when the run is in failed or completed status.
+	//
+	// Sequence:
+	//  1. Transitions run → rolling_back; publishes work.run.rolling_back.
+	//  2. Calls per-service compensation stubs (cross-service legs are no-ops
+	//     until each service implements DELETE /by-workflow-run/{id}).
+	//  3. Hard-deletes CodeValdWork artifacts (Tasks + TaskTodos + their edges)
+	//     via [DeleteWorkflowRunArtifacts].
+	//  4. On success: transitions run → rolled_back; publishes work.run.rolled_back.
+	//     On partial failure: transitions run → rollback_failed; publishes
+	//     work.run.rollback_failed. Operator can re-trigger after remediation.
+	//
+	// Returns [ErrWorkflowRunNotFound] when the run does not exist,
+	// [ErrRollbackConflict] when already rolling_back,
+	// [ErrInvalidRunStatusTransition] for any other disallowed source status,
+	// [ErrForeignRunDependency] when a Task in the closure is depended on by
+	// a Task from a different run (the dependent run must be rolled back first).
+	RollbackWorkflowRun(ctx context.Context, agencyID, runID, reason string) (WorkflowRun, error)
+
+	// DeleteWorkflowRunArtifacts hard-deletes every Task and TaskTodo whose
+	// workflow_run_id matches runID, along with all edges incident on those
+	// entities (started_task, started_todo, has_todo, assigned_to, depends_on).
+	// Emits work.task.rolled_back for each deleted Task for observability.
+	//
+	// This is the CodeValdWork leg of the per-service DELETE contract described
+	// in FEAT-20260602-004. Called by [RollbackWorkflowRun] as part of the
+	// orchestration; may also be called directly for operator-driven remediation.
+	//
+	// Returns [ErrWorkflowRunNotFound] when the run does not exist.
+	// A run with no Tasks is a valid no-op.
+	DeleteWorkflowRunArtifacts(ctx context.Context, agencyID, runID string) error
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].

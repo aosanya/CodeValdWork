@@ -37,8 +37,12 @@ func mapError(err error) error {
 	case errors.Is(err, codevaldwork.ErrInvalidRelationship):
 		return invalidRelationshipStatus(err)
 	case errors.Is(err, codevaldwork.ErrInvalidStatusTransition),
-		errors.Is(err, codevaldwork.ErrWorkflowRunMismatch):
+		errors.Is(err, codevaldwork.ErrInvalidRunStatusTransition),
+		errors.Is(err, codevaldwork.ErrWorkflowRunMismatch),
+		errors.Is(err, codevaldwork.ErrRollbackConflict):
 		return status.Error(codes.FailedPrecondition, err.Error())
+	case errors.Is(err, codevaldwork.ErrForeignRunDependency):
+		return status.Error(codes.Aborted, err.Error())
 	case errors.Is(err, codevaldwork.ErrInvalidTask),
 		errors.Is(err, codevaldwork.ErrInvalidImport):
 		return status.Error(codes.InvalidArgument, err.Error())

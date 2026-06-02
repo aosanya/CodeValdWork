@@ -105,6 +105,17 @@ func workflowRunToProto(r codevaldwork.WorkflowRun) *pb.WorkflowRun {
 	return pt
 }
 
+// RollbackWorkflowRun implements pb.TaskServiceServer (FEAT-20260602-004).
+// Orchestrates the compensation sequence for the given run. Valid only when
+// the run is in failed or completed status.
+func (s *Server) RollbackWorkflowRun(ctx context.Context, req *pb.RollbackWorkflowRunRequest) (*pb.RollbackWorkflowRunResponse, error) {
+	run, err := s.mgr.RollbackWorkflowRun(ctx, req.AgencyId, req.WorkflowRunId, req.Reason)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return &pb.RollbackWorkflowRunResponse{Run: workflowRunToProto(run)}, nil
+}
+
 func workflowRunStatusToProto(s codevaldwork.WorkflowRunStatus) pb.WorkflowRunStatus {
 	switch s {
 	case codevaldwork.WorkflowRunStatusPending:
@@ -117,6 +128,10 @@ func workflowRunStatusToProto(s codevaldwork.WorkflowRunStatus) pb.WorkflowRunSt
 		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_FAILED
 	case codevaldwork.WorkflowRunStatusRolledBack:
 		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLED_BACK
+	case codevaldwork.WorkflowRunStatusRollingBack:
+		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLING_BACK
+	case codevaldwork.WorkflowRunStatusRollbackFailed:
+		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLBACK_FAILED
 	default:
 		return pb.WorkflowRunStatus_WORKFLOW_RUN_STATUS_UNSPECIFIED
 	}
