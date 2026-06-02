@@ -14,8 +14,17 @@ import (
 // The unit tests for the Go-domain layer cover the manager itself; here
 // we exercise the proto translation + error mapping path.
 func newTestServer() pb.TaskServiceServer {
+	srv, _ := newTestServerWithManager()
+	return srv
+}
+
+// newTestServerWithManager returns both the gRPC server façade and the
+// underlying manager so handler tests can drive entity state via the manager
+// directly (e.g. seed a run into the failed status before exercising a
+// state-machine-gated handler).
+func newTestServerWithManager() (pb.TaskServiceServer, codevaldwork.TaskManager) {
 	mgr := newInMemoryManager()
-	return server.New(mgr)
+	return server.New(mgr), mgr
 }
 
 // newInMemoryManager returns a TaskManager backed by the package's local
