@@ -422,6 +422,26 @@ const (
 	WorkflowRunStatusRolledBack WorkflowRunStatus = "rolled_back"
 )
 
+// CanTransitionTo reports whether moving from the current status to next is
+// a valid state-machine step.
+//
+//	pending      → in_progress   (first task assigned)
+//	in_progress  → completed     (terminal event matched)
+//	in_progress  → failed        (any failure event)
+//	failed       → rolled_back   (explicit rollback — FEAT-20260602-004)
+func (s WorkflowRunStatus) CanTransitionTo(next WorkflowRunStatus) bool {
+	switch s {
+	case WorkflowRunStatusPending:
+		return next == WorkflowRunStatusInProgress
+	case WorkflowRunStatusInProgress:
+		return next == WorkflowRunStatusCompleted || next == WorkflowRunStatusFailed
+	case WorkflowRunStatusFailed:
+		return next == WorkflowRunStatusRolledBack
+	default:
+		return false // completed, rolled_back are terminal
+	}
+}
+
 // WorkflowRun anchors the closure of a single orchestrated execution.
 // Created by a producer (e.g. the next-task function) at run start; linked
 // to every Task / TaskTodo it produces via started_task / started_todo edges.
@@ -461,6 +481,12 @@ type WorkflowRun struct {
 
 	// BranchNames are git branch names linked to this run.
 	BranchNames []string `json:"branch_names,omitempty"`
+
+	// TerminalEvent is an optional colon-delimited condition
+	// (topic:field=value:field=value) that, when matched by an inbound event,
+	// transitions the run from in_progress to completed automatically.
+	// Empty means the run never auto-completes — operator must POST /complete.
+	TerminalEvent string `json:"terminal_event,omitempty"`
 
 	// StartedAt is the RFC 3339 timestamp the run began execution.
 	StartedAt string `json:"started_at,omitempty"`

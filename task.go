@@ -284,6 +284,16 @@ type TaskManager interface {
 	// GetWorkflowRunClosure returns the run plus every entity and edge
 	// reachable from it. See [WorkflowRunClosure] for the closure semantics.
 	GetWorkflowRunClosure(ctx context.Context, agencyID, runID string) (WorkflowRunClosure, error)
+
+	// UpdateWorkflowRunStatus transitions a WorkflowRun to a new lifecycle status.
+	// Valid transitions:
+	//   pending      → in_progress  (first work.task.assigned for the run)
+	//   in_progress  → completed    (terminal_event matched)
+	//   in_progress  → failed       (any failure event)
+	//   failed       → rolled_back  (explicit rollback request — FEAT-20260602-004)
+	// All other transitions return [ErrInvalidRunStatusTransition].
+	// reason is stored in the failure_reason field when transitioning to failed.
+	UpdateWorkflowRunStatus(ctx context.Context, agencyID, runID string, newStatus WorkflowRunStatus, reason string) (WorkflowRun, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].

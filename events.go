@@ -197,12 +197,61 @@ type TaskUpdatePayload struct {
 	BranchName string `json:"branch_name,omitempty"`
 }
 
+// WorkflowRun status event topic constants.
+const (
+	// TopicRunInProgress fires when a WorkflowRun first transitions to in_progress.
+	TopicRunInProgress = "work.run.in_progress"
+	// TopicRunCompleted fires when a WorkflowRun reaches the completed terminal state.
+	TopicRunCompleted = "work.run.completed"
+	// TopicRunFailed fires when a WorkflowRun reaches the failed terminal state.
+	TopicRunFailed = "work.run.failed"
+	// TopicRunRolledBack fires when a WorkflowRun reaches the rolled_back terminal state.
+	TopicRunRolledBack = "work.run.rolled_back"
+)
+
+// WorkflowRunInProgressPayload is the Payload for [TopicRunInProgress].
+type WorkflowRunInProgressPayload struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	StartedAt     string `json:"started_at"`
+}
+
+// WorkflowRunCompletedPayload is the Payload for [TopicRunCompleted].
+type WorkflowRunCompletedPayload struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	CompletedAt   string `json:"completed_at"`
+	DurationMs    int64  `json:"duration_ms,omitempty"`
+}
+
+// WorkflowRunFailedPayload is the Payload for [TopicRunFailed].
+type WorkflowRunFailedPayload struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	FailedAt      string `json:"failed_at"`
+	FailureReason string `json:"failure_reason,omitempty"`
+}
+
+// WorkflowRunRolledBackPayload is the Payload for [TopicRunRolledBack].
+type WorkflowRunRolledBackPayload struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	RolledBackAt  string `json:"rolled_back_at"`
+}
+
 // ConsumedTopics is the closed list of topics CodeValdWork subscribes to.
 //
-// TopicTaskCompleted is a self-subscription: CodeValdWork publishes
-// work.task.completed and also consumes it to drive the auto-unblock cascade
-// in [server.TaskEventDispatcher]. The handler is idempotent so re-delivery
-// (and self-receipts) are safely no-op.
+// Self-subscriptions (work.task.completed, work.task.assigned, work.task.failed)
+// allow intra-service coordination without importing other service packages.
 func ConsumedTopics() []string {
-	return []string{TopicTaskUpdate, TopicTaskCompleted}
+	return []string{
+		TopicTaskUpdate,
+		TopicTaskCompleted,
+		TopicTaskAssigned, // self-subscription: pending→in_progress run transition
+		TopicTaskFailed,   // self-subscription: in_progress→failed run transition
+		// External failure topics for run → failed transitions:
+		"functions.job.failed",
+		"ai.run.failed",
+		"git.merge.failed",
+		// External completion topics for terminal_event matching:
+		"functions.job.completed",
+		"git.merge.completed",
+		"ai.run.completed",
+	}
 }

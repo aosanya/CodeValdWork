@@ -419,6 +419,11 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "agent_run_ids", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
 					{Name: "function_job_ids", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
 					{Name: "branch_names", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
+					// terminal_event is a colon-delimited condition that auto-completes the run.
+					// Format: "topic:field=value:field=value"
+					// Example: "functions.job.completed:function_name=merge-flutter-branch:status=ok"
+					// Empty = run never auto-completes (operator must close it manually).
+					{Name: "terminal_event", Type: types.PropertyTypeString},
 					{Name: "started_at", Type: types.PropertyTypeString},
 					{Name: "completed_at", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
