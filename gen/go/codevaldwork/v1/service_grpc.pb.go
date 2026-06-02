@@ -19,37 +19,38 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TaskService_CreateTask_FullMethodName            = "/codevaldwork.v1.TaskService/CreateTask"
-	TaskService_GetTask_FullMethodName               = "/codevaldwork.v1.TaskService/GetTask"
-	TaskService_GetTaskByName_FullMethodName         = "/codevaldwork.v1.TaskService/GetTaskByName"
-	TaskService_UpdateTask_FullMethodName            = "/codevaldwork.v1.TaskService/UpdateTask"
-	TaskService_DeleteTask_FullMethodName            = "/codevaldwork.v1.TaskService/DeleteTask"
-	TaskService_ListTasks_FullMethodName             = "/codevaldwork.v1.TaskService/ListTasks"
-	TaskService_AssignTask_FullMethodName            = "/codevaldwork.v1.TaskService/AssignTask"
-	TaskService_UnassignTask_FullMethodName          = "/codevaldwork.v1.TaskService/UnassignTask"
-	TaskService_FailTodo_FullMethodName              = "/codevaldwork.v1.TaskService/FailTodo"
-	TaskService_UpsertAgent_FullMethodName           = "/codevaldwork.v1.TaskService/UpsertAgent"
-	TaskService_GetAgent_FullMethodName              = "/codevaldwork.v1.TaskService/GetAgent"
-	TaskService_ListAgents_FullMethodName            = "/codevaldwork.v1.TaskService/ListAgents"
-	TaskService_CreateTaskInProject_FullMethodName   = "/codevaldwork.v1.TaskService/CreateTaskInProject"
-	TaskService_CreateProject_FullMethodName         = "/codevaldwork.v1.TaskService/CreateProject"
-	TaskService_GetProject_FullMethodName            = "/codevaldwork.v1.TaskService/GetProject"
-	TaskService_GetProjectByName_FullMethodName      = "/codevaldwork.v1.TaskService/GetProjectByName"
-	TaskService_UpdateProject_FullMethodName         = "/codevaldwork.v1.TaskService/UpdateProject"
-	TaskService_DeleteProject_FullMethodName         = "/codevaldwork.v1.TaskService/DeleteProject"
-	TaskService_ListProjects_FullMethodName          = "/codevaldwork.v1.TaskService/ListProjects"
-	TaskService_AddTaskToProject_FullMethodName      = "/codevaldwork.v1.TaskService/AddTaskToProject"
-	TaskService_RemoveTaskFromProject_FullMethodName = "/codevaldwork.v1.TaskService/RemoveTaskFromProject"
-	TaskService_ListTasksInProject_FullMethodName    = "/codevaldwork.v1.TaskService/ListTasksInProject"
-	TaskService_ListProjectsForTask_FullMethodName   = "/codevaldwork.v1.TaskService/ListProjectsForTask"
-	TaskService_CreateRelationship_FullMethodName    = "/codevaldwork.v1.TaskService/CreateRelationship"
-	TaskService_DeleteRelationship_FullMethodName    = "/codevaldwork.v1.TaskService/DeleteRelationship"
-	TaskService_TraverseRelationships_FullMethodName = "/codevaldwork.v1.TaskService/TraverseRelationships"
-	TaskService_CreateWorkflowRun_FullMethodName     = "/codevaldwork.v1.TaskService/CreateWorkflowRun"
-	TaskService_GetWorkflowRun_FullMethodName        = "/codevaldwork.v1.TaskService/GetWorkflowRun"
-	TaskService_ListWorkflowRuns_FullMethodName      = "/codevaldwork.v1.TaskService/ListWorkflowRuns"
-	TaskService_RollbackWorkflowRun_FullMethodName   = "/codevaldwork.v1.TaskService/RollbackWorkflowRun"
-	TaskService_ImportProject_FullMethodName         = "/codevaldwork.v1.TaskService/ImportProject"
+	TaskService_CreateTask_FullMethodName             = "/codevaldwork.v1.TaskService/CreateTask"
+	TaskService_GetTask_FullMethodName                = "/codevaldwork.v1.TaskService/GetTask"
+	TaskService_GetTaskByName_FullMethodName          = "/codevaldwork.v1.TaskService/GetTaskByName"
+	TaskService_UpdateTask_FullMethodName             = "/codevaldwork.v1.TaskService/UpdateTask"
+	TaskService_DeleteTask_FullMethodName             = "/codevaldwork.v1.TaskService/DeleteTask"
+	TaskService_ListTasks_FullMethodName              = "/codevaldwork.v1.TaskService/ListTasks"
+	TaskService_AssignTask_FullMethodName             = "/codevaldwork.v1.TaskService/AssignTask"
+	TaskService_UnassignTask_FullMethodName           = "/codevaldwork.v1.TaskService/UnassignTask"
+	TaskService_FailTodo_FullMethodName               = "/codevaldwork.v1.TaskService/FailTodo"
+	TaskService_UpsertAgent_FullMethodName            = "/codevaldwork.v1.TaskService/UpsertAgent"
+	TaskService_GetAgent_FullMethodName               = "/codevaldwork.v1.TaskService/GetAgent"
+	TaskService_ListAgents_FullMethodName             = "/codevaldwork.v1.TaskService/ListAgents"
+	TaskService_CreateTaskInProject_FullMethodName    = "/codevaldwork.v1.TaskService/CreateTaskInProject"
+	TaskService_CreateProject_FullMethodName          = "/codevaldwork.v1.TaskService/CreateProject"
+	TaskService_GetProject_FullMethodName             = "/codevaldwork.v1.TaskService/GetProject"
+	TaskService_GetProjectByName_FullMethodName       = "/codevaldwork.v1.TaskService/GetProjectByName"
+	TaskService_UpdateProject_FullMethodName          = "/codevaldwork.v1.TaskService/UpdateProject"
+	TaskService_DeleteProject_FullMethodName          = "/codevaldwork.v1.TaskService/DeleteProject"
+	TaskService_ListProjects_FullMethodName           = "/codevaldwork.v1.TaskService/ListProjects"
+	TaskService_AddTaskToProject_FullMethodName       = "/codevaldwork.v1.TaskService/AddTaskToProject"
+	TaskService_RemoveTaskFromProject_FullMethodName  = "/codevaldwork.v1.TaskService/RemoveTaskFromProject"
+	TaskService_ListTasksInProject_FullMethodName     = "/codevaldwork.v1.TaskService/ListTasksInProject"
+	TaskService_ListProjectsForTask_FullMethodName    = "/codevaldwork.v1.TaskService/ListProjectsForTask"
+	TaskService_CreateRelationship_FullMethodName     = "/codevaldwork.v1.TaskService/CreateRelationship"
+	TaskService_DeleteRelationship_FullMethodName     = "/codevaldwork.v1.TaskService/DeleteRelationship"
+	TaskService_TraverseRelationships_FullMethodName  = "/codevaldwork.v1.TaskService/TraverseRelationships"
+	TaskService_CreateWorkflowRun_FullMethodName      = "/codevaldwork.v1.TaskService/CreateWorkflowRun"
+	TaskService_GetWorkflowRun_FullMethodName         = "/codevaldwork.v1.TaskService/GetWorkflowRun"
+	TaskService_ListWorkflowRuns_FullMethodName       = "/codevaldwork.v1.TaskService/ListWorkflowRuns"
+	TaskService_RollbackWorkflowRun_FullMethodName    = "/codevaldwork.v1.TaskService/RollbackWorkflowRun"
+	TaskService_IncrementFailureBudget_FullMethodName = "/codevaldwork.v1.TaskService/IncrementFailureBudget"
+	TaskService_ImportProject_FullMethodName          = "/codevaldwork.v1.TaskService/ImportProject"
 )
 
 // TaskServiceClient is the client API for TaskService service.
@@ -185,6 +186,15 @@ type TaskServiceClient interface {
 	// rolling back), ABORTED (foreign run dependency — roll back the dependent
 	// run first).
 	RollbackWorkflowRun(ctx context.Context, in *RollbackWorkflowRunRequest, opts ...grpc.CallOption) (*RollbackWorkflowRunResponse, error)
+	// IncrementFailureBudget atomically increments the
+	// failure_pipelines_used counter on the root WorkflowRun identified by
+	// workflow_run_id. Cross calls this at failure-dispatch time, before
+	// creating a child recovery run, to gate against budget exhaustion.
+	// Idempotent on child_run_id: repeated calls with the same child_run_id
+	// do not double-increment and return the current counter state
+	// (FEAT-20260602-007).
+	// Errors: NOT_FOUND if the root run does not exist.
+	IncrementFailureBudget(ctx context.Context, in *IncrementFailureBudgetRequest, opts ...grpc.CallOption) (*IncrementFailureBudgetResponse, error)
 	// ImportProject parses a JSON document describing a project and creates a
 	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
 	// from every Task to the Project, and depends_on edges for each entry in a
@@ -504,6 +514,16 @@ func (c *taskServiceClient) RollbackWorkflowRun(ctx context.Context, in *Rollbac
 	return out, nil
 }
 
+func (c *taskServiceClient) IncrementFailureBudget(ctx context.Context, in *IncrementFailureBudgetRequest, opts ...grpc.CallOption) (*IncrementFailureBudgetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IncrementFailureBudgetResponse)
+	err := c.cc.Invoke(ctx, TaskService_IncrementFailureBudget_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *taskServiceClient) ImportProject(ctx context.Context, in *ImportProjectRequest, opts ...grpc.CallOption) (*ImportProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ImportProjectResponse)
@@ -647,6 +667,15 @@ type TaskServiceServer interface {
 	// rolling back), ABORTED (foreign run dependency — roll back the dependent
 	// run first).
 	RollbackWorkflowRun(context.Context, *RollbackWorkflowRunRequest) (*RollbackWorkflowRunResponse, error)
+	// IncrementFailureBudget atomically increments the
+	// failure_pipelines_used counter on the root WorkflowRun identified by
+	// workflow_run_id. Cross calls this at failure-dispatch time, before
+	// creating a child recovery run, to gate against budget exhaustion.
+	// Idempotent on child_run_id: repeated calls with the same child_run_id
+	// do not double-increment and return the current counter state
+	// (FEAT-20260602-007).
+	// Errors: NOT_FOUND if the root run does not exist.
+	IncrementFailureBudget(context.Context, *IncrementFailureBudgetRequest) (*IncrementFailureBudgetResponse, error)
 	// ImportProject parses a JSON document describing a project and creates a
 	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
 	// from every Task to the Project, and depends_on edges for each entry in a
@@ -755,6 +784,9 @@ func (UnimplementedTaskServiceServer) ListWorkflowRuns(context.Context, *ListWor
 }
 func (UnimplementedTaskServiceServer) RollbackWorkflowRun(context.Context, *RollbackWorkflowRunRequest) (*RollbackWorkflowRunResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RollbackWorkflowRun not implemented")
+}
+func (UnimplementedTaskServiceServer) IncrementFailureBudget(context.Context, *IncrementFailureBudgetRequest) (*IncrementFailureBudgetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method IncrementFailureBudget not implemented")
 }
 func (UnimplementedTaskServiceServer) ImportProject(context.Context, *ImportProjectRequest) (*ImportProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ImportProject not implemented")
@@ -1320,6 +1352,24 @@ func _TaskService_RollbackWorkflowRun_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaskService_IncrementFailureBudget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncrementFailureBudgetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).IncrementFailureBudget(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_IncrementFailureBudget_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).IncrementFailureBudget(ctx, req.(*IncrementFailureBudgetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TaskService_ImportProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ImportProjectRequest)
 	if err := dec(in); err != nil {
@@ -1464,6 +1514,10 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RollbackWorkflowRun",
 			Handler:    _TaskService_RollbackWorkflowRun_Handler,
+		},
+		{
+			MethodName: "IncrementFailureBudget",
+			Handler:    _TaskService_IncrementFailureBudget_Handler,
 		},
 		{
 			MethodName: "ImportProject",

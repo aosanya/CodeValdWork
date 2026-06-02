@@ -373,16 +373,20 @@ func (m *taskManager) publishRunStatusEvent(ctx context.Context, agencyID string
 // workflowRunToProperties serialises a WorkflowRun for storage.
 func workflowRunToProperties(r WorkflowRun) map[string]any {
 	props := map[string]any{
-		"name":           r.Name,
-		"status":         string(r.Status),
-		"trigger_event":  r.TriggerEvent,
-		"initiator":      r.Initiator,
-		"notes":          r.Notes,
-		"terminal_event": r.TerminalEvent,
-		"started_at":     r.StartedAt,
-		"completed_at":   r.CompletedAt,
-		"created_at":     r.CreatedAt,
-		"updated_at":     r.UpdatedAt,
+		"name":                    r.Name,
+		"status":                  string(r.Status),
+		"trigger_event":           r.TriggerEvent,
+		"initiator":               r.Initiator,
+		"notes":                   r.Notes,
+		"terminal_event":          r.TerminalEvent,
+		"started_at":              r.StartedAt,
+		"completed_at":            r.CompletedAt,
+		"created_at":              r.CreatedAt,
+		"updated_at":              r.UpdatedAt,
+		"parent_workflow_run_id":  r.ParentWorkflowRunID,
+		"root_workflow_run_id":    r.RootWorkflowRunID,
+		"failure_pipeline_budget": r.FailurePipelineBudget,
+		"failure_pipelines_used":  r.FailurePipelinesUsed,
 	}
 	if len(r.AgentRunIDs) > 0 {
 		props["agent_run_ids"] = append([]string(nil), r.AgentRunIDs...)
@@ -393,29 +397,59 @@ func workflowRunToProperties(r WorkflowRun) map[string]any {
 	if len(r.BranchNames) > 0 {
 		props["branch_names"] = append([]string(nil), r.BranchNames...)
 	}
+	if len(r.CountedChildRunIDs) > 0 {
+		props["counted_child_run_ids"] = append([]string(nil), r.CountedChildRunIDs...)
+	}
 	return props
 }
 
 // workflowRunFromEntity reconstructs a WorkflowRun from an entitygraph Entity.
 func workflowRunFromEntity(e entitygraph.Entity) WorkflowRun {
 	r := WorkflowRun{
-		ID:            e.ID,
-		AgencyID:      e.AgencyID,
-		Name:          entitygraph.StringProp(e.Properties, "name"),
-		Status:        WorkflowRunStatus(entitygraph.StringProp(e.Properties, "status")),
-		TriggerEvent:  entitygraph.StringProp(e.Properties, "trigger_event"),
-		Initiator:     entitygraph.StringProp(e.Properties, "initiator"),
-		Notes:         entitygraph.StringProp(e.Properties, "notes"),
-		TerminalEvent: entitygraph.StringProp(e.Properties, "terminal_event"),
-		StartedAt:     entitygraph.StringProp(e.Properties, "started_at"),
-		CompletedAt:   entitygraph.StringProp(e.Properties, "completed_at"),
-		CreatedAt:     entitygraph.StringProp(e.Properties, "created_at"),
-		UpdatedAt:     entitygraph.StringProp(e.Properties, "updated_at"),
+		ID:                    e.ID,
+		AgencyID:              e.AgencyID,
+		Name:                  entitygraph.StringProp(e.Properties, "name"),
+		Status:                WorkflowRunStatus(entitygraph.StringProp(e.Properties, "status")),
+		TriggerEvent:          entitygraph.StringProp(e.Properties, "trigger_event"),
+		Initiator:             entitygraph.StringProp(e.Properties, "initiator"),
+		Notes:                 entitygraph.StringProp(e.Properties, "notes"),
+		TerminalEvent:         entitygraph.StringProp(e.Properties, "terminal_event"),
+		StartedAt:             entitygraph.StringProp(e.Properties, "started_at"),
+		CompletedAt:           entitygraph.StringProp(e.Properties, "completed_at"),
+		CreatedAt:             entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:             entitygraph.StringProp(e.Properties, "updated_at"),
+		ParentWorkflowRunID:   entitygraph.StringProp(e.Properties, "parent_workflow_run_id"),
+		RootWorkflowRunID:     entitygraph.StringProp(e.Properties, "root_workflow_run_id"),
+		FailurePipelineBudget: intProp(e.Properties, "failure_pipeline_budget"),
+		FailurePipelinesUsed:  intProp(e.Properties, "failure_pipelines_used"),
 	}
 	r.AgentRunIDs = stringSliceProp(e.Properties, "agent_run_ids")
 	r.FunctionJobIDs = stringSliceProp(e.Properties, "function_job_ids")
 	r.BranchNames = stringSliceProp(e.Properties, "branch_names")
+	r.CountedChildRunIDs = stringSliceProp(e.Properties, "counted_child_run_ids")
 	return r
+}
+
+// intProp extracts an int property from an entity property map, accepting
+// both native int (in-memory fakeDataManager) and the float64 form returned
+// by JSON-decoded ArangoDB documents.
+func intProp(props map[string]any, key string) int {
+	v, ok := props[key]
+	if !ok {
+		return 0
+	}
+	switch n := v.(type) {
+	case int:
+		return n
+	case int32:
+		return int(n)
+	case int64:
+		return int(n)
+	case float64:
+		return int(n)
+	default:
+		return 0
+	}
 }
 
 // stringSliceProp accepts both native []string (in-memory fakeDataManager)

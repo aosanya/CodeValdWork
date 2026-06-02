@@ -428,6 +428,31 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "completed_at", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
+					// parent_workflow_run_id references the WorkflowRun whose
+					// failure spawned this child (recovery) run. Empty for
+					// top-level runs. See FEAT-20260602-007.
+					{Name: "parent_workflow_run_id", Type: types.PropertyTypeString},
+					// root_workflow_run_id is denormalised — the topmost ancestor
+					// of the recovery chain. For a top-level run this equals the
+					// run's own ID (or is empty; consumers default it). Used by
+					// the closure SSE for O(1) chain aggregation.
+					{Name: "root_workflow_run_id", Type: types.PropertyTypeString},
+					// failure_pipeline_budget is the maximum number of recovery
+					// pipeline activations allowed under this run's lineage.
+					// Resolved at start-pipeline time (payload > agency > env)
+					// and frozen for the run's lifetime. Lives only on the root
+					// run — Cross always reads/increments the root.
+					{Name: "failure_pipeline_budget", Type: types.PropertyTypeInteger},
+					// failure_pipelines_used counts recovery activations charged
+					// to this root run so far. Incremented atomically by
+					// IncrementFailureBudget. Lives only on the root run.
+					{Name: "failure_pipelines_used", Type: types.PropertyTypeInteger},
+					// counted_child_run_ids is the set of child run IDs already
+					// charged to failure_pipelines_used. Used for idempotency on
+					// dispatch retry — a repeated IncrementFailureBudget with the
+					// same child_run_id returns the current counter without
+					// double-incrementing. Stored JSON-encoded.
+					{Name: "counted_child_run_ids", Type: types.PropertyTypeArray, ElementType: types.PropertyTypeString},
 				},
 				Relationships: []types.RelationshipDefinition{
 					{

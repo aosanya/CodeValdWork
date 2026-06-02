@@ -203,6 +203,23 @@ message WorkflowRun {
   // used as the correlation handle by test scripts and the headline column
   // in the WorkflowRuns UI list (FEAT-20260602-001).
   string                    name            = 14;
+
+  // parent_workflow_run_id references the WorkflowRun whose failure spawned
+  // this child (recovery) run. Empty for top-level runs (FEAT-20260602-007).
+  string                    parent_workflow_run_id = 15;
+
+  // root_workflow_run_id is the topmost ancestor of the recovery chain.
+  // Carried on every downstream event/artifact for one-query closure
+  // aggregation (FEAT-20260602-007).
+  string                    root_workflow_run_id   = 16;
+
+  // failure_pipeline_budget caps recovery-pipeline activations under this
+  // run's lineage. Lives only on the root run (FEAT-20260602-007).
+  int32                     failure_pipeline_budget = 17;
+
+  // failure_pipelines_used is the count of recovery activations charged to
+  // this root run so far (FEAT-20260602-007).
+  int32                     failure_pipelines_used  = 18;
 }
 
 // Relationship is the Work-domain projection of a directed graph edge.
