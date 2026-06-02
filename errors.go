@@ -44,6 +44,12 @@ var ErrTaskTodoNotFound = errors.New("task todo not found")
 // exist for the given agencyID and entity ID.
 var ErrWorkflowRunNotFound = errors.New("workflow run not found")
 
+// ErrWorkflowRunNameExists is returned by [TaskManager.CreateWorkflowRun]
+// when a run with the same (agencyID, name) pair already exists. The caller
+// should append a discriminator and retry, or treat the existing run as
+// idempotent — names are immutable once created.
+var ErrWorkflowRunNameExists = errors.New("workflow run name already exists")
+
 // ErrProjectAlreadyExists is returned by [TaskManager.CreateProject]
 // when a Project with the same ID already exists in the agency.
 var ErrProjectAlreadyExists = errors.New("project already exists")

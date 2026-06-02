@@ -236,16 +236,29 @@ type TaskManager interface {
 	// CreateWorkflowRun anchors a new orchestrated execution. The returned
 	// run is in [WorkflowRunStatusPending]; producers transition it to
 	// in_progress / completed / failed via UpdateWorkflowRunStatus.
-	CreateWorkflowRun(ctx context.Context, agencyID, triggerEvent, initiator string) (WorkflowRun, error)
+	//
+	// name may be empty — the server generates a unique label of the form
+	// `pipeline-YYYY-MM-DD-HHMMSS-<6hex>` in that case. When name is set,
+	// it must not have leading/trailing whitespace and must not collide
+	// with an existing run in the same agency (otherwise
+	// [ErrWorkflowRunNameExists]).
+	CreateWorkflowRun(ctx context.Context, agencyID, name, triggerEvent, initiator string) (WorkflowRun, error)
 
 	// GetWorkflowRun reads a single WorkflowRun by entity ID within the
 	// given agency. Returns [ErrWorkflowRunNotFound] when no matching
 	// entity exists.
 	GetWorkflowRun(ctx context.Context, agencyID, runID string) (WorkflowRun, error)
 
+	// GetWorkflowRunByName looks up a single run by its unique (agencyID,
+	// name) pair. Returns [ErrWorkflowRunNotFound] when no match exists.
+	GetWorkflowRunByName(ctx context.Context, agencyID, name string) (WorkflowRun, error)
+
 	// ListWorkflowRuns returns every WorkflowRun in the agency, newest first.
-	// Used by the frontend list view (FEAT-20260601-002).
-	ListWorkflowRuns(ctx context.Context, agencyID string) ([]WorkflowRun, error)
+	// When name is non-empty the result is filtered to runs whose Name
+	// matches exactly (at most one row). Used by the frontend list view
+	// (FEAT-20260601-002) and by the QA test scripts that correlate a run
+	// by a caller-supplied label.
+	ListWorkflowRuns(ctx context.Context, agencyID, name string) ([]WorkflowRun, error)
 
 	// LinkTaskToRun writes the `started_task` edge from runID to taskID
 	// (and relies on the schema-declared inverse `part_of_run` for reverse

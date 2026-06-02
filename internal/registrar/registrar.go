@@ -449,12 +449,21 @@ func projectRoutes() []types.RouteInfo {
 	}
 }
 
-// workflowRunRoutes exposes the FEAT-20260601-001 endpoints: list and detail
+// workflowRunRoutes exposes the FEAT-20260601-001 + FEAT-20260602-001
+// endpoints: create, list (with optional `?name=` filter), and detail
 // (the closure read). The detail route mounts on the same agency-scoped
 // path the schema-derived generic CRUD route would use, but routes to the
 // custom GetWorkflowRun RPC so callers always receive the full closure.
 func workflowRunRoutes() []types.RouteInfo {
 	return []types.RouteInfo{
+		{
+			Method:       "POST",
+			Pattern:      "/work/{agencyId}/workflow-runs",
+			Capability:   "create_workflow_run",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/CreateWorkflowRun",
+			IsWrite:      true,
+			PathBindings: []types.PathBinding{agencyBinding},
+		},
 		{
 			Method:       "GET",
 			Pattern:      "/work/{agencyId}/workflow-runs",

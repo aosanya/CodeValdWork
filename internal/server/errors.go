@@ -29,7 +29,8 @@ func mapError(err error) error {
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, codevaldwork.ErrTaskAlreadyExists),
 		errors.Is(err, codevaldwork.ErrAgentAlreadyExists),
-		errors.Is(err, codevaldwork.ErrProjectAlreadyExists):
+		errors.Is(err, codevaldwork.ErrProjectAlreadyExists),
+		errors.Is(err, codevaldwork.ErrWorkflowRunNameExists):
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.As(err, &blocked):
 		return blockedStatus(blocked)
