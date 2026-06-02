@@ -189,13 +189,18 @@ func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic strin
 	// Published regardless of whether the status update succeeded — a failed run always
 	// warrants the operations-officer review even if the task was already in a terminal state.
 	if topic == topicTaskFailed {
+		runID := p.WorkflowRunID
+		if runID == "" {
+			runID = task.WorkflowRunID
+		}
 		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
 			Topic:    codevaldwork.TopicTaskFailed,
 			AgencyID: d.agencyID,
 			Payload: codevaldwork.TaskFailedPayload{
-				TaskID: p.TaskID,
-				RunID:  p.RunID,
-				Reason: p.Reason,
+				TaskID:        p.TaskID,
+				RunID:         p.RunID,
+				Reason:        p.Reason,
+				WorkflowRunID: runID,
 			},
 		})
 		log.Printf("codevaldwork: TaskEventDispatcher: bridged work.task.failed for task=%s run=%s", p.TaskID, p.RunID)
@@ -248,10 +253,11 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 			Topic:    codevaldwork.TopicTodoCompleted,
 			AgencyID: d.agencyID,
 			Payload: codevaldwork.TodoCompletedPayload{
-				TodoID:       updated.ID,
-				ParentTaskID: updated.ParentTaskID,
-				Title:        updated.Title,
-				Status:       string(status),
+				TodoID:        updated.ID,
+				ParentTaskID:  updated.ParentTaskID,
+				Title:         updated.Title,
+				Status:        string(status),
+				WorkflowRunID: updated.WorkflowRunID,
 			},
 		})
 		log.Printf("codevaldwork: TaskEventDispatcher: published %s todo=%s task=%s", codevaldwork.TopicTodoCompleted, updated.ID, updated.ParentTaskID)
