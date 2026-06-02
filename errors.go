@@ -50,6 +50,13 @@ var ErrWorkflowRunNotFound = errors.New("workflow run not found")
 // idempotent — names are immutable once created.
 var ErrWorkflowRunNameExists = errors.New("workflow run name already exists")
 
+// ErrWorkflowRunMismatch is returned by [TaskManager.AssignTask] when the
+// caller supplies a workflow_run_id that differs from the one already
+// recorded on the Task. A task belonging to two runs breaks the rollback
+// invariant — callers must instead create a fresh task under the new run
+// (FEAT-20260602-002 — reject reassignment policy).
+var ErrWorkflowRunMismatch = errors.New("task already belongs to a different workflow run")
+
 // ErrProjectAlreadyExists is returned by [TaskManager.CreateProject]
 // when a Project with the same ID already exists in the agency.
 var ErrProjectAlreadyExists = errors.New("project already exists")

@@ -74,12 +74,18 @@ func AllTopics() []string {
 type TaskCreatedPayload struct {
 	TaskID   string
 	Priority TaskPriority
+	// WorkflowRunID is the WorkflowRun anchor this task belongs to, or empty
+	// when the task was created outside an orchestrated run
+	// (FEAT-20260602-002 chain-through rule).
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // TaskUpdatedPayload is the [Event.Payload] for [TopicTaskUpdated].
 type TaskUpdatedPayload struct {
 	TaskID        string
 	ChangedFields []string
+	// WorkflowRunID propagates the run anchor onto every work.* event payload.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // TaskStatusChangedPayload is the [Event.Payload] for [TopicTaskStatusChanged].
@@ -87,6 +93,8 @@ type TaskStatusChangedPayload struct {
 	TaskID string
 	From   TaskStatus
 	To     TaskStatus
+	// WorkflowRunID propagates the run anchor onto every work.* event payload.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // TaskCompletedPayload is the [Event.Payload] for [TopicTaskCompleted].
@@ -95,6 +103,8 @@ type TaskCompletedPayload struct {
 	TerminalStatus TaskStatus
 	// CompletedAt is the RFC 3339 timestamp when the terminal status was set.
 	CompletedAt string
+	// WorkflowRunID propagates the run anchor onto every work.* event payload.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // TaskFailedBy identifies the agent and work plan responsible for a task failure.
@@ -111,6 +121,8 @@ type TaskFailedPayload struct {
 	RunID    string
 	Reason   string
 	FailedBy TaskFailedBy
+	// WorkflowRunID propagates the run anchor onto every work.* event payload.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // TaskAssignedPayload is the [Event.Payload] for [TopicTaskAssigned].
@@ -121,6 +133,8 @@ type TaskAssignedPayload struct {
 	TaskCode    string // project-scoped code, e.g. "UTIL-001" — empty for tasks not in a project
 	Title       string
 	Description string
+	// WorkflowRunID propagates the run anchor onto every work.* event payload.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // RelationshipCreatedPayload is the [Event.Payload] for [TopicRelationshipCreated].
@@ -155,6 +169,8 @@ type TodoDispatchedPayload struct {
 	Precalls       string // JSON-encoded []PrecallSpec stored on the TaskTodo
 	TodoType       string // semantic type label (e.g. "compile-fix"); used for per-type run-count enforcement
 	MaxRuns        int    // maximum spawns of this todo type within the parent task; 0 means no limit
+	// WorkflowRunID propagates the run anchor onto every work.* event payload.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // TodoCompletedPayload is the [Event.Payload] for [TopicTodoCompleted].
@@ -167,6 +183,8 @@ type TodoCompletedPayload struct {
 	TodoType     string `json:"todo_type"`  // forwarded from the TaskTodo entity; empty when no type was set
 	MaxRuns      int    `json:"max_runs,omitempty"`  // forwarded from the TaskTodo entity; 0 means no limit
 	RunCount     int    `json:"run_count,omitempty"` // current count of todos of this TodoType for the parent task at the time of completion
+	// WorkflowRunID propagates the run anchor onto every work.* event payload.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // TaskUpdatePayload is the [Event.Payload] for [TopicTaskUpdate].

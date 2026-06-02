@@ -82,6 +82,11 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "separate_branch", Type: types.PropertyTypeBoolean},
 					// branch_name is the git branch to create/use for this task (e.g. "feature/SF-001_scaffolding").
 					{Name: "branch_name", Type: types.PropertyTypeString},
+					// workflow_run_id denormalises the WorkflowRun anchor onto the
+					// Task row so queries can filter by run-id without traversing
+					// the started_task edge. Empty for tasks not produced under a
+					// run (FEAT-20260602-002).
+					{Name: "workflow_run_id", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},
@@ -238,6 +243,11 @@ func DefaultWorkSchema() types.Schema {
 					// for the parent task. Enforced by CodeValdWork at creation time.
 					// Zero means no limit.
 					{Name: "max_runs", Type: types.PropertyTypeInteger},
+					// workflow_run_id denormalises the WorkflowRun anchor onto the
+					// TaskTodo row. Inherited from the parent Task at creation
+					// time so the todo carries the run-id its parent belongs to
+					// (FEAT-20260602-002).
+					{Name: "workflow_run_id", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},

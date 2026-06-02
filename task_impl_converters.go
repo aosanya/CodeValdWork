@@ -22,6 +22,7 @@ func taskToProperties(t Task) map[string]any {
 		"project_name":    t.ProjectName,
 		"separate_branch": t.SeparateBranch,
 		"branch_name":     t.BranchName,
+		"workflow_run_id": t.WorkflowRunID,
 		"created_at":      t.CreatedAt,
 		"updated_at":      t.UpdatedAt,
 	}
@@ -62,6 +63,7 @@ func taskFromEntity(e entitygraph.Entity) Task {
 		ProjectName:    entitygraph.StringProp(e.Properties, "project_name"),
 		SeparateBranch: entitygraph.BoolProp(e.Properties, "separate_branch"),
 		BranchName:     entitygraph.StringProp(e.Properties, "branch_name"),
+		WorkflowRunID:  entitygraph.StringProp(e.Properties, "workflow_run_id"),
 		CreatedAt:      entitygraph.StringProp(e.Properties, "created_at"),
 		UpdatedAt:      entitygraph.StringProp(e.Properties, "updated_at"),
 		EstimatedHours: entitygraph.Float64Prop(e.Properties, "estimated_hours"),
@@ -97,6 +99,7 @@ func taskTodoToProperties(t TaskTodo) map[string]any {
 		"decomp_run_id":    t.DecompRunID,
 		"agent_id":         t.AgentID,
 		"precalls":         t.Precalls,
+		"workflow_run_id":  t.WorkflowRunID,
 		"created_at":       t.CreatedAt,
 		"updated_at":       t.UpdatedAt,
 	}
@@ -122,6 +125,7 @@ func taskTodoFromEntity(e entitygraph.Entity) TaskTodo {
 		DecompRunID:    entitygraph.StringProp(e.Properties, "decomp_run_id"),
 		AgentID:        entitygraph.StringProp(e.Properties, "agent_id"),
 		Precalls:       entitygraph.StringProp(e.Properties, "precalls"),
+		WorkflowRunID:  entitygraph.StringProp(e.Properties, "workflow_run_id"),
 		CreatedAt:      entitygraph.StringProp(e.Properties, "created_at"),
 		UpdatedAt:      entitygraph.StringProp(e.Properties, "updated_at"),
 	}

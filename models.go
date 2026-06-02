@@ -155,6 +155,14 @@ type Task struct {
 	// task. Empty string means unassigned. Populated from the assigned_to graph
 	// edge at read time; mutated via AssignTask / UnassignTask.
 	AssignedTo string `json:"assigned_to,omitempty"`
+
+	// WorkflowRunID denormalises the WorkflowRun anchor onto the Task row so
+	// queries can filter by run-id without traversing the started_task edge.
+	// Set on CreateTask when a non-empty value is supplied (which also writes
+	// the started_task edge) and inherited by AssignTask from the inbound
+	// event payload. Empty for tasks not produced under a WorkflowRun
+	// (FEAT-20260602-002).
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // ImportResult is returned by [TaskManager.ImportProject].
@@ -291,6 +299,11 @@ type TaskTodo struct {
 
 	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.
 	UpdatedAt string `json:"updated_at"`
+
+	// WorkflowRunID denormalises the WorkflowRun anchor onto the TaskTodo
+	// row. Inherited from the parent Task at creation time so the todo
+	// carries the run-id its parent belongs to (FEAT-20260602-002).
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
 }
 
 // TaskFilter constrains the results returned by [TaskManager.ListTasks].
@@ -301,6 +314,10 @@ type TaskFilter struct {
 
 	// Priority filters tasks to the given priority. Empty string matches all.
 	Priority TaskPriority
+
+	// WorkflowRunID filters tasks to the given workflow_run_id when non-empty.
+	// Empty matches all (FEAT-20260602-002).
+	WorkflowRunID string
 }
 
 // Agent is the Work-domain projection of an AI agent. Each Agent becomes a
