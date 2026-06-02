@@ -363,10 +363,19 @@ func TestWorkflowRunStatus_CanTransitionTo(t *testing.T) {
 		{codevaldwork.WorkflowRunStatusInProgress, codevaldwork.WorkflowRunStatusCompleted, true},
 		{codevaldwork.WorkflowRunStatusInProgress, codevaldwork.WorkflowRunStatusFailed, true},
 		{codevaldwork.WorkflowRunStatusInProgress, codevaldwork.WorkflowRunStatusPending, false},
-		{codevaldwork.WorkflowRunStatusFailed, codevaldwork.WorkflowRunStatusRolledBack, true},
+		// rollback path — must go through rolling_back (FEAT-20260602-004)
+		{codevaldwork.WorkflowRunStatusFailed, codevaldwork.WorkflowRunStatusRollingBack, true},
+		{codevaldwork.WorkflowRunStatusFailed, codevaldwork.WorkflowRunStatusRolledBack, false},
 		{codevaldwork.WorkflowRunStatusFailed, codevaldwork.WorkflowRunStatusCompleted, false},
+		{codevaldwork.WorkflowRunStatusCompleted, codevaldwork.WorkflowRunStatusRollingBack, true},
 		{codevaldwork.WorkflowRunStatusCompleted, codevaldwork.WorkflowRunStatusFailed, false},
+		{codevaldwork.WorkflowRunStatusRollingBack, codevaldwork.WorkflowRunStatusRolledBack, true},
+		{codevaldwork.WorkflowRunStatusRollingBack, codevaldwork.WorkflowRunStatusRollbackFailed, true},
+		{codevaldwork.WorkflowRunStatusRollingBack, codevaldwork.WorkflowRunStatusFailed, false},
+		{codevaldwork.WorkflowRunStatusRollbackFailed, codevaldwork.WorkflowRunStatusRollingBack, true},
+		{codevaldwork.WorkflowRunStatusRollbackFailed, codevaldwork.WorkflowRunStatusRolledBack, false},
 		{codevaldwork.WorkflowRunStatusRolledBack, codevaldwork.WorkflowRunStatusFailed, false},
+		{codevaldwork.WorkflowRunStatusRolledBack, codevaldwork.WorkflowRunStatusRollingBack, false},
 	}
 	for _, c := range cases {
 		got := c.from.CanTransitionTo(c.to)

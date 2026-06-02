@@ -48,6 +48,7 @@ const (
 	TaskService_CreateWorkflowRun_FullMethodName     = "/codevaldwork.v1.TaskService/CreateWorkflowRun"
 	TaskService_GetWorkflowRun_FullMethodName        = "/codevaldwork.v1.TaskService/GetWorkflowRun"
 	TaskService_ListWorkflowRuns_FullMethodName      = "/codevaldwork.v1.TaskService/ListWorkflowRuns"
+	TaskService_RollbackWorkflowRun_FullMethodName   = "/codevaldwork.v1.TaskService/RollbackWorkflowRun"
 	TaskService_ImportProject_FullMethodName         = "/codevaldwork.v1.TaskService/ImportProject"
 )
 
@@ -176,6 +177,14 @@ type TaskServiceClient interface {
 	// When request.name is non-empty the result is filtered to runs whose
 	// name matches exactly (at most one row) (FEAT-20260602-001).
 	ListWorkflowRuns(ctx context.Context, in *ListWorkflowRunsRequest, opts ...grpc.CallOption) (*ListWorkflowRunsResponse, error)
+	// RollbackWorkflowRun initiates the compensation sequence for the given run
+	// (FEAT-20260602-004). Valid only when the run is in failed or completed
+	// status. Transitions: failed/completed → rolling_back → rolled_back (or
+	// rollback_failed on partial failure).
+	// Errors: NOT_FOUND, FAILED_PRECONDITION (wrong source status or already
+	// rolling back), ABORTED (foreign run dependency — roll back the dependent
+	// run first).
+	RollbackWorkflowRun(ctx context.Context, in *RollbackWorkflowRunRequest, opts ...grpc.CallOption) (*RollbackWorkflowRunResponse, error)
 	// ImportProject parses a JSON document describing a project and creates a
 	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
 	// from every Task to the Project, and depends_on edges for each entry in a
@@ -485,6 +494,16 @@ func (c *taskServiceClient) ListWorkflowRuns(ctx context.Context, in *ListWorkfl
 	return out, nil
 }
 
+func (c *taskServiceClient) RollbackWorkflowRun(ctx context.Context, in *RollbackWorkflowRunRequest, opts ...grpc.CallOption) (*RollbackWorkflowRunResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RollbackWorkflowRunResponse)
+	err := c.cc.Invoke(ctx, TaskService_RollbackWorkflowRun_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *taskServiceClient) ImportProject(ctx context.Context, in *ImportProjectRequest, opts ...grpc.CallOption) (*ImportProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ImportProjectResponse)
@@ -620,6 +639,14 @@ type TaskServiceServer interface {
 	// When request.name is non-empty the result is filtered to runs whose
 	// name matches exactly (at most one row) (FEAT-20260602-001).
 	ListWorkflowRuns(context.Context, *ListWorkflowRunsRequest) (*ListWorkflowRunsResponse, error)
+	// RollbackWorkflowRun initiates the compensation sequence for the given run
+	// (FEAT-20260602-004). Valid only when the run is in failed or completed
+	// status. Transitions: failed/completed → rolling_back → rolled_back (or
+	// rollback_failed on partial failure).
+	// Errors: NOT_FOUND, FAILED_PRECONDITION (wrong source status or already
+	// rolling back), ABORTED (foreign run dependency — roll back the dependent
+	// run first).
+	RollbackWorkflowRun(context.Context, *RollbackWorkflowRunRequest) (*RollbackWorkflowRunResponse, error)
 	// ImportProject parses a JSON document describing a project and creates a
 	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
 	// from every Task to the Project, and depends_on edges for each entry in a
@@ -725,6 +752,9 @@ func (UnimplementedTaskServiceServer) GetWorkflowRun(context.Context, *GetWorkfl
 }
 func (UnimplementedTaskServiceServer) ListWorkflowRuns(context.Context, *ListWorkflowRunsRequest) (*ListWorkflowRunsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListWorkflowRuns not implemented")
+}
+func (UnimplementedTaskServiceServer) RollbackWorkflowRun(context.Context, *RollbackWorkflowRunRequest) (*RollbackWorkflowRunResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RollbackWorkflowRun not implemented")
 }
 func (UnimplementedTaskServiceServer) ImportProject(context.Context, *ImportProjectRequest) (*ImportProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ImportProject not implemented")
@@ -1272,6 +1302,24 @@ func _TaskService_ListWorkflowRuns_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaskService_RollbackWorkflowRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RollbackWorkflowRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).RollbackWorkflowRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_RollbackWorkflowRun_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).RollbackWorkflowRun(ctx, req.(*RollbackWorkflowRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TaskService_ImportProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ImportProjectRequest)
 	if err := dec(in); err != nil {
@@ -1412,6 +1460,10 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListWorkflowRuns",
 			Handler:    _TaskService_ListWorkflowRuns_Handler,
+		},
+		{
+			MethodName: "RollbackWorkflowRun",
+			Handler:    _TaskService_RollbackWorkflowRun_Handler,
 		},
 		{
 			MethodName: "ImportProject",

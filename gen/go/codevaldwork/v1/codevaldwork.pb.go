@@ -261,6 +261,12 @@ const (
 	WorkflowRunStatus_WORKFLOW_RUN_STATUS_COMPLETED   WorkflowRunStatus = 3
 	WorkflowRunStatus_WORKFLOW_RUN_STATUS_FAILED      WorkflowRunStatus = 4
 	WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLED_BACK WorkflowRunStatus = 5
+	// ROLLING_BACK is the transient state entered when the rollback coordinator
+	// begins compensating cross-service artifacts (FEAT-20260602-004).
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLING_BACK WorkflowRunStatus = 6
+	// ROLLBACK_FAILED indicates a partial rollback failure requiring operator
+	// intervention; the rollback may be re-triggered after remediation.
+	WorkflowRunStatus_WORKFLOW_RUN_STATUS_ROLLBACK_FAILED WorkflowRunStatus = 7
 )
 
 // Enum value maps for WorkflowRunStatus.
@@ -272,14 +278,18 @@ var (
 		3: "WORKFLOW_RUN_STATUS_COMPLETED",
 		4: "WORKFLOW_RUN_STATUS_FAILED",
 		5: "WORKFLOW_RUN_STATUS_ROLLED_BACK",
+		6: "WORKFLOW_RUN_STATUS_ROLLING_BACK",
+		7: "WORKFLOW_RUN_STATUS_ROLLBACK_FAILED",
 	}
 	WorkflowRunStatus_value = map[string]int32{
-		"WORKFLOW_RUN_STATUS_UNSPECIFIED": 0,
-		"WORKFLOW_RUN_STATUS_PENDING":     1,
-		"WORKFLOW_RUN_STATUS_IN_PROGRESS": 2,
-		"WORKFLOW_RUN_STATUS_COMPLETED":   3,
-		"WORKFLOW_RUN_STATUS_FAILED":      4,
-		"WORKFLOW_RUN_STATUS_ROLLED_BACK": 5,
+		"WORKFLOW_RUN_STATUS_UNSPECIFIED":     0,
+		"WORKFLOW_RUN_STATUS_PENDING":         1,
+		"WORKFLOW_RUN_STATUS_IN_PROGRESS":     2,
+		"WORKFLOW_RUN_STATUS_COMPLETED":       3,
+		"WORKFLOW_RUN_STATUS_FAILED":          4,
+		"WORKFLOW_RUN_STATUS_ROLLED_BACK":     5,
+		"WORKFLOW_RUN_STATUS_ROLLING_BACK":    6,
+		"WORKFLOW_RUN_STATUS_ROLLBACK_FAILED": 7,
 	}
 )
 
@@ -1377,14 +1387,16 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\x13TODO_STATUS_BLOCKED\x10\x02\x12\x1a\n" +
 	"\x16TODO_STATUS_DISPATCHED\x10\x03\x12\x19\n" +
 	"\x15TODO_STATUS_COMPLETED\x10\x04\x12\x16\n" +
-	"\x12TODO_STATUS_FAILED\x10\x05*\xe6\x01\n" +
+	"\x12TODO_STATUS_FAILED\x10\x05*\xb5\x02\n" +
 	"\x11WorkflowRunStatus\x12#\n" +
 	"\x1fWORKFLOW_RUN_STATUS_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bWORKFLOW_RUN_STATUS_PENDING\x10\x01\x12#\n" +
 	"\x1fWORKFLOW_RUN_STATUS_IN_PROGRESS\x10\x02\x12!\n" +
 	"\x1dWORKFLOW_RUN_STATUS_COMPLETED\x10\x03\x12\x1e\n" +
 	"\x1aWORKFLOW_RUN_STATUS_FAILED\x10\x04\x12#\n" +
-	"\x1fWORKFLOW_RUN_STATUS_ROLLED_BACK\x10\x05BGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
+	"\x1fWORKFLOW_RUN_STATUS_ROLLED_BACK\x10\x05\x12$\n" +
+	" WORKFLOW_RUN_STATUS_ROLLING_BACK\x10\x06\x12'\n" +
+	"#WORKFLOW_RUN_STATUS_ROLLBACK_FAILED\x10\aBGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
 
 var (
 	file_codevaldwork_v1_codevaldwork_proto_rawDescOnce sync.Once

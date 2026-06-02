@@ -352,6 +352,10 @@ func TestAllTopics_StableSurface(t *testing.T) {
 		codevaldwork.TopicRelationshipCreated,
 		codevaldwork.TopicTodoDispatched,
 		codevaldwork.TopicTodoCompleted,
+		codevaldwork.TopicTaskRolledBack,
+		codevaldwork.TopicRunRollingBack,
+		codevaldwork.TopicRunRolledBack,
+		codevaldwork.TopicRunRollbackFailed,
 	}
 	for _, topic := range extras {
 		if !gotSet[topic] {

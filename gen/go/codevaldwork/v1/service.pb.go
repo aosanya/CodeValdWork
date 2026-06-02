@@ -3034,6 +3034,115 @@ func (x *ListWorkflowRunsResponse) GetRuns() []*WorkflowRun {
 	return nil
 }
 
+type RollbackWorkflowRunRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	WorkflowRunId string                 `protobuf:"bytes,2,opt,name=workflow_run_id,json=workflowRunId,proto3" json:"workflow_run_id,omitempty"`
+	// reason is a human-readable explanation stored on the run and included in
+	// the work.run.rolling_back and work.run.rolled_back events.
+	Reason        string `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RollbackWorkflowRunRequest) Reset() {
+	*x = RollbackWorkflowRunRequest{}
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RollbackWorkflowRunRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RollbackWorkflowRunRequest) ProtoMessage() {}
+
+func (x *RollbackWorkflowRunRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RollbackWorkflowRunRequest.ProtoReflect.Descriptor instead.
+func (*RollbackWorkflowRunRequest) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *RollbackWorkflowRunRequest) GetAgencyId() string {
+	if x != nil {
+		return x.AgencyId
+	}
+	return ""
+}
+
+func (x *RollbackWorkflowRunRequest) GetWorkflowRunId() string {
+	if x != nil {
+		return x.WorkflowRunId
+	}
+	return ""
+}
+
+func (x *RollbackWorkflowRunRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type RollbackWorkflowRunResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// run carries the updated WorkflowRun. On success the status is
+	// WORKFLOW_RUN_STATUS_ROLLED_BACK; on partial failure it is
+	// WORKFLOW_RUN_STATUS_ROLLBACK_FAILED.
+	Run           *WorkflowRun `protobuf:"bytes,1,opt,name=run,proto3" json:"run,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RollbackWorkflowRunResponse) Reset() {
+	*x = RollbackWorkflowRunResponse{}
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RollbackWorkflowRunResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RollbackWorkflowRunResponse) ProtoMessage() {}
+
+func (x *RollbackWorkflowRunResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RollbackWorkflowRunResponse.ProtoReflect.Descriptor instead.
+func (*RollbackWorkflowRunResponse) Descriptor() ([]byte, []int) {
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *RollbackWorkflowRunResponse) GetRun() *WorkflowRun {
+	if x != nil {
+		return x.Run
+	}
+	return nil
+}
+
 type ImportProjectRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	AgencyId string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
@@ -3047,7 +3156,7 @@ type ImportProjectRequest struct {
 
 func (x *ImportProjectRequest) Reset() {
 	*x = ImportProjectRequest{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[58]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3059,7 +3168,7 @@ func (x *ImportProjectRequest) String() string {
 func (*ImportProjectRequest) ProtoMessage() {}
 
 func (x *ImportProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[58]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3072,7 +3181,7 @@ func (x *ImportProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportProjectRequest.ProtoReflect.Descriptor instead.
 func (*ImportProjectRequest) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{58}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *ImportProjectRequest) GetAgencyId() string {
@@ -3101,7 +3210,7 @@ type ImportProjectResponse struct {
 
 func (x *ImportProjectResponse) Reset() {
 	*x = ImportProjectResponse{}
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[59]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3113,7 +3222,7 @@ func (x *ImportProjectResponse) String() string {
 func (*ImportProjectResponse) ProtoMessage() {}
 
 func (x *ImportProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codevaldwork_v1_service_proto_msgTypes[59]
+	mi := &file_codevaldwork_v1_service_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3126,7 +3235,7 @@ func (x *ImportProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportProjectResponse.ProtoReflect.Descriptor instead.
 func (*ImportProjectResponse) Descriptor() ([]byte, []int) {
-	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{59}
+	return file_codevaldwork_v1_service_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *ImportProjectResponse) GetProject() *Project {
@@ -3332,14 +3441,20 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"L\n" +
 	"\x18ListWorkflowRunsResponse\x120\n" +
-	"\x04runs\x18\x01 \x03(\v2\x1c.codevaldwork.v1.WorkflowRunR\x04runs\"O\n" +
+	"\x04runs\x18\x01 \x03(\v2\x1c.codevaldwork.v1.WorkflowRunR\x04runs\"y\n" +
+	"\x1aRollbackWorkflowRunRequest\x12\x1b\n" +
+	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12&\n" +
+	"\x0fworkflow_run_id\x18\x02 \x01(\tR\rworkflowRunId\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"M\n" +
+	"\x1bRollbackWorkflowRunResponse\x12.\n" +
+	"\x03run\x18\x01 \x01(\v2\x1c.codevaldwork.v1.WorkflowRunR\x03run\"O\n" +
 	"\x14ImportProjectRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x1a\n" +
 	"\bdocument\x18\x02 \x01(\tR\bdocument\"\x9b\x01\n" +
 	"\x15ImportProjectResponse\x122\n" +
 	"\aproject\x18\x01 \x01(\v2\x18.codevaldwork.v1.ProjectR\aproject\x12+\n" +
 	"\x05tasks\x18\x02 \x03(\v2\x15.codevaldwork.v1.TaskR\x05tasks\x12!\n" +
-	"\fdeps_created\x18\x03 \x01(\x05R\vdepsCreated2\xfa\x16\n" +
+	"\fdeps_created\x18\x03 \x01(\x05R\vdepsCreated2\xec\x17\n" +
 	"\vTaskService\x12U\n" +
 	"\n" +
 	"CreateTask\x12\".codevaldwork.v1.CreateTaskRequest\x1a#.codevaldwork.v1.CreateTaskResponse\x12L\n" +
@@ -3375,7 +3490,8 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\x15TraverseRelationships\x12-.codevaldwork.v1.TraverseRelationshipsRequest\x1a..codevaldwork.v1.TraverseRelationshipsResponse\x12j\n" +
 	"\x11CreateWorkflowRun\x12).codevaldwork.v1.CreateWorkflowRunRequest\x1a*.codevaldwork.v1.CreateWorkflowRunResponse\x12a\n" +
 	"\x0eGetWorkflowRun\x12&.codevaldwork.v1.GetWorkflowRunRequest\x1a'.codevaldwork.v1.GetWorkflowRunResponse\x12g\n" +
-	"\x10ListWorkflowRuns\x12(.codevaldwork.v1.ListWorkflowRunsRequest\x1a).codevaldwork.v1.ListWorkflowRunsResponse\x12^\n" +
+	"\x10ListWorkflowRuns\x12(.codevaldwork.v1.ListWorkflowRunsRequest\x1a).codevaldwork.v1.ListWorkflowRunsResponse\x12p\n" +
+	"\x13RollbackWorkflowRun\x12+.codevaldwork.v1.RollbackWorkflowRunRequest\x1a,.codevaldwork.v1.RollbackWorkflowRunResponse\x12^\n" +
 	"\rImportProject\x12%.codevaldwork.v1.ImportProjectRequest\x1a&.codevaldwork.v1.ImportProjectResponseBGZEgithub.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1;codevaldworkv1b\x06proto3"
 
 var (
@@ -3390,7 +3506,7 @@ func file_codevaldwork_v1_service_proto_rawDescGZIP() []byte {
 	return file_codevaldwork_v1_service_proto_rawDescData
 }
 
-var file_codevaldwork_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
+var file_codevaldwork_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
 var file_codevaldwork_v1_service_proto_goTypes = []any{
 	(*CreateTaskRequest)(nil),             // 0: codevaldwork.v1.CreateTaskRequest
 	(*CreateTaskResponse)(nil),            // 1: codevaldwork.v1.CreateTaskResponse
@@ -3450,121 +3566,126 @@ var file_codevaldwork_v1_service_proto_goTypes = []any{
 	(*GetWorkflowRunResponse)(nil),        // 55: codevaldwork.v1.GetWorkflowRunResponse
 	(*ListWorkflowRunsRequest)(nil),       // 56: codevaldwork.v1.ListWorkflowRunsRequest
 	(*ListWorkflowRunsResponse)(nil),      // 57: codevaldwork.v1.ListWorkflowRunsResponse
-	(*ImportProjectRequest)(nil),          // 58: codevaldwork.v1.ImportProjectRequest
-	(*ImportProjectResponse)(nil),         // 59: codevaldwork.v1.ImportProjectResponse
-	(*Task)(nil),                          // 60: codevaldwork.v1.Task
-	(*fieldmaskpb.FieldMask)(nil),         // 61: google.protobuf.FieldMask
-	(*TaskFilter)(nil),                    // 62: codevaldwork.v1.TaskFilter
-	(*Agent)(nil),                         // 63: codevaldwork.v1.Agent
-	(*Project)(nil),                       // 64: codevaldwork.v1.Project
-	(*structpb.Struct)(nil),               // 65: google.protobuf.Struct
-	(*Relationship)(nil),                  // 66: codevaldwork.v1.Relationship
-	(Direction)(0),                        // 67: codevaldwork.v1.Direction
-	(*WorkflowRun)(nil),                   // 68: codevaldwork.v1.WorkflowRun
-	(*TaskTodo)(nil),                      // 69: codevaldwork.v1.TaskTodo
+	(*RollbackWorkflowRunRequest)(nil),    // 58: codevaldwork.v1.RollbackWorkflowRunRequest
+	(*RollbackWorkflowRunResponse)(nil),   // 59: codevaldwork.v1.RollbackWorkflowRunResponse
+	(*ImportProjectRequest)(nil),          // 60: codevaldwork.v1.ImportProjectRequest
+	(*ImportProjectResponse)(nil),         // 61: codevaldwork.v1.ImportProjectResponse
+	(*Task)(nil),                          // 62: codevaldwork.v1.Task
+	(*fieldmaskpb.FieldMask)(nil),         // 63: google.protobuf.FieldMask
+	(*TaskFilter)(nil),                    // 64: codevaldwork.v1.TaskFilter
+	(*Agent)(nil),                         // 65: codevaldwork.v1.Agent
+	(*Project)(nil),                       // 66: codevaldwork.v1.Project
+	(*structpb.Struct)(nil),               // 67: google.protobuf.Struct
+	(*Relationship)(nil),                  // 68: codevaldwork.v1.Relationship
+	(Direction)(0),                        // 69: codevaldwork.v1.Direction
+	(*WorkflowRun)(nil),                   // 70: codevaldwork.v1.WorkflowRun
+	(*TaskTodo)(nil),                      // 71: codevaldwork.v1.TaskTodo
 }
 var file_codevaldwork_v1_service_proto_depIdxs = []int32{
-	60, // 0: codevaldwork.v1.CreateTaskRequest.task:type_name -> codevaldwork.v1.Task
-	60, // 1: codevaldwork.v1.CreateTaskResponse.task:type_name -> codevaldwork.v1.Task
-	60, // 2: codevaldwork.v1.GetTaskResponse.task:type_name -> codevaldwork.v1.Task
-	60, // 3: codevaldwork.v1.UpdateTaskRequest.task:type_name -> codevaldwork.v1.Task
-	61, // 4: codevaldwork.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
-	60, // 5: codevaldwork.v1.UpdateTaskResponse.task:type_name -> codevaldwork.v1.Task
-	62, // 6: codevaldwork.v1.ListTasksRequest.filter:type_name -> codevaldwork.v1.TaskFilter
-	60, // 7: codevaldwork.v1.ListTasksResponse.tasks:type_name -> codevaldwork.v1.Task
-	60, // 8: codevaldwork.v1.GetTaskByNameResponse.task:type_name -> codevaldwork.v1.Task
-	60, // 9: codevaldwork.v1.CreateTaskInProjectRequest.task:type_name -> codevaldwork.v1.Task
-	60, // 10: codevaldwork.v1.CreateTaskInProjectResponse.task:type_name -> codevaldwork.v1.Task
-	63, // 11: codevaldwork.v1.UpsertAgentRequest.agent:type_name -> codevaldwork.v1.Agent
-	63, // 12: codevaldwork.v1.UpsertAgentResponse.agent:type_name -> codevaldwork.v1.Agent
-	63, // 13: codevaldwork.v1.GetAgentResponse.agent:type_name -> codevaldwork.v1.Agent
-	63, // 14: codevaldwork.v1.ListAgentsResponse.agents:type_name -> codevaldwork.v1.Agent
-	64, // 15: codevaldwork.v1.CreateProjectRequest.project:type_name -> codevaldwork.v1.Project
-	64, // 16: codevaldwork.v1.CreateProjectResponse.project:type_name -> codevaldwork.v1.Project
-	64, // 17: codevaldwork.v1.GetProjectResponse.project:type_name -> codevaldwork.v1.Project
-	64, // 18: codevaldwork.v1.GetProjectByNameResponse.project:type_name -> codevaldwork.v1.Project
-	64, // 19: codevaldwork.v1.UpdateProjectRequest.project:type_name -> codevaldwork.v1.Project
-	64, // 20: codevaldwork.v1.UpdateProjectResponse.project:type_name -> codevaldwork.v1.Project
-	64, // 21: codevaldwork.v1.ListProjectsResponse.projects:type_name -> codevaldwork.v1.Project
-	60, // 22: codevaldwork.v1.ListTasksInProjectResponse.tasks:type_name -> codevaldwork.v1.Task
-	64, // 23: codevaldwork.v1.ListProjectsForTaskResponse.projects:type_name -> codevaldwork.v1.Project
-	65, // 24: codevaldwork.v1.CreateRelationshipRequest.properties:type_name -> google.protobuf.Struct
-	66, // 25: codevaldwork.v1.CreateRelationshipResponse.relationship:type_name -> codevaldwork.v1.Relationship
-	67, // 26: codevaldwork.v1.TraverseRelationshipsRequest.direction:type_name -> codevaldwork.v1.Direction
-	66, // 27: codevaldwork.v1.TraverseRelationshipsResponse.relationships:type_name -> codevaldwork.v1.Relationship
-	68, // 28: codevaldwork.v1.CreateWorkflowRunResponse.run:type_name -> codevaldwork.v1.WorkflowRun
-	68, // 29: codevaldwork.v1.GetWorkflowRunResponse.run:type_name -> codevaldwork.v1.WorkflowRun
-	60, // 30: codevaldwork.v1.GetWorkflowRunResponse.tasks:type_name -> codevaldwork.v1.Task
-	69, // 31: codevaldwork.v1.GetWorkflowRunResponse.todos:type_name -> codevaldwork.v1.TaskTodo
-	66, // 32: codevaldwork.v1.GetWorkflowRunResponse.edges:type_name -> codevaldwork.v1.Relationship
-	68, // 33: codevaldwork.v1.ListWorkflowRunsResponse.runs:type_name -> codevaldwork.v1.WorkflowRun
-	64, // 34: codevaldwork.v1.ImportProjectResponse.project:type_name -> codevaldwork.v1.Project
-	60, // 35: codevaldwork.v1.ImportProjectResponse.tasks:type_name -> codevaldwork.v1.Task
-	0,  // 36: codevaldwork.v1.TaskService.CreateTask:input_type -> codevaldwork.v1.CreateTaskRequest
-	2,  // 37: codevaldwork.v1.TaskService.GetTask:input_type -> codevaldwork.v1.GetTaskRequest
-	10, // 38: codevaldwork.v1.TaskService.GetTaskByName:input_type -> codevaldwork.v1.GetTaskByNameRequest
-	4,  // 39: codevaldwork.v1.TaskService.UpdateTask:input_type -> codevaldwork.v1.UpdateTaskRequest
-	6,  // 40: codevaldwork.v1.TaskService.DeleteTask:input_type -> codevaldwork.v1.DeleteTaskRequest
-	8,  // 41: codevaldwork.v1.TaskService.ListTasks:input_type -> codevaldwork.v1.ListTasksRequest
-	14, // 42: codevaldwork.v1.TaskService.AssignTask:input_type -> codevaldwork.v1.AssignTaskRequest
-	16, // 43: codevaldwork.v1.TaskService.UnassignTask:input_type -> codevaldwork.v1.UnassignTaskRequest
-	18, // 44: codevaldwork.v1.TaskService.FailTodo:input_type -> codevaldwork.v1.FailTodoRequest
-	20, // 45: codevaldwork.v1.TaskService.UpsertAgent:input_type -> codevaldwork.v1.UpsertAgentRequest
-	22, // 46: codevaldwork.v1.TaskService.GetAgent:input_type -> codevaldwork.v1.GetAgentRequest
-	24, // 47: codevaldwork.v1.TaskService.ListAgents:input_type -> codevaldwork.v1.ListAgentsRequest
-	12, // 48: codevaldwork.v1.TaskService.CreateTaskInProject:input_type -> codevaldwork.v1.CreateTaskInProjectRequest
-	26, // 49: codevaldwork.v1.TaskService.CreateProject:input_type -> codevaldwork.v1.CreateProjectRequest
-	28, // 50: codevaldwork.v1.TaskService.GetProject:input_type -> codevaldwork.v1.GetProjectRequest
-	30, // 51: codevaldwork.v1.TaskService.GetProjectByName:input_type -> codevaldwork.v1.GetProjectByNameRequest
-	32, // 52: codevaldwork.v1.TaskService.UpdateProject:input_type -> codevaldwork.v1.UpdateProjectRequest
-	34, // 53: codevaldwork.v1.TaskService.DeleteProject:input_type -> codevaldwork.v1.DeleteProjectRequest
-	36, // 54: codevaldwork.v1.TaskService.ListProjects:input_type -> codevaldwork.v1.ListProjectsRequest
-	38, // 55: codevaldwork.v1.TaskService.AddTaskToProject:input_type -> codevaldwork.v1.AddTaskToProjectRequest
-	40, // 56: codevaldwork.v1.TaskService.RemoveTaskFromProject:input_type -> codevaldwork.v1.RemoveTaskFromProjectRequest
-	42, // 57: codevaldwork.v1.TaskService.ListTasksInProject:input_type -> codevaldwork.v1.ListTasksInProjectRequest
-	44, // 58: codevaldwork.v1.TaskService.ListProjectsForTask:input_type -> codevaldwork.v1.ListProjectsForTaskRequest
-	46, // 59: codevaldwork.v1.TaskService.CreateRelationship:input_type -> codevaldwork.v1.CreateRelationshipRequest
-	48, // 60: codevaldwork.v1.TaskService.DeleteRelationship:input_type -> codevaldwork.v1.DeleteRelationshipRequest
-	50, // 61: codevaldwork.v1.TaskService.TraverseRelationships:input_type -> codevaldwork.v1.TraverseRelationshipsRequest
-	52, // 62: codevaldwork.v1.TaskService.CreateWorkflowRun:input_type -> codevaldwork.v1.CreateWorkflowRunRequest
-	54, // 63: codevaldwork.v1.TaskService.GetWorkflowRun:input_type -> codevaldwork.v1.GetWorkflowRunRequest
-	56, // 64: codevaldwork.v1.TaskService.ListWorkflowRuns:input_type -> codevaldwork.v1.ListWorkflowRunsRequest
-	58, // 65: codevaldwork.v1.TaskService.ImportProject:input_type -> codevaldwork.v1.ImportProjectRequest
-	1,  // 66: codevaldwork.v1.TaskService.CreateTask:output_type -> codevaldwork.v1.CreateTaskResponse
-	3,  // 67: codevaldwork.v1.TaskService.GetTask:output_type -> codevaldwork.v1.GetTaskResponse
-	11, // 68: codevaldwork.v1.TaskService.GetTaskByName:output_type -> codevaldwork.v1.GetTaskByNameResponse
-	5,  // 69: codevaldwork.v1.TaskService.UpdateTask:output_type -> codevaldwork.v1.UpdateTaskResponse
-	7,  // 70: codevaldwork.v1.TaskService.DeleteTask:output_type -> codevaldwork.v1.DeleteTaskResponse
-	9,  // 71: codevaldwork.v1.TaskService.ListTasks:output_type -> codevaldwork.v1.ListTasksResponse
-	15, // 72: codevaldwork.v1.TaskService.AssignTask:output_type -> codevaldwork.v1.AssignTaskResponse
-	17, // 73: codevaldwork.v1.TaskService.UnassignTask:output_type -> codevaldwork.v1.UnassignTaskResponse
-	19, // 74: codevaldwork.v1.TaskService.FailTodo:output_type -> codevaldwork.v1.FailTodoResponse
-	21, // 75: codevaldwork.v1.TaskService.UpsertAgent:output_type -> codevaldwork.v1.UpsertAgentResponse
-	23, // 76: codevaldwork.v1.TaskService.GetAgent:output_type -> codevaldwork.v1.GetAgentResponse
-	25, // 77: codevaldwork.v1.TaskService.ListAgents:output_type -> codevaldwork.v1.ListAgentsResponse
-	13, // 78: codevaldwork.v1.TaskService.CreateTaskInProject:output_type -> codevaldwork.v1.CreateTaskInProjectResponse
-	27, // 79: codevaldwork.v1.TaskService.CreateProject:output_type -> codevaldwork.v1.CreateProjectResponse
-	29, // 80: codevaldwork.v1.TaskService.GetProject:output_type -> codevaldwork.v1.GetProjectResponse
-	31, // 81: codevaldwork.v1.TaskService.GetProjectByName:output_type -> codevaldwork.v1.GetProjectByNameResponse
-	33, // 82: codevaldwork.v1.TaskService.UpdateProject:output_type -> codevaldwork.v1.UpdateProjectResponse
-	35, // 83: codevaldwork.v1.TaskService.DeleteProject:output_type -> codevaldwork.v1.DeleteProjectResponse
-	37, // 84: codevaldwork.v1.TaskService.ListProjects:output_type -> codevaldwork.v1.ListProjectsResponse
-	39, // 85: codevaldwork.v1.TaskService.AddTaskToProject:output_type -> codevaldwork.v1.AddTaskToProjectResponse
-	41, // 86: codevaldwork.v1.TaskService.RemoveTaskFromProject:output_type -> codevaldwork.v1.RemoveTaskFromProjectResponse
-	43, // 87: codevaldwork.v1.TaskService.ListTasksInProject:output_type -> codevaldwork.v1.ListTasksInProjectResponse
-	45, // 88: codevaldwork.v1.TaskService.ListProjectsForTask:output_type -> codevaldwork.v1.ListProjectsForTaskResponse
-	47, // 89: codevaldwork.v1.TaskService.CreateRelationship:output_type -> codevaldwork.v1.CreateRelationshipResponse
-	49, // 90: codevaldwork.v1.TaskService.DeleteRelationship:output_type -> codevaldwork.v1.DeleteRelationshipResponse
-	51, // 91: codevaldwork.v1.TaskService.TraverseRelationships:output_type -> codevaldwork.v1.TraverseRelationshipsResponse
-	53, // 92: codevaldwork.v1.TaskService.CreateWorkflowRun:output_type -> codevaldwork.v1.CreateWorkflowRunResponse
-	55, // 93: codevaldwork.v1.TaskService.GetWorkflowRun:output_type -> codevaldwork.v1.GetWorkflowRunResponse
-	57, // 94: codevaldwork.v1.TaskService.ListWorkflowRuns:output_type -> codevaldwork.v1.ListWorkflowRunsResponse
-	59, // 95: codevaldwork.v1.TaskService.ImportProject:output_type -> codevaldwork.v1.ImportProjectResponse
-	66, // [66:96] is the sub-list for method output_type
-	36, // [36:66] is the sub-list for method input_type
-	36, // [36:36] is the sub-list for extension type_name
-	36, // [36:36] is the sub-list for extension extendee
-	0,  // [0:36] is the sub-list for field type_name
+	62, // 0: codevaldwork.v1.CreateTaskRequest.task:type_name -> codevaldwork.v1.Task
+	62, // 1: codevaldwork.v1.CreateTaskResponse.task:type_name -> codevaldwork.v1.Task
+	62, // 2: codevaldwork.v1.GetTaskResponse.task:type_name -> codevaldwork.v1.Task
+	62, // 3: codevaldwork.v1.UpdateTaskRequest.task:type_name -> codevaldwork.v1.Task
+	63, // 4: codevaldwork.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
+	62, // 5: codevaldwork.v1.UpdateTaskResponse.task:type_name -> codevaldwork.v1.Task
+	64, // 6: codevaldwork.v1.ListTasksRequest.filter:type_name -> codevaldwork.v1.TaskFilter
+	62, // 7: codevaldwork.v1.ListTasksResponse.tasks:type_name -> codevaldwork.v1.Task
+	62, // 8: codevaldwork.v1.GetTaskByNameResponse.task:type_name -> codevaldwork.v1.Task
+	62, // 9: codevaldwork.v1.CreateTaskInProjectRequest.task:type_name -> codevaldwork.v1.Task
+	62, // 10: codevaldwork.v1.CreateTaskInProjectResponse.task:type_name -> codevaldwork.v1.Task
+	65, // 11: codevaldwork.v1.UpsertAgentRequest.agent:type_name -> codevaldwork.v1.Agent
+	65, // 12: codevaldwork.v1.UpsertAgentResponse.agent:type_name -> codevaldwork.v1.Agent
+	65, // 13: codevaldwork.v1.GetAgentResponse.agent:type_name -> codevaldwork.v1.Agent
+	65, // 14: codevaldwork.v1.ListAgentsResponse.agents:type_name -> codevaldwork.v1.Agent
+	66, // 15: codevaldwork.v1.CreateProjectRequest.project:type_name -> codevaldwork.v1.Project
+	66, // 16: codevaldwork.v1.CreateProjectResponse.project:type_name -> codevaldwork.v1.Project
+	66, // 17: codevaldwork.v1.GetProjectResponse.project:type_name -> codevaldwork.v1.Project
+	66, // 18: codevaldwork.v1.GetProjectByNameResponse.project:type_name -> codevaldwork.v1.Project
+	66, // 19: codevaldwork.v1.UpdateProjectRequest.project:type_name -> codevaldwork.v1.Project
+	66, // 20: codevaldwork.v1.UpdateProjectResponse.project:type_name -> codevaldwork.v1.Project
+	66, // 21: codevaldwork.v1.ListProjectsResponse.projects:type_name -> codevaldwork.v1.Project
+	62, // 22: codevaldwork.v1.ListTasksInProjectResponse.tasks:type_name -> codevaldwork.v1.Task
+	66, // 23: codevaldwork.v1.ListProjectsForTaskResponse.projects:type_name -> codevaldwork.v1.Project
+	67, // 24: codevaldwork.v1.CreateRelationshipRequest.properties:type_name -> google.protobuf.Struct
+	68, // 25: codevaldwork.v1.CreateRelationshipResponse.relationship:type_name -> codevaldwork.v1.Relationship
+	69, // 26: codevaldwork.v1.TraverseRelationshipsRequest.direction:type_name -> codevaldwork.v1.Direction
+	68, // 27: codevaldwork.v1.TraverseRelationshipsResponse.relationships:type_name -> codevaldwork.v1.Relationship
+	70, // 28: codevaldwork.v1.CreateWorkflowRunResponse.run:type_name -> codevaldwork.v1.WorkflowRun
+	70, // 29: codevaldwork.v1.GetWorkflowRunResponse.run:type_name -> codevaldwork.v1.WorkflowRun
+	62, // 30: codevaldwork.v1.GetWorkflowRunResponse.tasks:type_name -> codevaldwork.v1.Task
+	71, // 31: codevaldwork.v1.GetWorkflowRunResponse.todos:type_name -> codevaldwork.v1.TaskTodo
+	68, // 32: codevaldwork.v1.GetWorkflowRunResponse.edges:type_name -> codevaldwork.v1.Relationship
+	70, // 33: codevaldwork.v1.ListWorkflowRunsResponse.runs:type_name -> codevaldwork.v1.WorkflowRun
+	70, // 34: codevaldwork.v1.RollbackWorkflowRunResponse.run:type_name -> codevaldwork.v1.WorkflowRun
+	66, // 35: codevaldwork.v1.ImportProjectResponse.project:type_name -> codevaldwork.v1.Project
+	62, // 36: codevaldwork.v1.ImportProjectResponse.tasks:type_name -> codevaldwork.v1.Task
+	0,  // 37: codevaldwork.v1.TaskService.CreateTask:input_type -> codevaldwork.v1.CreateTaskRequest
+	2,  // 38: codevaldwork.v1.TaskService.GetTask:input_type -> codevaldwork.v1.GetTaskRequest
+	10, // 39: codevaldwork.v1.TaskService.GetTaskByName:input_type -> codevaldwork.v1.GetTaskByNameRequest
+	4,  // 40: codevaldwork.v1.TaskService.UpdateTask:input_type -> codevaldwork.v1.UpdateTaskRequest
+	6,  // 41: codevaldwork.v1.TaskService.DeleteTask:input_type -> codevaldwork.v1.DeleteTaskRequest
+	8,  // 42: codevaldwork.v1.TaskService.ListTasks:input_type -> codevaldwork.v1.ListTasksRequest
+	14, // 43: codevaldwork.v1.TaskService.AssignTask:input_type -> codevaldwork.v1.AssignTaskRequest
+	16, // 44: codevaldwork.v1.TaskService.UnassignTask:input_type -> codevaldwork.v1.UnassignTaskRequest
+	18, // 45: codevaldwork.v1.TaskService.FailTodo:input_type -> codevaldwork.v1.FailTodoRequest
+	20, // 46: codevaldwork.v1.TaskService.UpsertAgent:input_type -> codevaldwork.v1.UpsertAgentRequest
+	22, // 47: codevaldwork.v1.TaskService.GetAgent:input_type -> codevaldwork.v1.GetAgentRequest
+	24, // 48: codevaldwork.v1.TaskService.ListAgents:input_type -> codevaldwork.v1.ListAgentsRequest
+	12, // 49: codevaldwork.v1.TaskService.CreateTaskInProject:input_type -> codevaldwork.v1.CreateTaskInProjectRequest
+	26, // 50: codevaldwork.v1.TaskService.CreateProject:input_type -> codevaldwork.v1.CreateProjectRequest
+	28, // 51: codevaldwork.v1.TaskService.GetProject:input_type -> codevaldwork.v1.GetProjectRequest
+	30, // 52: codevaldwork.v1.TaskService.GetProjectByName:input_type -> codevaldwork.v1.GetProjectByNameRequest
+	32, // 53: codevaldwork.v1.TaskService.UpdateProject:input_type -> codevaldwork.v1.UpdateProjectRequest
+	34, // 54: codevaldwork.v1.TaskService.DeleteProject:input_type -> codevaldwork.v1.DeleteProjectRequest
+	36, // 55: codevaldwork.v1.TaskService.ListProjects:input_type -> codevaldwork.v1.ListProjectsRequest
+	38, // 56: codevaldwork.v1.TaskService.AddTaskToProject:input_type -> codevaldwork.v1.AddTaskToProjectRequest
+	40, // 57: codevaldwork.v1.TaskService.RemoveTaskFromProject:input_type -> codevaldwork.v1.RemoveTaskFromProjectRequest
+	42, // 58: codevaldwork.v1.TaskService.ListTasksInProject:input_type -> codevaldwork.v1.ListTasksInProjectRequest
+	44, // 59: codevaldwork.v1.TaskService.ListProjectsForTask:input_type -> codevaldwork.v1.ListProjectsForTaskRequest
+	46, // 60: codevaldwork.v1.TaskService.CreateRelationship:input_type -> codevaldwork.v1.CreateRelationshipRequest
+	48, // 61: codevaldwork.v1.TaskService.DeleteRelationship:input_type -> codevaldwork.v1.DeleteRelationshipRequest
+	50, // 62: codevaldwork.v1.TaskService.TraverseRelationships:input_type -> codevaldwork.v1.TraverseRelationshipsRequest
+	52, // 63: codevaldwork.v1.TaskService.CreateWorkflowRun:input_type -> codevaldwork.v1.CreateWorkflowRunRequest
+	54, // 64: codevaldwork.v1.TaskService.GetWorkflowRun:input_type -> codevaldwork.v1.GetWorkflowRunRequest
+	56, // 65: codevaldwork.v1.TaskService.ListWorkflowRuns:input_type -> codevaldwork.v1.ListWorkflowRunsRequest
+	58, // 66: codevaldwork.v1.TaskService.RollbackWorkflowRun:input_type -> codevaldwork.v1.RollbackWorkflowRunRequest
+	60, // 67: codevaldwork.v1.TaskService.ImportProject:input_type -> codevaldwork.v1.ImportProjectRequest
+	1,  // 68: codevaldwork.v1.TaskService.CreateTask:output_type -> codevaldwork.v1.CreateTaskResponse
+	3,  // 69: codevaldwork.v1.TaskService.GetTask:output_type -> codevaldwork.v1.GetTaskResponse
+	11, // 70: codevaldwork.v1.TaskService.GetTaskByName:output_type -> codevaldwork.v1.GetTaskByNameResponse
+	5,  // 71: codevaldwork.v1.TaskService.UpdateTask:output_type -> codevaldwork.v1.UpdateTaskResponse
+	7,  // 72: codevaldwork.v1.TaskService.DeleteTask:output_type -> codevaldwork.v1.DeleteTaskResponse
+	9,  // 73: codevaldwork.v1.TaskService.ListTasks:output_type -> codevaldwork.v1.ListTasksResponse
+	15, // 74: codevaldwork.v1.TaskService.AssignTask:output_type -> codevaldwork.v1.AssignTaskResponse
+	17, // 75: codevaldwork.v1.TaskService.UnassignTask:output_type -> codevaldwork.v1.UnassignTaskResponse
+	19, // 76: codevaldwork.v1.TaskService.FailTodo:output_type -> codevaldwork.v1.FailTodoResponse
+	21, // 77: codevaldwork.v1.TaskService.UpsertAgent:output_type -> codevaldwork.v1.UpsertAgentResponse
+	23, // 78: codevaldwork.v1.TaskService.GetAgent:output_type -> codevaldwork.v1.GetAgentResponse
+	25, // 79: codevaldwork.v1.TaskService.ListAgents:output_type -> codevaldwork.v1.ListAgentsResponse
+	13, // 80: codevaldwork.v1.TaskService.CreateTaskInProject:output_type -> codevaldwork.v1.CreateTaskInProjectResponse
+	27, // 81: codevaldwork.v1.TaskService.CreateProject:output_type -> codevaldwork.v1.CreateProjectResponse
+	29, // 82: codevaldwork.v1.TaskService.GetProject:output_type -> codevaldwork.v1.GetProjectResponse
+	31, // 83: codevaldwork.v1.TaskService.GetProjectByName:output_type -> codevaldwork.v1.GetProjectByNameResponse
+	33, // 84: codevaldwork.v1.TaskService.UpdateProject:output_type -> codevaldwork.v1.UpdateProjectResponse
+	35, // 85: codevaldwork.v1.TaskService.DeleteProject:output_type -> codevaldwork.v1.DeleteProjectResponse
+	37, // 86: codevaldwork.v1.TaskService.ListProjects:output_type -> codevaldwork.v1.ListProjectsResponse
+	39, // 87: codevaldwork.v1.TaskService.AddTaskToProject:output_type -> codevaldwork.v1.AddTaskToProjectResponse
+	41, // 88: codevaldwork.v1.TaskService.RemoveTaskFromProject:output_type -> codevaldwork.v1.RemoveTaskFromProjectResponse
+	43, // 89: codevaldwork.v1.TaskService.ListTasksInProject:output_type -> codevaldwork.v1.ListTasksInProjectResponse
+	45, // 90: codevaldwork.v1.TaskService.ListProjectsForTask:output_type -> codevaldwork.v1.ListProjectsForTaskResponse
+	47, // 91: codevaldwork.v1.TaskService.CreateRelationship:output_type -> codevaldwork.v1.CreateRelationshipResponse
+	49, // 92: codevaldwork.v1.TaskService.DeleteRelationship:output_type -> codevaldwork.v1.DeleteRelationshipResponse
+	51, // 93: codevaldwork.v1.TaskService.TraverseRelationships:output_type -> codevaldwork.v1.TraverseRelationshipsResponse
+	53, // 94: codevaldwork.v1.TaskService.CreateWorkflowRun:output_type -> codevaldwork.v1.CreateWorkflowRunResponse
+	55, // 95: codevaldwork.v1.TaskService.GetWorkflowRun:output_type -> codevaldwork.v1.GetWorkflowRunResponse
+	57, // 96: codevaldwork.v1.TaskService.ListWorkflowRuns:output_type -> codevaldwork.v1.ListWorkflowRunsResponse
+	59, // 97: codevaldwork.v1.TaskService.RollbackWorkflowRun:output_type -> codevaldwork.v1.RollbackWorkflowRunResponse
+	61, // 98: codevaldwork.v1.TaskService.ImportProject:output_type -> codevaldwork.v1.ImportProjectResponse
+	68, // [68:99] is the sub-list for method output_type
+	37, // [37:68] is the sub-list for method input_type
+	37, // [37:37] is the sub-list for extension type_name
+	37, // [37:37] is the sub-list for extension extendee
+	0,  // [0:37] is the sub-list for field type_name
 }
 
 func init() { file_codevaldwork_v1_service_proto_init() }
@@ -3579,7 +3700,7 @@ func file_codevaldwork_v1_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codevaldwork_v1_service_proto_rawDesc), len(file_codevaldwork_v1_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   60,
+			NumMessages:   62,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

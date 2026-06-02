@@ -418,27 +418,45 @@ const (
 	WorkflowRunStatusFailed WorkflowRunStatus = "failed"
 
 	// WorkflowRunStatusRolledBack is a terminal state — the rollback action
-	// (out of scope for v1) has compensated the run.
+	// has compensated all artifacts of this run.
 	WorkflowRunStatusRolledBack WorkflowRunStatus = "rolled_back"
+
+	// WorkflowRunStatusRollingBack is a transient state entered when the
+	// rollback coordinator begins compensating cross-service artifacts.
+	// Transitions to rolled_back on success or rollback_failed on partial failure.
+	WorkflowRunStatusRollingBack WorkflowRunStatus = "rolling_back"
+
+	// WorkflowRunStatusRollbackFailed is a terminal state indicating the
+	// rollback coordinator encountered a partial failure. Operator intervention
+	// is required; the rollback may be re-triggered after manual remediation.
+	WorkflowRunStatusRollbackFailed WorkflowRunStatus = "rollback_failed"
 )
 
 // CanTransitionTo reports whether moving from the current status to next is
 // a valid state-machine step.
 //
-//	pending      → in_progress   (first task assigned)
-//	in_progress  → completed     (terminal event matched)
-//	in_progress  → failed        (any failure event)
-//	failed       → rolled_back   (explicit rollback — FEAT-20260602-004)
+//	pending          → in_progress       (first task assigned)
+//	in_progress      → completed         (terminal event matched)
+//	in_progress      → failed            (any failure event)
+//	failed           → rolling_back      (explicit rollback triggered)
+//	completed        → rolling_back      (explicit rollback on a completed run)
+//	rolling_back     → rolled_back       (coordinator finished cleanly)
+//	rolling_back     → rollback_failed   (coordinator hit a partial failure)
+//	rollback_failed  → rolling_back      (operator re-triggers after remediation)
 func (s WorkflowRunStatus) CanTransitionTo(next WorkflowRunStatus) bool {
 	switch s {
 	case WorkflowRunStatusPending:
 		return next == WorkflowRunStatusInProgress
 	case WorkflowRunStatusInProgress:
 		return next == WorkflowRunStatusCompleted || next == WorkflowRunStatusFailed
-	case WorkflowRunStatusFailed:
-		return next == WorkflowRunStatusRolledBack
+	case WorkflowRunStatusFailed, WorkflowRunStatusCompleted:
+		return next == WorkflowRunStatusRollingBack
+	case WorkflowRunStatusRollingBack:
+		return next == WorkflowRunStatusRolledBack || next == WorkflowRunStatusRollbackFailed
+	case WorkflowRunStatusRollbackFailed:
+		return next == WorkflowRunStatusRollingBack
 	default:
-		return false // completed, rolled_back are terminal
+		return false // rolled_back is terminal
 	}
 }
 

@@ -169,12 +169,18 @@ message TaskTodo {
 // WorkflowRunStatus mirrors the Go [WorkflowRunStatus] enumeration.
 // Anchors the lifecycle of a single orchestrated execution (FEAT-20260601-001).
 enum WorkflowRunStatus {
-  WORKFLOW_RUN_STATUS_UNSPECIFIED  = 0;
-  WORKFLOW_RUN_STATUS_PENDING      = 1;
-  WORKFLOW_RUN_STATUS_IN_PROGRESS  = 2;
-  WORKFLOW_RUN_STATUS_COMPLETED    = 3;
-  WORKFLOW_RUN_STATUS_FAILED       = 4;
-  WORKFLOW_RUN_STATUS_ROLLED_BACK  = 5;
+  WORKFLOW_RUN_STATUS_UNSPECIFIED      = 0;
+  WORKFLOW_RUN_STATUS_PENDING          = 1;
+  WORKFLOW_RUN_STATUS_IN_PROGRESS      = 2;
+  WORKFLOW_RUN_STATUS_COMPLETED        = 3;
+  WORKFLOW_RUN_STATUS_FAILED           = 4;
+  WORKFLOW_RUN_STATUS_ROLLED_BACK      = 5;
+  // ROLLING_BACK is the transient state entered when the rollback coordinator
+  // begins compensating cross-service artifacts (FEAT-20260602-004).
+  WORKFLOW_RUN_STATUS_ROLLING_BACK     = 6;
+  // ROLLBACK_FAILED indicates a partial rollback failure requiring operator
+  // intervention; the rollback may be re-triggered after remediation.
+  WORKFLOW_RUN_STATUS_ROLLBACK_FAILED  = 7;
 }
 
 // WorkflowRun anchors the closure of a single orchestrated execution.

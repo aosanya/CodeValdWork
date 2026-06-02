@@ -309,7 +309,8 @@ func (m *taskManager) UpdateWorkflowRunStatus(ctx context.Context, agencyID, run
 	if newStatus == WorkflowRunStatusInProgress && run.StartedAt == "" {
 		run.StartedAt = run.UpdatedAt
 	}
-	if newStatus == WorkflowRunStatusCompleted || newStatus == WorkflowRunStatusFailed || newStatus == WorkflowRunStatusRolledBack {
+	if newStatus == WorkflowRunStatusCompleted || newStatus == WorkflowRunStatusFailed ||
+		newStatus == WorkflowRunStatusRolledBack || newStatus == WorkflowRunStatusRollbackFailed {
 		run.CompletedAt = run.UpdatedAt
 	}
 
@@ -352,7 +353,13 @@ func (m *taskManager) publishRunStatusEvent(ctx context.Context, agencyID string
 		payload = WorkflowRunFailedPayload{WorkflowRunID: run.ID, FailedAt: run.CompletedAt, FailureReason: reason}
 	case WorkflowRunStatusRolledBack:
 		topic = TopicRunRolledBack
-		payload = WorkflowRunRolledBackPayload{WorkflowRunID: run.ID, RolledBackAt: run.CompletedAt}
+		payload = WorkflowRunRolledBackPayload{WorkflowRunID: run.ID, RolledBackAt: run.CompletedAt, Reason: reason}
+	case WorkflowRunStatusRollingBack:
+		topic = TopicRunRollingBack
+		payload = WorkflowRunRollingBackPayload{WorkflowRunID: run.ID, Reason: reason}
+	case WorkflowRunStatusRollbackFailed:
+		topic = TopicRunRollbackFailed
+		payload = WorkflowRunRollbackFailedPayload{WorkflowRunID: run.ID, FailedAt: run.UpdatedAt, FailureReason: reason}
 	default:
 		return
 	}
