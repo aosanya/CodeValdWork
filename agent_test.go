@@ -119,7 +119,7 @@ func TestAssignTask_AcceptsAgentSlug_EdgeUsesUUID(t *testing.T) {
 	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "developer-01"})
 
-	if err := mgr.AssignTask(ctx, "ag", task.ID, "developer-01"); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", task.ID, "developer-01", ""); err != nil {
 		t.Fatalf("AssignTask with slug: %v", err)
 	}
 
@@ -159,7 +159,7 @@ func TestAssignTask_UnknownAgent_ReturnsErrAgentNotFound(t *testing.T) {
 	ctx := context.Background()
 	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 
-	err := mgr.AssignTask(ctx, "ag", task.ID, "no-such-agent")
+	err := mgr.AssignTask(ctx, "ag", task.ID, "no-such-agent", "")
 	if !errors.Is(err, codevaldwork.ErrAgentNotFound) {
 		t.Fatalf("got %v, want ErrAgentNotFound", err)
 	}
@@ -170,7 +170,7 @@ func TestAssignTask_UnknownTask_ReturnsErrTaskNotFound(t *testing.T) {
 	ctx := context.Background()
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a"})
 
-	err := mgr.AssignTask(ctx, "ag", "no-such-task", agent.ID)
+	err := mgr.AssignTask(ctx, "ag", "no-such-task", agent.ID, "")
 	if !errors.Is(err, codevaldwork.ErrTaskNotFound) {
 		t.Fatalf("got %v, want ErrTaskNotFound", err)
 	}
@@ -182,7 +182,7 @@ func TestAssignTask_HappyPath_CreatesEdge(t *testing.T) {
 	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a"})
 
-	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID, ""); err != nil {
 		t.Fatalf("AssignTask: %v", err)
 	}
 	edges, _ := mgr.TraverseRelationships(ctx, "ag", task.ID, codevaldwork.RelLabelAssignedTo, codevaldwork.DirectionOutbound)
@@ -201,10 +201,10 @@ func TestAssignTask_Reassign_ReplacesEdge(t *testing.T) {
 	a1, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a1"})
 	a2, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a2"})
 
-	if err := mgr.AssignTask(ctx, "ag", task.ID, a1.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", task.ID, a1.ID, ""); err != nil {
 		t.Fatalf("first AssignTask: %v", err)
 	}
-	if err := mgr.AssignTask(ctx, "ag", task.ID, a2.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", task.ID, a2.ID, ""); err != nil {
 		t.Fatalf("second AssignTask: %v", err)
 	}
 
@@ -224,7 +224,7 @@ func TestAssignTask_PublishesEvent(t *testing.T) {
 	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a"})
 
-	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID, ""); err != nil {
 		t.Fatalf("AssignTask: %v", err)
 	}
 
@@ -246,7 +246,7 @@ func TestUnassignTask_OnAssignedTask_RemovesEdge(t *testing.T) {
 	ctx := context.Background()
 	task, _ := mgr.CreateTask(ctx, "ag", codevaldwork.Task{})
 	agent, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a"})
-	_ = mgr.AssignTask(ctx, "ag", task.ID, agent.ID)
+	_ = mgr.AssignTask(ctx, "ag", task.ID, agent.ID, "")
 
 	if err := mgr.UnassignTask(ctx, "ag", task.ID); err != nil {
 		t.Fatalf("UnassignTask: %v", err)

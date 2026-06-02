@@ -117,13 +117,13 @@ func TestAssignTask_Replacement_FiresAssignedOnce(t *testing.T) {
 	a2, _ := mgr.UpsertAgent(ctx, "ag", codevaldwork.Agent{AgentID: "a2"})
 
 	// Reset captured events so we count only the reassign hits.
-	if err := mgr.AssignTask(ctx, "ag", task.ID, a1.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", task.ID, a1.ID, ""); err != nil {
 		t.Fatalf("AssignTask a1: %v", err)
 	}
 	pub.full = nil
 	pub.events = nil
 
-	if err := mgr.AssignTask(ctx, "ag", task.ID, a2.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", task.ID, a2.ID, ""); err != nil {
 		t.Fatalf("AssignTask a2: %v", err)
 	}
 
@@ -158,7 +158,7 @@ func TestAssignTask_PayloadHydrated_IncludesTaskCodeAndTitle(t *testing.T) {
 		RoleName: "Developer",
 	})
 
-	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID); err != nil {
+	if err := mgr.AssignTask(ctx, "ag", task.ID, agent.ID, ""); err != nil {
 		t.Fatalf("AssignTask: %v", err)
 	}
 
@@ -244,7 +244,7 @@ func TestEventSequence_FullPhase2Flow_EmitsExactOrderedTopics(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UpsertAgent: %v", err)
 	}
-	if err := mgr.AssignTask(ctx, agency, task.ID, agent.ID); err != nil {
+	if err := mgr.AssignTask(ctx, agency, task.ID, agent.ID, ""); err != nil {
 		t.Fatalf("AssignTask: %v", err)
 	}
 
