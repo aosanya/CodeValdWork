@@ -116,6 +116,15 @@ var ErrFailureBudgetAlreadySet = errors.New("workflow run failure budget already
 // root run — child runs must defer to their root (FEAT-20260602-007).
 var ErrNotRootWorkflowRun = errors.New("workflow run is not a root run; budget operations must target the root")
 
+// ErrCannotCancelTerminalRun is returned by [TaskManager.CancelWorkflowRun]
+// when the target run is not in the in_progress status. Cancel is only valid
+// for actively running runs (FEAT-20260602-008). Already-terminal runs
+// (completed, failed, cancelled, rolled_back, rollback_failed) and runs
+// already in a transient state (rolling_back) are rejected with this error.
+// An already-cancelling run is NOT an error — the call is idempotent and
+// returns the existing cancellation envelope.
+var ErrCannotCancelTerminalRun = errors.New("workflow run is not in_progress; cancel rejected")
+
 // ErrBlocked is the sentinel returned by [TaskManager.UpdateTask] when a
 // pending → in_progress transition is rejected because the task has one or
 // more non-terminal `blocks`-inbound predecessors. Match it with

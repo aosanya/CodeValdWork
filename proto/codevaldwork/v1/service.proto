@@ -180,6 +180,19 @@ service TaskService {
   // run first).
   rpc RollbackWorkflowRun(RollbackWorkflowRunRequest) returns (RollbackWorkflowRunResponse);
 
+  // CancelWorkflowRun flips an in_progress WorkflowRun to the cancelling
+  // transient state, cascades work.task.cancelled to every non-terminal Task
+  // in the run, and publishes work.run.cancelling (FEAT-20260602-008). A
+  // separate finalization step elsewhere transitions the run to cancelled
+  // after the quiesce deadline elapses.
+  //
+  // Idempotent: a repeated call on an already-cancelling run returns the
+  // stored envelope without re-firing events or shifting the deadline.
+  //
+  // Errors: NOT_FOUND, FAILED_PRECONDITION (run is in any status other than
+  // in_progress or cancelling).
+  rpc CancelWorkflowRun(CancelWorkflowRunRequest) returns (CancelWorkflowRunResponse);
+
   // IncrementFailureBudget atomically increments the
   // failure_pipelines_used counter on the root WorkflowRun identified by
   // workflow_run_id. Cross calls this at failure-dispatch time, before
@@ -518,6 +531,30 @@ message RollbackWorkflowRunResponse {
   // run carries the updated WorkflowRun. On success the status is
   // WORKFLOW_RUN_STATUS_ROLLED_BACK; on partial failure it is
   // WORKFLOW_RUN_STATUS_ROLLBACK_FAILED.
+  WorkflowRun run = 1;
+}
+
+// ── Cancel messages (FEAT-20260602-008) ──────────────────────────────────────
+
+message CancelWorkflowRunRequest {
+  string agency_id       = 1;
+  string workflow_run_id = 2;
+  // reason is a human-readable explanation persisted on the run row and
+  // included in the work.run.cancelling and work.run.cancelled events.
+  string reason          = 3;
+  // cancelled_by identifies the operator or service that issued the cancel.
+  // Stored on the run row for audit; included in the cancel events.
+  string cancelled_by    = 4;
+  // quiesce_timeout_ms is the number of milliseconds in-flight subscribers
+  // are given to wind down before the run is finalised to cancelled. When
+  // zero the server applies its default (30000 ms).
+  int32  quiesce_timeout_ms = 5;
+}
+
+message CancelWorkflowRunResponse {
+  // run carries the updated WorkflowRun in WORKFLOW_RUN_STATUS_CANCELLING.
+  // cancelling_until, cancelled_by, and cancel_reason are populated on the
+  // run vertex.
   WorkflowRun run = 1;
 }
 

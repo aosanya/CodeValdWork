@@ -41,7 +41,8 @@ func mapError(err error) error {
 		errors.Is(err, codevaldwork.ErrWorkflowRunMismatch),
 		errors.Is(err, codevaldwork.ErrRollbackConflict),
 		errors.Is(err, codevaldwork.ErrFailureBudgetAlreadySet),
-		errors.Is(err, codevaldwork.ErrNotRootWorkflowRun):
+		errors.Is(err, codevaldwork.ErrNotRootWorkflowRun),
+		errors.Is(err, codevaldwork.ErrCannotCancelTerminalRun):
 		return status.Error(codes.FailedPrecondition, err.Error())
 	case errors.Is(err, codevaldwork.ErrForeignRunDependency):
 		return status.Error(codes.Aborted, err.Error())

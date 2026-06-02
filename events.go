@@ -57,6 +57,12 @@ const (
 	// TopicTaskRolledBack fires once per Task deleted by [DeleteWorkflowRunArtifacts].
 	// Payload: [TaskRolledBackPayload].
 	TopicTaskRolledBack = "work.task.rolled_back"
+
+	// TopicTaskCancelled fires once per non-terminal Task whose status was
+	// flipped to cancelled by the run-cancel cascade (FEAT-20260602-008).
+	// CodeValdAI / CodeValdFunctions subscribe to drop in-flight work for
+	// the task. Payload: [TaskCancelledPayload].
+	TopicTaskCancelled = "work.task.cancelled"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -75,6 +81,9 @@ func AllTopics() []string {
 		TopicRunRollingBack,
 		TopicRunRolledBack,
 		TopicRunRollbackFailed,
+		TopicTaskCancelled,
+		TopicRunCancelling,
+		TopicRunCancelled,
 	)
 }
 
@@ -228,6 +237,15 @@ const (
 	// TopicRunRollbackFailed fires when the rollback coordinator encountered a partial
 	// failure and the run reached rollback_failed. Operator intervention is required.
 	TopicRunRollbackFailed = "work.run.rollback_failed"
+	// TopicRunCancelling fires when an operator-issued cancel transitions a
+	// WorkflowRun from in_progress to the cancelling transient state
+	// (FEAT-20260602-008). In-flight subscribers should quiesce their work
+	// on behalf of the run.
+	TopicRunCancelling = "work.run.cancelling"
+	// TopicRunCancelled fires when the cancellation finalization step
+	// transitions a WorkflowRun from cancelling to the cancelled terminal
+	// state (FEAT-20260602-008).
+	TopicRunCancelled = "work.run.cancelled"
 )
 
 // WorkflowRunInProgressPayload is the Payload for [TopicRunInProgress].
@@ -270,6 +288,35 @@ type WorkflowRunRollbackFailedPayload struct {
 	WorkflowRunID string `json:"workflow_run_id"`
 	FailedAt      string `json:"failed_at"`
 	FailureReason string `json:"failure_reason,omitempty"`
+}
+
+// WorkflowRunCancellingPayload is the Payload for [TopicRunCancelling]
+// (FEAT-20260602-008). Subscribers should quiesce in-flight work for the
+// run; the finalization step transitions the run to cancelled at or after
+// QuiesceDeadline regardless of acknowledgement.
+type WorkflowRunCancellingPayload struct {
+	WorkflowRunID   string `json:"workflow_run_id"`
+	Reason          string `json:"reason,omitempty"`
+	CancelledBy     string `json:"cancelled_by,omitempty"`
+	QuiesceDeadline string `json:"quiesce_deadline,omitempty"`
+}
+
+// WorkflowRunCancelledPayload is the Payload for [TopicRunCancelled]
+// (FEAT-20260602-008). Marks the run as terminally cancelled.
+type WorkflowRunCancelledPayload struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	CancelledAt   string `json:"cancelled_at"`
+	Reason        string `json:"reason,omitempty"`
+	CancelledBy   string `json:"cancelled_by,omitempty"`
+}
+
+// TaskCancelledPayload is the Payload for [TopicTaskCancelled]
+// (FEAT-20260602-008). Emitted once per Task whose status was flipped to
+// cancelled by the run-cancel cascade.
+type TaskCancelledPayload struct {
+	TaskID        string `json:"task_id"`
+	WorkflowRunID string `json:"workflow_run_id"`
+	Reason        string `json:"reason,omitempty"`
 }
 
 // ConsumedTopics is the closed list of topics CodeValdWork subscribes to.

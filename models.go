@@ -430,6 +430,19 @@ const (
 	// rollback coordinator encountered a partial failure. Operator intervention
 	// is required; the rollback may be re-triggered after manual remediation.
 	WorkflowRunStatusRollbackFailed WorkflowRunStatus = "rollback_failed"
+
+	// WorkflowRunStatusCancelling is the transient state entered when an
+	// operator-issued POST /workflow-runs/{id}/cancel quiesces in-flight
+	// handlers (FEAT-20260602-008). The run remains in this state until the
+	// quiesce deadline elapses and the finalization step transitions it to
+	// cancelled.
+	WorkflowRunStatusCancelling WorkflowRunStatus = "cancelling"
+
+	// WorkflowRunStatusCancelled is the terminal state reached after the
+	// quiesce deadline elapses. Distinct from failed so closure SSE and
+	// rollback can treat operator-cancelled runs differently if needed.
+	// Rollback is allowed on cancelled runs (cancel → optional rollback).
+	WorkflowRunStatusCancelled WorkflowRunStatus = "cancelled"
 )
 
 // CanTransitionTo reports whether moving from the current status to next is
@@ -438,8 +451,11 @@ const (
 //	pending          → in_progress       (first task assigned)
 //	in_progress      → completed         (terminal event matched)
 //	in_progress      → failed            (any failure event)
+//	in_progress      → cancelling        (operator cancel issued — FEAT-008)
+//	cancelling       → cancelled         (quiesce deadline elapsed — FEAT-008)
 //	failed           → rolling_back      (explicit rollback triggered)
 //	completed        → rolling_back      (explicit rollback on a completed run)
+//	cancelled        → rolling_back      (rollback allowed after cancel — FEAT-008)
 //	rolling_back     → rolled_back       (coordinator finished cleanly)
 //	rolling_back     → rollback_failed   (coordinator hit a partial failure)
 //	rollback_failed  → rolling_back      (operator re-triggers after remediation)
@@ -448,8 +464,12 @@ func (s WorkflowRunStatus) CanTransitionTo(next WorkflowRunStatus) bool {
 	case WorkflowRunStatusPending:
 		return next == WorkflowRunStatusInProgress
 	case WorkflowRunStatusInProgress:
-		return next == WorkflowRunStatusCompleted || next == WorkflowRunStatusFailed
-	case WorkflowRunStatusFailed, WorkflowRunStatusCompleted:
+		return next == WorkflowRunStatusCompleted ||
+			next == WorkflowRunStatusFailed ||
+			next == WorkflowRunStatusCancelling
+	case WorkflowRunStatusCancelling:
+		return next == WorkflowRunStatusCancelled
+	case WorkflowRunStatusFailed, WorkflowRunStatusCompleted, WorkflowRunStatusCancelled:
 		return next == WorkflowRunStatusRollingBack
 	case WorkflowRunStatusRollingBack:
 		return next == WorkflowRunStatusRolledBack || next == WorkflowRunStatusRollbackFailed
@@ -543,6 +563,21 @@ type WorkflowRun struct {
 	// to FailurePipelinesUsed — supports idempotent retries of
 	// IncrementFailureBudget.
 	CountedChildRunIDs []string `json:"counted_child_run_ids,omitempty"`
+
+	// CancelledBy is the authenticated identity of the caller who issued the
+	// cancel API call (FEAT-20260602-008). Empty for runs that have never
+	// been cancelled.
+	CancelledBy string `json:"cancelled_by,omitempty"`
+
+	// CancelReason is the human-readable explanation supplied by the caller
+	// when cancelling the run (FEAT-20260602-008). Carried in the
+	// work.run.cancelling and work.run.cancelled event payloads.
+	CancelReason string `json:"cancel_reason,omitempty"`
+
+	// CancellingUntil is the RFC 3339 timestamp marking the quiesce deadline.
+	// The finalization step transitions the run from cancelling → cancelled
+	// at or after this time (FEAT-20260602-008). Empty for non-cancelled runs.
+	CancellingUntil string `json:"cancelling_until,omitempty"`
 }
 
 // WorkflowRunClosure is the full read returned by GetWorkflowRunClosure —
