@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
+	"github.com/aosanya/CodeValdSharedLib/eventbus"
 )
 
 // runNameSuffixBytes is the number of random bytes that feed the
@@ -290,18 +291,91 @@ func (m *taskManager) GetWorkflowRunClosure(ctx context.Context, agencyID, runID
 	return closure, nil
 }
 
+// UpdateWorkflowRunStatus transitions a WorkflowRun to a new lifecycle status.
+// Allowed transitions: pending→in_progress, in_progress→completed,
+// in_progress→failed, failed→rolled_back. All others return
+// [ErrInvalidRunStatusTransition].
+func (m *taskManager) UpdateWorkflowRunStatus(ctx context.Context, agencyID, runID string, newStatus WorkflowRunStatus, reason string) (WorkflowRun, error) {
+	run, err := m.GetWorkflowRun(ctx, agencyID, runID)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	if !run.Status.CanTransitionTo(newStatus) {
+		return WorkflowRun{}, fmt.Errorf("%w: %s → %s", ErrInvalidRunStatusTransition, run.Status, newStatus)
+	}
+	now := time.Now().UTC()
+	run.Status = newStatus
+	run.UpdatedAt = now.Format(time.RFC3339)
+	if newStatus == WorkflowRunStatusInProgress && run.StartedAt == "" {
+		run.StartedAt = run.UpdatedAt
+	}
+	if newStatus == WorkflowRunStatusCompleted || newStatus == WorkflowRunStatusFailed || newStatus == WorkflowRunStatusRolledBack {
+		run.CompletedAt = run.UpdatedAt
+	}
+
+	props := workflowRunToProperties(run)
+	if reason != "" {
+		props["failure_reason"] = reason
+	}
+	updated, err := m.dm.UpdateEntity(ctx, agencyID, runID, entitygraph.UpdateEntityRequest{Properties: props})
+	if err != nil {
+		return WorkflowRun{}, fmt.Errorf("UpdateWorkflowRunStatus: %w", err)
+	}
+	result := workflowRunFromEntity(updated)
+
+	m.publishRunStatusEvent(ctx, agencyID, result, now, reason)
+	return result, nil
+}
+
+// publishRunStatusEvent fires the appropriate work.run.* event after a status transition.
+func (m *taskManager) publishRunStatusEvent(ctx context.Context, agencyID string, run WorkflowRun, now time.Time, reason string) {
+	if m.publisher == nil {
+		return
+	}
+	var topic string
+	var payload any
+	switch run.Status {
+	case WorkflowRunStatusInProgress:
+		topic = TopicRunInProgress
+		payload = WorkflowRunInProgressPayload{WorkflowRunID: run.ID, StartedAt: run.StartedAt}
+	case WorkflowRunStatusCompleted:
+		durationMs := int64(0)
+		if run.StartedAt != "" {
+			if started, err := time.Parse(time.RFC3339, run.StartedAt); err == nil {
+				durationMs = now.UnixMilli() - started.UnixMilli()
+			}
+		}
+		topic = TopicRunCompleted
+		payload = WorkflowRunCompletedPayload{WorkflowRunID: run.ID, CompletedAt: run.CompletedAt, DurationMs: durationMs}
+	case WorkflowRunStatusFailed:
+		topic = TopicRunFailed
+		payload = WorkflowRunFailedPayload{WorkflowRunID: run.ID, FailedAt: run.CompletedAt, FailureReason: reason}
+	case WorkflowRunStatusRolledBack:
+		topic = TopicRunRolledBack
+		payload = WorkflowRunRolledBackPayload{WorkflowRunID: run.ID, RolledBackAt: run.CompletedAt}
+	default:
+		return
+	}
+	eventbus.SafePublish(ctx, m.publisher, eventbus.Event{
+		Topic:    topic,
+		AgencyID: agencyID,
+		Payload:  payload,
+	})
+}
+
 // workflowRunToProperties serialises a WorkflowRun for storage.
 func workflowRunToProperties(r WorkflowRun) map[string]any {
 	props := map[string]any{
-		"name":          r.Name,
-		"status":        string(r.Status),
-		"trigger_event": r.TriggerEvent,
-		"initiator":     r.Initiator,
-		"notes":         r.Notes,
-		"started_at":    r.StartedAt,
-		"completed_at":  r.CompletedAt,
-		"created_at":    r.CreatedAt,
-		"updated_at":    r.UpdatedAt,
+		"name":           r.Name,
+		"status":         string(r.Status),
+		"trigger_event":  r.TriggerEvent,
+		"initiator":      r.Initiator,
+		"notes":          r.Notes,
+		"terminal_event": r.TerminalEvent,
+		"started_at":     r.StartedAt,
+		"completed_at":   r.CompletedAt,
+		"created_at":     r.CreatedAt,
+		"updated_at":     r.UpdatedAt,
 	}
 	if len(r.AgentRunIDs) > 0 {
 		props["agent_run_ids"] = append([]string(nil), r.AgentRunIDs...)
@@ -318,17 +392,18 @@ func workflowRunToProperties(r WorkflowRun) map[string]any {
 // workflowRunFromEntity reconstructs a WorkflowRun from an entitygraph Entity.
 func workflowRunFromEntity(e entitygraph.Entity) WorkflowRun {
 	r := WorkflowRun{
-		ID:           e.ID,
-		AgencyID:     e.AgencyID,
-		Name:         entitygraph.StringProp(e.Properties, "name"),
-		Status:       WorkflowRunStatus(entitygraph.StringProp(e.Properties, "status")),
-		TriggerEvent: entitygraph.StringProp(e.Properties, "trigger_event"),
-		Initiator:    entitygraph.StringProp(e.Properties, "initiator"),
-		Notes:        entitygraph.StringProp(e.Properties, "notes"),
-		StartedAt:    entitygraph.StringProp(e.Properties, "started_at"),
-		CompletedAt:  entitygraph.StringProp(e.Properties, "completed_at"),
-		CreatedAt:    entitygraph.StringProp(e.Properties, "created_at"),
-		UpdatedAt:    entitygraph.StringProp(e.Properties, "updated_at"),
+		ID:            e.ID,
+		AgencyID:      e.AgencyID,
+		Name:          entitygraph.StringProp(e.Properties, "name"),
+		Status:        WorkflowRunStatus(entitygraph.StringProp(e.Properties, "status")),
+		TriggerEvent:  entitygraph.StringProp(e.Properties, "trigger_event"),
+		Initiator:     entitygraph.StringProp(e.Properties, "initiator"),
+		Notes:         entitygraph.StringProp(e.Properties, "notes"),
+		TerminalEvent: entitygraph.StringProp(e.Properties, "terminal_event"),
+		StartedAt:     entitygraph.StringProp(e.Properties, "started_at"),
+		CompletedAt:   entitygraph.StringProp(e.Properties, "completed_at"),
+		CreatedAt:     entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:     entitygraph.StringProp(e.Properties, "updated_at"),
 	}
 	r.AgentRunIDs = stringSliceProp(e.Properties, "agent_run_ids")
 	r.FunctionJobIDs = stringSliceProp(e.Properties, "function_job_ids")

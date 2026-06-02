@@ -58,20 +58,22 @@ type aiTodoItem struct {
 // TaskEventDispatcher bridges ai.task.* events into work task / todo status transitions
 // and materialises ai.task.todo decompositions into TaskTodo entities.
 type TaskEventDispatcher struct {
-	mgr      codevaldwork.TaskManager
-	agencyID string
-	pub      eventbus.Publisher // optional; nil = skip work.task.failed bridging
-	writes   *writeTracker      // gates ai.task.completed on git.file.written (BUG-09-020 Phase 2)
+	mgr       codevaldwork.TaskManager
+	agencyID  string
+	pub       eventbus.Publisher // optional; nil = skip work.task.failed bridging
+	writes    *writeTracker      // gates ai.task.completed on git.file.written (BUG-09-020 Phase 2)
+	runStatus *RunStatusHandler  // drives WorkflowRun status transitions
 }
 
 // NewTaskEventDispatcher constructs a TaskEventDispatcher.
 // pub may be nil — work.task.failed bridging is skipped when no publisher is set.
 func NewTaskEventDispatcher(mgr codevaldwork.TaskManager, agencyID string, pub eventbus.Publisher) *TaskEventDispatcher {
 	return &TaskEventDispatcher{
-		mgr:      mgr,
-		agencyID: agencyID,
-		pub:      pub,
-		writes:   newWriteTracker(writeGateTimeout),
+		mgr:       mgr,
+		agencyID:  agencyID,
+		pub:       pub,
+		writes:    newWriteTracker(writeGateTimeout),
+		runStatus: NewRunStatusHandler(mgr, agencyID),
 	}
 }
 
@@ -88,6 +90,12 @@ func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload strin
 		d.handleWorkTaskCompleted(ctx, payload)
 	case topicFileWritten:
 		d.handleFileWritten(ctx, payload)
+	}
+	// Always check for WorkflowRun status transitions on every event that
+	// carries a workflow_run_id — handles both the hardcoded failure topics
+	// and any terminal_event topic configured on the run.
+	if d.runStatus != nil {
+		d.runStatus.HandleEvent(ctx, topic, payload)
 	}
 }
 

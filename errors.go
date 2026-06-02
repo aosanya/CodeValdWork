@@ -44,6 +44,12 @@ var ErrTaskTodoNotFound = errors.New("task todo not found")
 // exist for the given agencyID and entity ID.
 var ErrWorkflowRunNotFound = errors.New("workflow run not found")
 
+// ErrInvalidRunStatusTransition is returned by [TaskManager.UpdateWorkflowRunStatus]
+// when the requested transition is not permitted from the current status.
+// Terminal states (completed, failed, rolled_back) cannot be re-transitioned;
+// failed cannot transition to completed; only in_progress → * is allowed after pending.
+var ErrInvalidRunStatusTransition = errors.New("invalid workflow run status transition")
+
 // ErrWorkflowRunNameExists is returned by [TaskManager.CreateWorkflowRun]
 // when a run with the same (agencyID, name) pair already exists. The caller
 // should append a discriminator and retry, or treat the existing run as
