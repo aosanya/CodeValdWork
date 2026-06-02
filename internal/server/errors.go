@@ -39,7 +39,9 @@ func mapError(err error) error {
 	case errors.Is(err, codevaldwork.ErrInvalidStatusTransition),
 		errors.Is(err, codevaldwork.ErrInvalidRunStatusTransition),
 		errors.Is(err, codevaldwork.ErrWorkflowRunMismatch),
-		errors.Is(err, codevaldwork.ErrRollbackConflict):
+		errors.Is(err, codevaldwork.ErrRollbackConflict),
+		errors.Is(err, codevaldwork.ErrFailureBudgetAlreadySet),
+		errors.Is(err, codevaldwork.ErrNotRootWorkflowRun):
 		return status.Error(codes.FailedPrecondition, err.Error())
 	case errors.Is(err, codevaldwork.ErrForeignRunDependency):
 		return status.Error(codes.Aborted, err.Error())

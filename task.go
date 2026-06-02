@@ -256,6 +256,26 @@ type TaskManager interface {
 	// [ErrWorkflowRunNameExists]).
 	CreateWorkflowRun(ctx context.Context, agencyID, name, triggerEvent, initiator string) (WorkflowRun, error)
 
+	// CreateRecoveryWorkflowRun mints a child WorkflowRun spawned by Cross's
+	// failure dispatch (FEAT-20260602-007). The child carries
+	// parent_workflow_run_id and root_workflow_run_id; the budget counter
+	// lives on the root and is incremented by IncrementFailureBudget.
+	CreateRecoveryWorkflowRun(ctx context.Context, agencyID, name, triggerEvent, initiator, parentRunID, rootRunID string) (WorkflowRun, error)
+
+	// SetFailureBudget locks the failure_pipeline_budget on a root
+	// WorkflowRun (FEAT-20260602-007). The budget is frozen for the lifetime
+	// of the run; resetting it returns [ErrFailureBudgetAlreadySet]. Acting
+	// on a non-root run returns [ErrNotRootWorkflowRun].
+	SetFailureBudget(ctx context.Context, agencyID, runID string, budget int) (WorkflowRun, error)
+
+	// IncrementFailureBudget atomically increments failure_pipelines_used on
+	// the root WorkflowRun (FEAT-20260602-007). Idempotent on childRunID:
+	// repeated calls with the same childRunID return the current counter
+	// state without double-incrementing. The exhausted return is true iff
+	// `used > budget` after the increment; Cross must skip the recovery
+	// dispatch and fail the run on exhausted.
+	IncrementFailureBudget(ctx context.Context, agencyID, rootRunID, childRunID string) (used, budget int, exhausted bool, err error)
+
 	// GetWorkflowRun reads a single WorkflowRun by entity ID within the
 	// given agency. Returns [ErrWorkflowRunNotFound] when no matching
 	// entity exists.

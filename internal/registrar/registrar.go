@@ -481,6 +481,19 @@ func workflowRunRoutes() []types.RouteInfo {
 				{URLParam: "workflowRunId", Field: "workflow_run_id"},
 			},
 		},
+		// FEAT-20260602-007: failure-budget gate. Cross's failure-dispatch
+		// POSTs here before creating a child recovery run.
+		{
+			Method:     "POST",
+			Pattern:    "/work/{agencyId}/workflow-runs/{workflowRunId}/increment-failure-budget",
+			Capability: "increment_failure_budget",
+			GrpcMethod: "/codevaldwork.v1.TaskService/IncrementFailureBudget",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "workflowRunId", Field: "workflow_run_id"},
+			},
+		},
 	}
 }
 

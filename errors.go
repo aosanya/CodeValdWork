@@ -104,6 +104,18 @@ var ErrRollbackConflict = errors.New("workflow run rollback already in progress"
 // first, then re-trigger this rollback.
 var ErrForeignRunDependency = errors.New("run closure contains a task depended on by another workflow run")
 
+// ErrFailureBudgetAlreadySet is returned by [TaskManager.SetFailureBudget]
+// when the run's failure_pipeline_budget has already been set to a non-zero
+// value. The budget is frozen for the lifetime of the run; resetting it
+// would invalidate previously-charged increments (FEAT-20260602-007).
+var ErrFailureBudgetAlreadySet = errors.New("workflow run failure budget already set")
+
+// ErrNotRootWorkflowRun is returned by [TaskManager.SetFailureBudget] and
+// [TaskManager.IncrementFailureBudget] when the target run has a non-empty
+// parent_workflow_run_id. The failure-pipeline budget lives only on the
+// root run — child runs must defer to their root (FEAT-20260602-007).
+var ErrNotRootWorkflowRun = errors.New("workflow run is not a root run; budget operations must target the root")
+
 // ErrBlocked is the sentinel returned by [TaskManager.UpdateTask] when a
 // pending → in_progress transition is rejected because the task has one or
 // more non-terminal `blocks`-inbound predecessors. Match it with

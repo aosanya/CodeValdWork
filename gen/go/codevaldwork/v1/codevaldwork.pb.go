@@ -1013,9 +1013,22 @@ type WorkflowRun struct {
 	// name is a caller-supplied or server-generated label unique per agency,
 	// used as the correlation handle by test scripts and the headline column
 	// in the WorkflowRuns UI list (FEAT-20260602-001).
-	Name          string `protobuf:"bytes,14,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Name string `protobuf:"bytes,14,opt,name=name,proto3" json:"name,omitempty"`
+	// parent_workflow_run_id references the WorkflowRun whose failure spawned
+	// this child (recovery) run. Empty for top-level runs (FEAT-20260602-007).
+	ParentWorkflowRunId string `protobuf:"bytes,15,opt,name=parent_workflow_run_id,json=parentWorkflowRunId,proto3" json:"parent_workflow_run_id,omitempty"`
+	// root_workflow_run_id is the topmost ancestor of the recovery chain.
+	// Carried on every downstream event/artifact for one-query closure
+	// aggregation (FEAT-20260602-007).
+	RootWorkflowRunId string `protobuf:"bytes,16,opt,name=root_workflow_run_id,json=rootWorkflowRunId,proto3" json:"root_workflow_run_id,omitempty"`
+	// failure_pipeline_budget caps recovery-pipeline activations under this
+	// run's lineage. Lives only on the root run (FEAT-20260602-007).
+	FailurePipelineBudget int32 `protobuf:"varint,17,opt,name=failure_pipeline_budget,json=failurePipelineBudget,proto3" json:"failure_pipeline_budget,omitempty"`
+	// failure_pipelines_used is the count of recovery activations charged to
+	// this root run so far (FEAT-20260602-007).
+	FailurePipelinesUsed int32 `protobuf:"varint,18,opt,name=failure_pipelines_used,json=failurePipelinesUsed,proto3" json:"failure_pipelines_used,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *WorkflowRun) Reset() {
@@ -1144,6 +1157,34 @@ func (x *WorkflowRun) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+func (x *WorkflowRun) GetParentWorkflowRunId() string {
+	if x != nil {
+		return x.ParentWorkflowRunId
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetRootWorkflowRunId() string {
+	if x != nil {
+		return x.RootWorkflowRunId
+	}
+	return ""
+}
+
+func (x *WorkflowRun) GetFailurePipelineBudget() int32 {
+	if x != nil {
+		return x.FailurePipelineBudget
+	}
+	return 0
+}
+
+func (x *WorkflowRun) GetFailurePipelinesUsed() int32 {
+	if x != nil {
+		return x.FailurePipelinesUsed
+	}
+	return 0
 }
 
 // Relationship is the Work-domain projection of a directed graph edge.
@@ -1330,7 +1371,7 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12&\n" +
-	"\x0fworkflow_run_id\x18\x11 \x01(\tR\rworkflowRunId\"\xc4\x04\n" +
+	"\x0fworkflow_run_id\x18\x11 \x01(\tR\rworkflowRunId\"\x98\x06\n" +
 	"\vWorkflowRun\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12:\n" +
@@ -1349,7 +1390,11 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x12\n" +
-	"\x04name\x18\x0e \x01(\tR\x04name\"\xf3\x01\n" +
+	"\x04name\x18\x0e \x01(\tR\x04name\x123\n" +
+	"\x16parent_workflow_run_id\x18\x0f \x01(\tR\x13parentWorkflowRunId\x12/\n" +
+	"\x14root_workflow_run_id\x18\x10 \x01(\tR\x11rootWorkflowRunId\x126\n" +
+	"\x17failure_pipeline_budget\x18\x11 \x01(\x05R\x15failurePipelineBudget\x124\n" +
+	"\x16failure_pipelines_used\x18\x12 \x01(\x05R\x14failurePipelinesUsed\"\xf3\x01\n" +
 	"\fRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +

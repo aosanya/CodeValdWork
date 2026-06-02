@@ -14,12 +14,47 @@ import (
 // Mints a new WorkflowRun anchor for an orchestrated execution. When the
 // request name is empty the server generates one; when it collides with
 // an existing run in the same agency the call fails with ALREADY_EXISTS.
+//
+// When req.ParentWorkflowRunId is set, the run is created as a recovery
+// child via [CreateRecoveryWorkflowRun] (FEAT-20260602-007). For
+// top-level runs (no parent), an optional req.FailurePipelineBudget locks
+// the budget via [SetFailureBudget].
 func (s *Server) CreateWorkflowRun(ctx context.Context, req *pb.CreateWorkflowRunRequest) (*pb.CreateWorkflowRunResponse, error) {
-	run, err := s.mgr.CreateWorkflowRun(ctx, req.AgencyId, req.Name, req.TriggerEvent, req.Initiator)
+	var (
+		run codevaldwork.WorkflowRun
+		err error
+	)
+	if req.ParentWorkflowRunId != "" {
+		run, err = s.mgr.CreateRecoveryWorkflowRun(ctx, req.AgencyId, req.Name, req.TriggerEvent, req.Initiator, req.ParentWorkflowRunId, req.RootWorkflowRunId)
+	} else {
+		run, err = s.mgr.CreateWorkflowRun(ctx, req.AgencyId, req.Name, req.TriggerEvent, req.Initiator)
+	}
 	if err != nil {
 		return nil, mapError(err)
 	}
+	if req.ParentWorkflowRunId == "" && req.FailurePipelineBudget > 0 {
+		run, err = s.mgr.SetFailureBudget(ctx, req.AgencyId, run.ID, int(req.FailurePipelineBudget))
+		if err != nil {
+			return nil, mapError(err)
+		}
+	}
 	return &pb.CreateWorkflowRunResponse{Run: workflowRunToProto(run)}, nil
+}
+
+// IncrementFailureBudget implements pb.TaskServiceServer (FEAT-20260602-007).
+// Atomically increments the root run's failure_pipelines_used counter,
+// idempotent on (rootRunID, childRunID). Cross calls this at failure-
+// dispatch time; if exhausted=true the dispatch must be skipped.
+func (s *Server) IncrementFailureBudget(ctx context.Context, req *pb.IncrementFailureBudgetRequest) (*pb.IncrementFailureBudgetResponse, error) {
+	used, budget, exhausted, err := s.mgr.IncrementFailureBudget(ctx, req.AgencyId, req.WorkflowRunId, req.ChildRunId)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return &pb.IncrementFailureBudgetResponse{
+		Used:      int32(used),
+		Budget:    int32(budget),
+		Exhausted: exhausted,
+	}, nil
 }
 
 // GetWorkflowRun implements pb.TaskServiceServer (FEAT-20260601-001).
@@ -71,16 +106,20 @@ func (s *Server) ListWorkflowRuns(ctx context.Context, req *pb.ListWorkflowRunsR
 
 func workflowRunToProto(r codevaldwork.WorkflowRun) *pb.WorkflowRun {
 	pt := &pb.WorkflowRun{
-		Id:             r.ID,
-		AgencyId:       r.AgencyID,
-		Name:           r.Name,
-		Status:         workflowRunStatusToProto(r.Status),
-		TriggerEvent:   r.TriggerEvent,
-		Initiator:      r.Initiator,
-		Notes:          r.Notes,
-		AgentRunIds:    append([]string(nil), r.AgentRunIDs...),
-		FunctionJobIds: append([]string(nil), r.FunctionJobIDs...),
-		BranchNames:    append([]string(nil), r.BranchNames...),
+		Id:                    r.ID,
+		AgencyId:              r.AgencyID,
+		Name:                  r.Name,
+		Status:                workflowRunStatusToProto(r.Status),
+		TriggerEvent:          r.TriggerEvent,
+		Initiator:             r.Initiator,
+		Notes:                 r.Notes,
+		AgentRunIds:           append([]string(nil), r.AgentRunIDs...),
+		FunctionJobIds:        append([]string(nil), r.FunctionJobIDs...),
+		BranchNames:           append([]string(nil), r.BranchNames...),
+		ParentWorkflowRunId:   r.ParentWorkflowRunID,
+		RootWorkflowRunId:     r.RootWorkflowRunID,
+		FailurePipelineBudget: int32(r.FailurePipelineBudget),
+		FailurePipelinesUsed:  int32(r.FailurePipelinesUsed),
 	}
 	if r.StartedAt != "" {
 		if ts, err := time.Parse(time.RFC3339, r.StartedAt); err == nil {

@@ -180,6 +180,16 @@ service TaskService {
   // run first).
   rpc RollbackWorkflowRun(RollbackWorkflowRunRequest) returns (RollbackWorkflowRunResponse);
 
+  // IncrementFailureBudget atomically increments the
+  // failure_pipelines_used counter on the root WorkflowRun identified by
+  // workflow_run_id. Cross calls this at failure-dispatch time, before
+  // creating a child recovery run, to gate against budget exhaustion.
+  // Idempotent on child_run_id: repeated calls with the same child_run_id
+  // do not double-increment and return the current counter state
+  // (FEAT-20260602-007).
+  // Errors: NOT_FOUND if the root run does not exist.
+  rpc IncrementFailureBudget(IncrementFailureBudgetRequest) returns (IncrementFailureBudgetResponse);
+
   // ── Markdown import ────────────────────────────────────────────────────────
 
   // ImportProject parses a JSON document describing a project and creates a
@@ -447,6 +457,20 @@ message CreateWorkflowRunRequest {
   // initiator is an opaque caller identifier (operator email, service
   // name, etc.) — may be empty.
   string initiator     = 4;
+
+  // parent_workflow_run_id is set by Cross's failure dispatch when
+  // creating a child recovery run; empty for top-level runs
+  // (FEAT-20260602-007).
+  string parent_workflow_run_id = 5;
+  // root_workflow_run_id is propagated from the parent's root for child
+  // runs; for a top-level run the server defaults it to the new run's
+  // own id (FEAT-20260602-007).
+  string root_workflow_run_id   = 6;
+  // failure_pipeline_budget caps recovery-pipeline activations for this
+  // run's lineage. Resolved by start-pipeline (payload > agency >
+  // env default) and frozen for the lifetime of the run; only persisted
+  // on the root run (FEAT-20260602-007).
+  int32  failure_pipeline_budget = 7;
 }
 
 message CreateWorkflowRunResponse {
@@ -495,6 +519,29 @@ message RollbackWorkflowRunResponse {
   // WORKFLOW_RUN_STATUS_ROLLED_BACK; on partial failure it is
   // WORKFLOW_RUN_STATUS_ROLLBACK_FAILED.
   WorkflowRun run = 1;
+}
+
+// ── Failure-budget messages (FEAT-20260602-007) ──────────────────────────────
+
+message IncrementFailureBudgetRequest {
+  string agency_id       = 1;
+  // workflow_run_id is the root run whose counter is being incremented.
+  string workflow_run_id = 2;
+  // child_run_id is the recovery run about to be created. Used for
+  // idempotency on retry — a repeated call with the same child_run_id
+  // returns the existing counter without double-incrementing.
+  string child_run_id    = 3;
+}
+
+message IncrementFailureBudgetResponse {
+  // used is the post-increment failure_pipelines_used value.
+  int32 used      = 1;
+  // budget is the failure_pipeline_budget cap.
+  int32 budget    = 2;
+  // exhausted is true iff used > budget after this increment. Side-effect-
+  // then-report contract: the counter is updated even when exhausted; the
+  // caller must skip the recovery dispatch and fail the run.
+  bool  exhausted = 3;
 }
 
 // ── Markdown import messages ──────────────────────────────────────────────────

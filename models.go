@@ -517,6 +517,32 @@ type WorkflowRun struct {
 
 	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.
 	UpdatedAt string `json:"updated_at"`
+
+	// ParentWorkflowRunID references the WorkflowRun whose failure spawned
+	// this child (recovery) run. Empty on top-level runs. See FEAT-20260602-007.
+	ParentWorkflowRunID string `json:"parent_workflow_run_id,omitempty"`
+
+	// RootWorkflowRunID is the top-of-chain run ID — denormalised so Cross
+	// can read/increment the root counter in O(1). For top-level runs this
+	// equals ID (or is empty; consumers default to ID). Carried on every
+	// downstream event and artifact for one-query closure aggregation.
+	RootWorkflowRunID string `json:"root_workflow_run_id,omitempty"`
+
+	// FailurePipelineBudget is the maximum number of recovery-pipeline
+	// activations allowed under this run's lineage. Lives only on the root
+	// run. Resolved by start-pipeline (payload > agency > env default) and
+	// frozen for the run's lifetime.
+	FailurePipelineBudget int `json:"failure_pipeline_budget,omitempty"`
+
+	// FailurePipelinesUsed counts recovery activations charged to this root
+	// run. Atomically incremented by IncrementFailureBudget. Lives only on
+	// the root run.
+	FailurePipelinesUsed int `json:"failure_pipelines_used,omitempty"`
+
+	// CountedChildRunIDs is the dedup set of child run IDs already charged
+	// to FailurePipelinesUsed — supports idempotent retries of
+	// IncrementFailureBudget.
+	CountedChildRunIDs []string `json:"counted_child_run_ids,omitempty"`
 }
 
 // WorkflowRunClosure is the full read returned by GetWorkflowRunClosure —
