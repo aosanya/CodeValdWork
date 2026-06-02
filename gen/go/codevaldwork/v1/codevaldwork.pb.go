@@ -347,7 +347,11 @@ type Task struct {
 	// assigned_to is the entity ID of the Agent currently responsible for this
 	// task. Empty string means unassigned. Populated from the `assigned_to`
 	// graph edge at query time; set via AssignTask / UnassignTask RPCs.
-	AssignedTo    string `protobuf:"bytes,20,opt,name=assigned_to,json=assignedTo,proto3" json:"assigned_to,omitempty"`
+	AssignedTo string `protobuf:"bytes,20,opt,name=assigned_to,json=assignedTo,proto3" json:"assigned_to,omitempty"`
+	// workflow_run_id denormalises the WorkflowRun anchor onto the Task so
+	// queries can filter by run-id without traversing the started_task edge.
+	// Empty for tasks not produced under a run (FEAT-20260602-002).
+	WorkflowRunId string `protobuf:"bytes,21,opt,name=workflow_run_id,json=workflowRunId,proto3" json:"workflow_run_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -508,15 +512,25 @@ func (x *Task) GetAssignedTo() string {
 	return ""
 }
 
+func (x *Task) GetWorkflowRunId() string {
+	if x != nil {
+		return x.WorkflowRunId
+	}
+	return ""
+}
+
 // TaskFilter is used in ListTasks to constrain results.
 // Unset fields (zero values) match all.
 //
 // assigned_to (string, field 3) was removed in MVP-WORK-010 — to find tasks
 // for an agent, traverse inbound `assigned_to` edges from the Agent vertex.
 type TaskFilter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        TaskStatus             `protobuf:"varint,1,opt,name=status,proto3,enum=codevaldwork.v1.TaskStatus" json:"status,omitempty"`
-	Priority      TaskPriority           `protobuf:"varint,2,opt,name=priority,proto3,enum=codevaldwork.v1.TaskPriority" json:"priority,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Status   TaskStatus             `protobuf:"varint,1,opt,name=status,proto3,enum=codevaldwork.v1.TaskStatus" json:"status,omitempty"`
+	Priority TaskPriority           `protobuf:"varint,2,opt,name=priority,proto3,enum=codevaldwork.v1.TaskPriority" json:"priority,omitempty"`
+	// workflow_run_id filters tasks to a specific WorkflowRun anchor when
+	// non-empty (FEAT-20260602-002). Empty matches all.
+	WorkflowRunId string `protobuf:"bytes,4,opt,name=workflow_run_id,json=workflowRunId,proto3" json:"workflow_run_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -563,6 +577,13 @@ func (x *TaskFilter) GetPriority() TaskPriority {
 		return x.Priority
 	}
 	return TaskPriority_TASK_PRIORITY_UNSPECIFIED
+}
+
+func (x *TaskFilter) GetWorkflowRunId() string {
+	if x != nil {
+		return x.WorkflowRunId
+	}
+	return ""
 }
 
 // Agent is the Work-domain projection of an AI agent. Each Agent is a graph
@@ -806,8 +827,11 @@ type TaskTodo struct {
 	TodoType       string                 `protobuf:"bytes,14,opt,name=todo_type,json=todoType,proto3" json:"todo_type,omitempty"`
 	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// workflow_run_id is inherited from the parent Task at creation time so
+	// the todo carries the run anchor of its parent (FEAT-20260602-002).
+	WorkflowRunId string `protobuf:"bytes,17,opt,name=workflow_run_id,json=workflowRunId,proto3" json:"workflow_run_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TaskTodo) Reset() {
@@ -950,6 +974,13 @@ func (x *TaskTodo) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *TaskTodo) GetWorkflowRunId() string {
+	if x != nil {
+		return x.WorkflowRunId
+	}
+	return ""
 }
 
 // WorkflowRun anchors the closure of a single orchestrated execution.
@@ -1207,7 +1238,7 @@ var File_codevaldwork_v1_codevaldwork_proto protoreflect.FileDescriptor
 
 const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
-	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xd1\x05\n" +
+	"\"codevaldwork/v1/codevaldwork.proto\x12\x0fcodevaldwork.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xf9\x05\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12 \n" +
@@ -1231,11 +1262,13 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\vbranch_name\x18\x13 \x01(\tR\n" +
 	"branchName\x12\x1f\n" +
 	"\vassigned_to\x18\x14 \x01(\tR\n" +
-	"assignedToJ\x04\b\x03\x10\x04J\x04\b\a\x10\b\"\x8f\x01\n" +
+	"assignedTo\x12&\n" +
+	"\x0fworkflow_run_id\x18\x15 \x01(\tR\rworkflowRunIdJ\x04\b\x03\x10\x04J\x04\b\a\x10\b\"\xb7\x01\n" +
 	"\n" +
 	"TaskFilter\x123\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.codevaldwork.v1.TaskStatusR\x06status\x129\n" +
-	"\bpriority\x18\x02 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriorityJ\x04\b\x03\x10\x04R\vassigned_to\"\xa5\x02\n" +
+	"\bpriority\x18\x02 \x01(\x0e2\x1d.codevaldwork.v1.TaskPriorityR\bpriority\x12&\n" +
+	"\x0fworkflow_run_id\x18\x04 \x01(\tR\rworkflowRunIdJ\x04\b\x03\x10\x04R\vassigned_to\"\xa5\x02\n" +
 	"\x05Agent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x19\n" +
@@ -1263,7 +1296,7 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\fproject_name\x18\t \x01(\tR\vprojectName\x12\x1f\n" +
 	"\vtask_prefix\x18\n" +
 	" \x01(\tR\n" +
-	"taskPrefixJ\x04\b\x05\x10\x06R\x06due_at\"\xc5\x04\n" +
+	"taskPrefixJ\x04\b\x05\x10\x06R\x06due_at\"\xed\x04\n" +
 	"\bTaskTodo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12\x14\n" +
@@ -1286,7 +1319,8 @@ const file_codevaldwork_v1_codevaldwork_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xc4\x04\n" +
+	"updated_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12&\n" +
+	"\x0fworkflow_run_id\x18\x11 \x01(\tR\rworkflowRunId\"\xc4\x04\n" +
 	"\vWorkflowRun\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tagency_id\x18\x02 \x01(\tR\bagencyId\x12:\n" +

@@ -13,6 +13,14 @@ import (
 // any pre-existing outbound `assigned_to` edge from the Task is removed
 // before the new one is created.
 //
+// workflowRunID propagates the WorkflowRun anchor from the inbound event onto
+// the Task per the FEAT-20260602-002 chain-through rule:
+//   - empty workflowRunID preserves the existing value
+//   - non-empty + stored is empty: stored is set AND the started_task edge
+//     from run→task is written
+//   - non-empty + stored is the same: no-op
+//   - non-empty + stored differs: [ErrWorkflowRunMismatch]
+//
 // If the task has any unmet outbound `depends_on` edges (i.e. depends on a
 // source task that has not reached a terminal status), the assignment is
 // still recorded but the task is transitioned to TaskStatusBlocked and the
@@ -21,7 +29,7 @@ import (
 // it could not act on. When every blocking dependency eventually reaches a
 // terminal status, a separate unblock path can flip blocked → pending and
 // re-fire work.task.assigned.
-func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID string) error {
+func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID, workflowRunID string) error {
 	task, err := m.GetTask(ctx, agencyID, taskID)
 	if err != nil {
 		return err
@@ -34,6 +42,27 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 	// edge writes + the work.task.assigned payload need the entity UUID so
 	// subscribers can resolve the agent via GetEntity without slug knowledge.
 	resolvedAgentID := agent.ID
+
+	// Apply chain-through before any edge writes so a mismatch fails fast
+	// without partially mutating state.
+	effectiveRunID := task.WorkflowRunID
+	if workflowRunID != "" {
+		switch task.WorkflowRunID {
+		case "":
+			if err := m.setTaskWorkflowRunID(ctx, agencyID, taskID, workflowRunID); err != nil {
+				return fmt.Errorf("AssignTask: set workflow_run_id: %w", err)
+			}
+			if err := m.LinkTaskToRun(ctx, agencyID, workflowRunID, taskID); err != nil {
+				return fmt.Errorf("AssignTask: link to run: %w", err)
+			}
+			effectiveRunID = workflowRunID
+			task.WorkflowRunID = workflowRunID
+		case workflowRunID:
+			// no-op — same run, idempotent re-assign
+		default:
+			return ErrWorkflowRunMismatch
+		}
+	}
 
 	existing, err := m.TraverseRelationships(ctx, agencyID, taskID, RelLabelAssignedTo, DirectionOutbound)
 	if err != nil {
@@ -68,9 +97,10 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 				return fmt.Errorf("AssignTask: set blocked: %w", err)
 			}
 			m.publish(ctx, TopicTaskStatusChanged, agencyID, TaskStatusChangedPayload{
-				TaskID: taskID,
-				From:   task.Status,
-				To:     TaskStatusBlocked,
+				TaskID:        taskID,
+				From:          task.Status,
+				To:            TaskStatusBlocked,
+				WorkflowRunID: effectiveRunID,
 			})
 		}
 		// Suppress work.task.assigned — the AI must not run a task whose
@@ -80,13 +110,35 @@ func (m *taskManager) AssignTask(ctx context.Context, agencyID, taskID, agentID 
 	}
 
 	m.publish(ctx, TopicTaskAssigned, agencyID, TaskAssignedPayload{
-		TaskID:      taskID,
-		AgentID:     resolvedAgentID,
-		RoleName:    agent.RoleName,
-		TaskCode:    task.TaskName,
-		Title:       task.Title,
-		Description: task.Description,
+		TaskID:        taskID,
+		AgentID:       resolvedAgentID,
+		RoleName:      agent.RoleName,
+		TaskCode:      task.TaskName,
+		Title:         task.Title,
+		Description:   task.Description,
+		WorkflowRunID: effectiveRunID,
 	})
+	return nil
+}
+
+// setTaskWorkflowRunID updates only the workflow_run_id property on a Task
+// without touching other fields. Mirrors [setTaskStatus] for the chain-through
+// path in AssignTask.
+func (m *taskManager) setTaskWorkflowRunID(ctx context.Context, agencyID, taskID, runID string) error {
+	entity, err := m.dm.GetEntity(ctx, agencyID, taskID)
+	if err != nil {
+		return fmt.Errorf("setTaskWorkflowRunID: get entity: %w", err)
+	}
+	if entity.Properties == nil {
+		entity.Properties = map[string]any{}
+	}
+	entity.Properties["workflow_run_id"] = runID
+	entity.Properties["updated_at"] = time.Now().UTC().Format(time.RFC3339)
+	if _, err := m.dm.UpdateEntity(ctx, agencyID, taskID, entitygraph.UpdateEntityRequest{
+		Properties: entity.Properties,
+	}); err != nil {
+		return fmt.Errorf("setTaskWorkflowRunID: update entity: %w", err)
+	}
 	return nil
 }
 

@@ -741,12 +741,20 @@ func (x *CreateTaskInProjectResponse) GetTask() *Task {
 }
 
 type AssignTaskRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AgencyId      string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
-	TaskId        string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	AgentId       string                 `protobuf:"bytes,3,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`             // entity ID of the Agent vertex
-	TaskName      string                 `protobuf:"bytes,4,opt,name=task_name,json=taskName,proto3" json:"task_name,omitempty"`          // project-scoped name; used when task_id is empty
-	ProjectName   string                 `protobuf:"bytes,5,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"` // required when resolving by task_name
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	AgencyId    string                 `protobuf:"bytes,1,opt,name=agency_id,json=agencyId,proto3" json:"agency_id,omitempty"`
+	TaskId      string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	AgentId     string                 `protobuf:"bytes,3,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`             // entity ID of the Agent vertex
+	TaskName    string                 `protobuf:"bytes,4,opt,name=task_name,json=taskName,proto3" json:"task_name,omitempty"`          // project-scoped name; used when task_id is empty
+	ProjectName string                 `protobuf:"bytes,5,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"` // required when resolving by task_name
+	// workflow_run_id propagates the WorkflowRun anchor from the inbound event
+	// (e.g. work.next.requested) onto the Task. Empty preserves the stored
+	// value; non-empty is set on a task with empty stored value (and writes
+	// the started_task edge), and a non-empty value that differs from the
+	// stored one is rejected with FAILED_PRECONDITION
+	// (codevaldwork.ErrWorkflowRunMismatch) — a task belonging to two runs
+	// breaks the rollback invariant (FEAT-20260602-002).
+	WorkflowRunId string `protobuf:"bytes,6,opt,name=workflow_run_id,json=workflowRunId,proto3" json:"workflow_run_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -812,6 +820,13 @@ func (x *AssignTaskRequest) GetTaskName() string {
 func (x *AssignTaskRequest) GetProjectName() string {
 	if x != nil {
 		return x.ProjectName
+	}
+	return ""
+}
+
+func (x *AssignTaskRequest) GetWorkflowRunId() string {
+	if x != nil {
+		return x.WorkflowRunId
 	}
 	return ""
 }
@@ -3180,13 +3195,14 @@ const file_codevaldwork_v1_service_proto_rawDesc = "" +
 	"\fproject_name\x18\x02 \x01(\tR\vprojectName\x12)\n" +
 	"\x04task\x18\x03 \x01(\v2\x15.codevaldwork.v1.TaskR\x04task\"H\n" +
 	"\x1bCreateTaskInProjectResponse\x12)\n" +
-	"\x04task\x18\x01 \x01(\v2\x15.codevaldwork.v1.TaskR\x04task\"\xa4\x01\n" +
+	"\x04task\x18\x01 \x01(\v2\x15.codevaldwork.v1.TaskR\x04task\"\xcc\x01\n" +
 	"\x11AssignTaskRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x17\n" +
 	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12\x19\n" +
 	"\bagent_id\x18\x03 \x01(\tR\aagentId\x12\x1b\n" +
 	"\ttask_name\x18\x04 \x01(\tR\btaskName\x12!\n" +
-	"\fproject_name\x18\x05 \x01(\tR\vprojectName\"\x14\n" +
+	"\fproject_name\x18\x05 \x01(\tR\vprojectName\x12&\n" +
+	"\x0fworkflow_run_id\x18\x06 \x01(\tR\rworkflowRunId\"\x14\n" +
 	"\x12AssignTaskResponse\"\x8b\x01\n" +
 	"\x13UnassignTaskRequest\x12\x1b\n" +
 	"\tagency_id\x18\x01 \x01(\tR\bagencyId\x12\x17\n" +

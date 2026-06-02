@@ -16,7 +16,7 @@ func (s *Server) AssignTask(ctx context.Context, req *pb.AssignTaskRequest) (*pb
 	if err != nil {
 		return nil, mapError(err)
 	}
-	if err := s.mgr.AssignTask(ctx, req.AgencyId, taskID, req.AgentId); err != nil {
+	if err := s.mgr.AssignTask(ctx, req.AgencyId, taskID, req.AgentId, req.WorkflowRunId); err != nil {
 		return nil, mapError(err)
 	}
 	return &pb.AssignTaskResponse{}, nil

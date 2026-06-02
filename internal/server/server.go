@@ -220,6 +220,8 @@ func taskToProto(t codevaldwork.Task) *pb.Task {
 		ProjectName:    t.ProjectName,
 		SeparateBranch: t.SeparateBranch,
 		BranchName:     t.BranchName,
+		AssignedTo:     t.AssignedTo,
+		WorkflowRunId:  t.WorkflowRunID,
 	}
 	if t.CreatedAt != "" {
 		if ts, err := time.Parse(time.RFC3339, t.CreatedAt); err == nil {
@@ -262,6 +264,8 @@ func protoToTask(pt *pb.Task) codevaldwork.Task {
 		ProjectName:    pt.ProjectName,
 		SeparateBranch: pt.SeparateBranch,
 		BranchName:     pt.BranchName,
+		AssignedTo:     pt.AssignedTo,
+		WorkflowRunID:  pt.WorkflowRunId,
 	}
 	if pt.CreatedAt != nil {
 		t.CreatedAt = pt.CreatedAt.AsTime().UTC().Format(time.RFC3339)
@@ -283,8 +287,9 @@ func protoToFilter(pf *pb.TaskFilter) codevaldwork.TaskFilter {
 		return codevaldwork.TaskFilter{}
 	}
 	return codevaldwork.TaskFilter{
-		Status:   protoToStatus(pf.Status),
-		Priority: protoToPriority(pf.Priority),
+		Status:        protoToStatus(pf.Status),
+		Priority:      protoToPriority(pf.Priority),
+		WorkflowRunID: pf.WorkflowRunId,
 	}
 }
 

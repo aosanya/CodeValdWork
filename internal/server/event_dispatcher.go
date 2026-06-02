@@ -29,14 +29,16 @@ type aiTaskPayload struct {
 	Reason        string   `json:"Reason"`
 	HasSubtasks   bool     `json:"has_subtasks,omitempty"`
 	EmittedWrites []string `json:"emitted_writes,omitempty"`
+	WorkflowRunID string   `json:"workflow_run_id,omitempty"`
 }
 
 // aiTodoCreatedPayload mirrors the CodeValdAI TodoCreatedPayload — the ai.todo.created event body.
 type aiTodoCreatedPayload struct {
-	ParentTaskID string        `json:"parent_task_id"`
-	RunID        string        `json:"run_id"`
-	AgentID      string        `json:"agent_id"`
-	Todos        []aiTodoItem  `json:"todos"`
+	ParentTaskID  string       `json:"parent_task_id"`
+	RunID         string       `json:"run_id"`
+	AgentID       string       `json:"agent_id"`
+	WorkflowRunID string       `json:"workflow_run_id,omitempty"`
+	Todos         []aiTodoItem `json:"todos"`
 }
 
 type aiTodoItem struct {

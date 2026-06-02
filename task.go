@@ -118,9 +118,21 @@ type TaskManager interface {
 
 	// AssignTask sets the assignee of a Task by writing the `assigned_to`
 	// edge (Task → Agent). Replaces any prior assignee — a Task has at
-	// most one outbound `assigned_to` edge. Returns [ErrTaskNotFound] or
-	// [ErrAgentNotFound] when the respective vertex is missing.
-	AssignTask(ctx context.Context, agencyID, taskID, agentID string) error
+	// most one outbound `assigned_to` edge.
+	//
+	// workflowRunID propagates the WorkflowRun anchor from the inbound event
+	// payload onto the Task per the FEAT-20260602-002 chain-through rule.
+	// Semantics when non-empty:
+	//   • If the Task's stored WorkflowRunID is empty, it is set to the new
+	//     value AND the started_task edge from run→task is written.
+	//   • If the stored WorkflowRunID equals the new value, it is a no-op.
+	//   • If the stored WorkflowRunID differs, returns [ErrWorkflowRunMismatch]
+	//     — a task belonging to two runs breaks the rollback invariant.
+	// Empty workflowRunID is permitted and preserves the existing value.
+	//
+	// Returns [ErrTaskNotFound] or [ErrAgentNotFound] when the respective
+	// vertex is missing.
+	AssignTask(ctx context.Context, agencyID, taskID, agentID, workflowRunID string) error
 
 	// UnassignTask removes any outbound `assigned_to` edge from the Task.
 	// Idempotent — returns nil whether or not an edge was present.
