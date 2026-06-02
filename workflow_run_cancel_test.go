@@ -63,8 +63,16 @@ func TestCancelWorkflowRun_CascadesTaskCancelledForNonTerminalTasks(t *testing.T
 	if err != nil {
 		t.Fatalf("CreateTask done: %v", err)
 	}
-	done.Status = codevaldwork.TaskStatusCompleted
+	done.Status = codevaldwork.TaskStatusInProgress
 	if _, err := mgr.UpdateTask(ctx, agencyID, done); err != nil {
+		t.Fatalf("UpdateTask done → in_progress: %v", err)
+	}
+	doneInProgress, err := mgr.GetTask(ctx, agencyID, done.ID)
+	if err != nil {
+		t.Fatalf("GetTask done: %v", err)
+	}
+	doneInProgress.Status = codevaldwork.TaskStatusCompleted
+	if _, err := mgr.UpdateTask(ctx, agencyID, doneInProgress); err != nil {
 		t.Fatalf("UpdateTask done → completed: %v", err)
 	}
 

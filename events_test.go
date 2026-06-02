@@ -356,6 +356,9 @@ func TestAllTopics_StableSurface(t *testing.T) {
 		codevaldwork.TopicRunRollingBack,
 		codevaldwork.TopicRunRolledBack,
 		codevaldwork.TopicRunRollbackFailed,
+		codevaldwork.TopicTaskCancelled,
+		codevaldwork.TopicRunCancelling,
+		codevaldwork.TopicRunCancelled,
 	}
 	for _, topic := range extras {
 		if !gotSet[topic] {
