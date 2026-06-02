@@ -72,6 +72,7 @@ func (m *taskManager) DispatchTaskTodo(ctx context.Context, agencyID, todoID str
 		CanRunParallel: todo.CanRunParallel,
 		DependsOn:      todo.DependsOn,
 		Precalls:       todo.Precalls,
+		WorkflowRunID:  todo.WorkflowRunID,
 	})
 	return nil
 }
