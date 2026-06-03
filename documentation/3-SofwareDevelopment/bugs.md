@@ -29,8 +29,20 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 
 | Bug ID | Title | Severity | Status | Depends On |
 |--------|-------|----------|--------|------------|
+| ~~[BUG-20260603-005](bug-details/BUG-20260603-005_task-todos-api-ignores-workflow-run-id-filter.md)~~ | ~~`GET /work/{agency}/task-todos` ignores `workflow_run_id` query param — returns empty list~~ | Medium | ✅ Fixed (2026-06-03) | — |
 | [BUG-20260603-004](bug-details/BUG-20260603-004_project-name-routing-case-sensitive.md) | Project-name URL routing is case-sensitive; display-name casing returns 404 | Medium | 📋 Open | — |
 | [BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) | WorkflowRun status never advances past PENDING | Medium | 📋 Open | — |
+
+---
+
+### BUG-20260603-005 — `GET /work/{agency}/task-todos` ignores `workflow_run_id` query param
+
+**Severity:** Medium — WorkflowRun UI "Todos" tab shows empty; QA scripts cannot filter todos by run without direct ArangoDB access
+**Status:** 📋 Open
+
+`GET /work/{agency}/task-todos?workflow_run_id=<id>` returns `{"todos":[]}` even when matching todos exist in ArangoDB. Verified in QA scenario 09 (2026-06-03): 15 todos with `workflow_run_id=c4821356-...` in `work_task_todos` collection; API returned 0 for both filtered and unfiltered calls. Root cause: the `ListTaskTodos` handler likely uses the wrong ArangoDB property path (`doc.workflow_run_id` instead of `doc.properties.workflow_run_id`) or does not wire the query param into the AQL filter.
+
+See [bug-details/BUG-20260603-005](bug-details/BUG-20260603-005_task-todos-api-ignores-workflow-run-id-filter.md) for full fix plan.
 
 ---
 
