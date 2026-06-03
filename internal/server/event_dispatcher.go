@@ -20,6 +20,9 @@ const (
 	// flush-race gate on work.todo.completed. String literal (not imported)
 	// to keep CodeValdWork's no-cross-service-import rule intact.
 	topicFileWritten = "git.file.written"
+	// topicTaskDirection is the inbound direction response from the AI failure
+	// reviewer or a human submitting the direction form.
+	topicTaskDirection = codevaldwork.TopicTaskDirection
 )
 
 // aiTaskPayload is the common shape of ai.task.started/completed/failed payloads.
@@ -94,6 +97,8 @@ func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload strin
 		d.handleRunTimeout(ctx, payload)
 	case codevaldwork.TopicTaskTimeout:
 		d.handleTaskTimeout(ctx, payload)
+	case topicTaskDirection:
+		d.handleTaskDirection(ctx, payload)
 	}
 	// Always check for WorkflowRun status transitions on every event that
 	// carries a workflow_run_id — handles both the hardcoded failure topics
@@ -286,7 +291,9 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 		return
 	}
 
-	if status == codevaldwork.TodoStatusCompleted || status == codevaldwork.TodoStatusFailed {
+	if status == codevaldwork.TodoStatusCompleted ||
+		status == codevaldwork.TodoStatusFailed ||
+		status == codevaldwork.TodoStatusSkipped {
 		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
 			Topic:    codevaldwork.TopicTodoCompleted,
 			AgencyID: d.agencyID,
@@ -298,12 +305,12 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 				WorkflowRunID: updated.WorkflowRunID,
 			},
 		})
-		log.Printf("codevaldwork: TaskEventDispatcher: published %s todo=%s task=%s", codevaldwork.TopicTodoCompleted, updated.ID, updated.ParentTaskID)
+		log.Printf("codevaldwork: TaskEventDispatcher: published %s todo=%s task=%s status=%s", codevaldwork.TopicTodoCompleted, updated.ID, updated.ParentTaskID, status)
 	}
 
 	switch status {
-	case codevaldwork.TodoStatusCompleted:
-		// Unblock any todos that were waiting on this one.
+	case codevaldwork.TodoStatusCompleted, codevaldwork.TodoStatusSkipped:
+		// skipped is non-failing terminal — unblock dependents same as completed.
 		d.unblockDependentTodos(ctx, updated.ParentTaskID, updated.Ordinality)
 		d.maybeCompleteParentTask(ctx, updated.ParentTaskID)
 	case codevaldwork.TodoStatusFailed:
@@ -314,7 +321,7 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 }
 
 // maybeCompleteParentTask marks a Task completed or failed once all child todos
-// are terminal. Terminal states are: completed, failed, blocked (cascade-failed).
+// are terminal. Terminal states: completed, skipped (non-failing), failed, blocked (cascade-failed).
 func (d *TaskEventDispatcher) maybeCompleteParentTask(ctx context.Context, taskID string) {
 	edges, err := d.mgr.TraverseRelationships(ctx, d.agencyID, taskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
 	if err != nil {
@@ -328,8 +335,8 @@ func (d *TaskEventDispatcher) maybeCompleteParentTask(ctx context.Context, taskI
 			return
 		}
 		switch todo.Status {
-		case codevaldwork.TodoStatusCompleted:
-			// fine
+		case codevaldwork.TodoStatusCompleted, codevaldwork.TodoStatusSkipped:
+			// skipped is non-failing terminal — treat same as completed
 		case codevaldwork.TodoStatusFailed, codevaldwork.TodoStatusBlocked:
 			anyFailed = true
 		default:
@@ -392,10 +399,11 @@ func (d *TaskEventDispatcher) unblockDependentTodos(ctx context.Context, taskID 
 		if !dependsOnThis {
 			continue
 		}
-		// Only dispatch if every dependency is now completed.
+		// Only dispatch if every dependency is now completed or skipped.
 		allSatisfied := true
 		for _, dep := range todo.DependsOn {
-			if ordStatus[dep] != codevaldwork.TodoStatusCompleted {
+			s := ordStatus[dep]
+			if s != codevaldwork.TodoStatusCompleted && s != codevaldwork.TodoStatusSkipped {
 				allSatisfied = false
 				break
 			}
@@ -435,6 +443,148 @@ func (d *TaskEventDispatcher) blockDependentTodos(ctx context.Context, taskID st
 				break
 			}
 		}
+	}
+}
+
+// SkipTodo marks todoID as skipped (non-failing terminal) and runs the
+// unblock-and-complete cascade. Dependents of a skipped todo are unblocked
+// the same as if it had completed — skipping a step does not cascade-fail.
+func (d *TaskEventDispatcher) SkipTodo(ctx context.Context, todoID string) error {
+	updated, err := d.mgr.UpdateTaskTodoStatus(ctx, d.agencyID, todoID, codevaldwork.TodoStatusSkipped)
+	if err != nil {
+		return err
+	}
+	log.Printf("codevaldwork: SkipTodo: todo %s → skipped", todoID)
+	if updated.ParentTaskID != "" {
+		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+			Topic:    codevaldwork.TopicTodoCompleted,
+			AgencyID: d.agencyID,
+			Payload: codevaldwork.TodoCompletedPayload{
+				TodoID:        updated.ID,
+				ParentTaskID:  updated.ParentTaskID,
+				Title:         updated.Title,
+				Status:        string(codevaldwork.TodoStatusSkipped),
+				WorkflowRunID: updated.WorkflowRunID,
+			},
+		})
+		d.unblockDependentTodos(ctx, updated.ParentTaskID, updated.Ordinality)
+		d.maybeCompleteParentTask(ctx, updated.ParentTaskID)
+	}
+	return nil
+}
+
+// handleTaskDirection processes a work.task.direction event.
+// Routes by selected_option:
+//   - retry-with-instructions: append instructions to task description, move to in_progress, re-dispatch
+//   - skip: mark the most-recently-failed todo as skipped, resume cascade
+//   - mark-blocked: transition task to blocked, store blocker note, run stays paused
+//   - cancel: transition task to cancelled, maybeCompleteWorkflowRun evaluates to failed
+func (d *TaskEventDispatcher) handleTaskDirection(ctx context.Context, payloadStr string) {
+	var p codevaldwork.TaskDirectionPayload
+	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.TaskID == "" {
+		log.Printf("codevaldwork: handleTaskDirection: bad payload: %v", err)
+		return
+	}
+	log.Printf("codevaldwork: handleTaskDirection: task=%s option=%s directed_by=%s", p.TaskID, p.SelectedOption, p.DirectedBy)
+
+	task, err := d.mgr.GetTask(ctx, d.agencyID, p.TaskID)
+	if err != nil {
+		log.Printf("codevaldwork: handleTaskDirection: GetTask %s: %v", p.TaskID, err)
+		return
+	}
+
+	switch p.SelectedOption {
+	case codevaldwork.DirectionRetry:
+		// Append human/AI instructions to the task description so the next
+		// agent run has the extra context, then re-dispatch.
+		if p.Instructions != "" {
+			task.Description = task.Description + "\n\nDirection: " + p.Instructions
+		}
+		task.Status = codevaldwork.TaskStatusInProgress
+		if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
+			log.Printf("codevaldwork: handleTaskDirection: retry: UpdateTask %s: %v", p.TaskID, err)
+			return
+		}
+		// Resolve agent role name so the re-emitted work.task.assigned carries
+		// RoleName — required by developer-assigned-handler payload_condition.
+		agentEntityID, _ := d.resolveAgentForTask(ctx, task.ID, task.AssignedTo)
+		roleName := ""
+		if agentEntityID != "" {
+			if ag, err := d.mgr.GetAgent(ctx, d.agencyID, agentEntityID); err == nil {
+				roleName = ag.RoleName
+			}
+		}
+		// Re-publish work.task.assigned so the developer-assigned-handler fires again.
+		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+			Topic:    codevaldwork.TopicTaskAssigned,
+			AgencyID: d.agencyID,
+			Payload: codevaldwork.TaskAssignedPayload{
+				TaskID:        task.ID,
+				AgentID:       task.AssignedTo,
+				RoleName:      roleName,
+				TaskCode:      task.TaskName,
+				Title:         task.Title,
+				Description:   task.Description,
+				WorkflowRunID: task.WorkflowRunID,
+			},
+		})
+		log.Printf("codevaldwork: handleTaskDirection: retry: re-dispatched task=%s role=%s", p.TaskID, roleName)
+
+	case codevaldwork.DirectionSkip:
+		// Find the most-recently-failed todo for this task and skip it.
+		edges, err := d.mgr.TraverseRelationships(ctx, d.agencyID, p.TaskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
+		if err != nil {
+			log.Printf("codevaldwork: handleTaskDirection: skip: TraverseRelationships %s: %v", p.TaskID, err)
+			return
+		}
+		for _, edge := range edges {
+			todo, err := d.mgr.GetTaskTodo(ctx, d.agencyID, edge.ToID)
+			if err != nil {
+				continue
+			}
+			if todo.Status == codevaldwork.TodoStatusFailed {
+				if err := d.SkipTodo(ctx, todo.ID); err != nil {
+					log.Printf("codevaldwork: handleTaskDirection: SkipTodo %s: %v", todo.ID, err)
+				}
+				// Move task back to in_progress so maybeCompleteParentTask can
+				// evaluate whether it's done.
+				task.Status = codevaldwork.TaskStatusInProgress
+				if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
+					log.Printf("codevaldwork: handleTaskDirection: skip: UpdateTask %s: %v", p.TaskID, err)
+				}
+				return
+			}
+		}
+		log.Printf("codevaldwork: handleTaskDirection: skip: no failed todo found for task=%s", p.TaskID)
+
+	case codevaldwork.DirectionMarkBlocked:
+		if p.Instructions != "" {
+			task.Description = task.Description + "\n\nBlocked: " + p.Instructions
+		}
+		task.Status = codevaldwork.TaskStatusBlocked
+		if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
+			log.Printf("codevaldwork: handleTaskDirection: mark-blocked: UpdateTask %s: %v", p.TaskID, err)
+		}
+		log.Printf("codevaldwork: handleTaskDirection: mark-blocked: task=%s", p.TaskID)
+
+	case codevaldwork.DirectionCancel:
+		task.Status = codevaldwork.TaskStatusCancelled
+		if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
+			log.Printf("codevaldwork: handleTaskDirection: cancel: UpdateTask %s: %v", p.TaskID, err)
+			return
+		}
+		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+			Topic:    codevaldwork.TopicTaskCancelled,
+			AgencyID: d.agencyID,
+			Payload: codevaldwork.TaskCancelledPayload{
+				TaskID:        task.ID,
+				WorkflowRunID: task.WorkflowRunID,
+			},
+		})
+		log.Printf("codevaldwork: handleTaskDirection: cancel: task=%s", p.TaskID)
+
+	default:
+		log.Printf("codevaldwork: handleTaskDirection: unknown option %q for task=%s", p.SelectedOption, p.TaskID)
 	}
 }
 

@@ -69,6 +69,29 @@ const (
 	// RunStatusHandler can flip the run from PENDING → IN_PROGRESS without
 	// waiting for the first work.task.assigned event (BUG-09-025 fix).
 	TopicPipelineStarted = "work.pipeline.started"
+
+	// TopicTaskNeedsDirection is published by CodeValdWork when a task has
+	// exhausted its retry budget and requires direction to resume. The payload
+	// carries a [DirectionForm] JSON object renderable on any platform.
+	// Payload: [TaskNeedsDirectionPayload].
+	TopicTaskNeedsDirection = "work.task.needs-direction"
+
+	// TopicTaskDirection is consumed by CodeValdWork from the bus — emitted by
+	// CodeValdAI (failure-direction-handler) or the frontend after the human
+	// resolves the direction form. Routes to the direction handler which resumes
+	// the task according to selected_option.
+	// Payload: [TaskDirectionPayload].
+	TopicTaskDirection = "work.task.direction"
+
+	// TopicRunPaused fires when a WorkflowRun transitions to paused status
+	// because at least one task is awaiting direction.
+	// Payload: [RunPausedPayload].
+	TopicRunPaused = "work.run.paused"
+
+	// TopicRunResumed fires when a paused WorkflowRun transitions back to
+	// in_progress after all awaiting-direction tasks have been resolved.
+	// Payload: [RunResumedPayload].
+	TopicRunResumed = "work.run.resumed"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -92,6 +115,9 @@ func AllTopics() []string {
 		TopicRunCancelled,
 		TopicRunTimeout,
 		TopicTaskTimeout,
+		TopicTaskNeedsDirection,
+		TopicRunPaused,
+		TopicRunResumed,
 	)
 }
 
@@ -382,5 +408,7 @@ func ConsumedTopics() []string {
 		TopicTaskTimeout,
 		// Pipeline start: flip PENDING → IN_PROGRESS immediately (BUG-09-025):
 		TopicPipelineStarted,
+		// Failure recovery: direction response from AI reviewer or human form submission:
+		TopicTaskDirection,
 	}
 }

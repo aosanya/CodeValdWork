@@ -43,6 +43,7 @@ CodeValdWork MVP tasks. Phase 1 (Task lifecycle) is complete; Phase 2
 | [FEAT-20260602-003_workflow_run_status_state_machine.md](FEAT-20260602-003_workflow_run_status_state_machine.md) | FEAT-20260602-003 | — | Run status state machine driven by inbound events |
 | [FEAT-20260602-004_workflow_run_rollback_semantics.md](FEAT-20260602-004_workflow_run_rollback_semantics.md) | FEAT-20260602-004 | ✅ Phase 1+3 / ⏸️ Phase 2 | Rollback coordinator + CodeValdWork artifact cleanup leg; cross-service legs still stubs |
 | [FEAT-20260602-008_workflow_run_cancel.md](FEAT-20260602-008_workflow_run_cancel.md) | FEAT-20260602-008 | 📋 Draft | Mid-flight cancel endpoint — `POST /workflow-runs/{id}/cancel`; `cancelling` transient + `cancelled` terminal states; quiesce signal cascades to AI/Functions; complements rollback (which only accepts terminal runs) |
+| [FEAT-20260603-003_workflow_failure_recovery.md](FEAT-20260603-003_workflow_failure_recovery.md) | FEAT-20260603-003 | 📋 Draft | Failure recovery ladder: N retries → AI classifies transient/requires-human → JSON direction form → human picks option → task resumes; adds `awaiting-direction` + `blocked` task statuses and `paused` WorkflowRun status |
 
 ---
 

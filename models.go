@@ -40,6 +40,14 @@ const (
 	// dependency reaches a terminal state, at which point the task
 	// transitions back to pending and the assignment fires for real.
 	TaskStatusBlocked TaskStatus = "blocked"
+
+	// TaskStatusAwaitingDirection is a non-terminal hold state entered when
+	// a task has exhausted its automatic retry budget and AI classification
+	// determines that human (or AI reviewer) intervention is required.
+	// The WorkflowRun transitions to paused while any task holds this status.
+	// Resolved by a work.task.direction event — transitions to in_progress
+	// (retry), blocked (awaiting external fix), or cancelled (abort).
+	TaskStatusAwaitingDirection TaskStatus = "awaiting-direction"
 )
 
 // CanTransitionTo reports whether transitioning from the receiver status to
@@ -47,12 +55,13 @@ const (
 //
 // Allowed transitions:
 //
-//	pending     → in_progress, cancelled, blocked
-//	blocked     → pending, cancelled
-//	in_progress → completed, failed, cancelled
-//	completed   → (none — terminal)
-//	failed      → (none — terminal)
-//	cancelled   → (none — terminal)
+//	pending            → in_progress, cancelled, blocked
+//	blocked            → pending, cancelled
+//	in_progress        → completed, failed, cancelled, awaiting-direction
+//	awaiting-direction → in_progress, blocked, cancelled
+//	completed          → (none — terminal)
+//	failed             → (none — terminal)
+//	cancelled          → (none — terminal)
 func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
 	switch s {
 	case TaskStatusPending:
@@ -63,7 +72,12 @@ func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
 		// to in_progress. Cancel is always allowed as an escape hatch.
 		return next == TaskStatusPending || next == TaskStatusCancelled
 	case TaskStatusInProgress:
-		return next == TaskStatusCompleted || next == TaskStatusFailed || next == TaskStatusCancelled
+		return next == TaskStatusCompleted || next == TaskStatusFailed ||
+			next == TaskStatusCancelled || next == TaskStatusAwaitingDirection
+	case TaskStatusAwaitingDirection:
+		// Direction received: retry (→ in_progress), external blocker noted
+		// (→ blocked), or operator abort (→ cancelled).
+		return next == TaskStatusInProgress || next == TaskStatusBlocked || next == TaskStatusCancelled
 	default:
 		// completed, failed, cancelled are terminal — no further transitions.
 		return false
@@ -245,6 +259,11 @@ const (
 
 	// TodoStatusFailed is a terminal state — the agent encountered an error.
 	TodoStatusFailed TodoStatus = "failed"
+
+	// TodoStatusSkipped is a terminal state — a direction response chose to
+	// bypass this step. Treated as non-failing by maybeCompleteParentTask so
+	// skipping a todo does not fail its parent task.
+	TodoStatusSkipped TodoStatus = "skipped"
 )
 
 // TaskTodo is a decomposed sub-task produced when CodeValdWork receives an
@@ -443,6 +462,12 @@ const (
 	// rollback can treat operator-cancelled runs differently if needed.
 	// Rollback is allowed on cancelled runs (cancel → optional rollback).
 	WorkflowRunStatusCancelled WorkflowRunStatus = "cancelled"
+
+	// WorkflowRunStatusPaused is a non-terminal hold state entered when at
+	// least one Task transitions to awaiting-direction or blocked (external
+	// blocker). The run resumes to in_progress once all paused tasks receive
+	// direction. The run fails if a paused task is cancelled.
+	WorkflowRunStatusPaused WorkflowRunStatus = "paused"
 )
 
 // CanTransitionTo reports whether moving from the current status to next is
@@ -451,7 +476,11 @@ const (
 //	pending          → in_progress       (first task assigned)
 //	in_progress      → completed         (terminal event matched)
 //	in_progress      → failed            (any failure event)
+//	in_progress      → paused            (a task enters awaiting-direction)
 //	in_progress      → cancelling        (operator cancel issued — FEAT-008)
+//	paused           → in_progress       (all awaiting-direction tasks resolved)
+//	paused           → failed            (a paused task is cancelled/failed)
+//	paused           → cancelling        (operator cancel while paused)
 //	cancelling       → cancelled         (quiesce deadline elapsed — FEAT-008)
 //	failed           → rolling_back      (explicit rollback triggered)
 //	completed        → rolling_back      (explicit rollback on a completed run)
@@ -465,6 +494,11 @@ func (s WorkflowRunStatus) CanTransitionTo(next WorkflowRunStatus) bool {
 		return next == WorkflowRunStatusInProgress
 	case WorkflowRunStatusInProgress:
 		return next == WorkflowRunStatusCompleted ||
+			next == WorkflowRunStatusFailed ||
+			next == WorkflowRunStatusPaused ||
+			next == WorkflowRunStatusCancelling
+	case WorkflowRunStatusPaused:
+		return next == WorkflowRunStatusInProgress ||
 			next == WorkflowRunStatusFailed ||
 			next == WorkflowRunStatusCancelling
 	case WorkflowRunStatusCancelling:
@@ -481,6 +515,7 @@ func (s WorkflowRunStatus) CanTransitionTo(next WorkflowRunStatus) bool {
 }
 
 // IsTerminal reports whether s is a terminal (non-recoverable) status.
+// paused is explicitly non-terminal — it resolves to in_progress or failed.
 func (s WorkflowRunStatus) IsTerminal() bool {
 	switch s {
 	case WorkflowRunStatusCompleted, WorkflowRunStatusFailed,
