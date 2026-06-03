@@ -405,6 +405,11 @@ type TaskManager interface {
 
 	// ListTasksForRun returns every Task linked to runID.
 	ListTasksForRun(ctx context.Context, agencyID, runID string) ([]Task, error)
+
+	// ListTaskTodos returns TaskTodos for the agency, optionally filtered by
+	// workflowRunID. When workflowRunID is empty, all todos for the agency
+	// are returned (BUG-20260603-005).
+	ListTaskTodos(ctx context.Context, agencyID, workflowRunID string) ([]TaskTodo, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].
@@ -415,34 +420,19 @@ type WorkSchemaManager = entitygraph.SchemaManager
 // package that unifies the publish contract across CodeVald services.
 type CrossPublisher = eventbus.Publisher
 
-// RollbackClients holds optional gRPC callers for the cross-service compensation
-// legs of RollbackWorkflowRun. Nil fields are skipped with an informational log.
-type RollbackClients struct {
-	Git       func(ctx context.Context, runID string) error
-	AI        func(ctx context.Context, runID, reason string) error
-	Comm      func(ctx context.Context, agencyID, runID, reason string) error
-	Functions func(ctx context.Context, agencyID, runID, reason string) error
-}
-
 // taskManager is the concrete implementation of [TaskManager].
 type taskManager struct {
 	dm        entitygraph.DataManager
 	publisher eventbus.Publisher // optional; nil = skip event publishing
-	rollback  RollbackClients    // optional; nil fields = skip cross-service compensation
 }
 
 // NewTaskManager constructs a [TaskManager] backed by the given
 // [entitygraph.DataManager].
 // pub may be nil — cross-service events are skipped when no publisher is set.
-// rollback is optional; nil fields in the struct skip that compensation leg.
 // Returns an error if dm is nil.
-func NewTaskManager(dm entitygraph.DataManager, pub eventbus.Publisher, rollback ...RollbackClients) (TaskManager, error) {
+func NewTaskManager(dm entitygraph.DataManager, pub eventbus.Publisher) (TaskManager, error) {
 	if dm == nil {
 		return nil, fmt.Errorf("NewTaskManager: data manager must not be nil")
 	}
-	m := &taskManager{dm: dm, publisher: pub}
-	if len(rollback) > 0 {
-		m.rollback = rollback[0]
-	}
-	return m, nil
+	return &taskManager{dm: dm, publisher: pub}, nil
 }

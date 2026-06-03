@@ -71,6 +71,10 @@ service TaskService {
   // Error: NOT_FOUND if the todo does not exist.
   rpc FailTodo(FailTodoRequest) returns (FailTodoResponse);
 
+  // ListTaskTodos returns TaskTodos for the agency, optionally filtered by
+  // workflow_run_id. Returns an empty list (not an error) when none match.
+  rpc ListTaskTodos(ListTaskTodosRequest) returns (ListTaskTodosResponse);
+
   // UpsertAgent creates or merges an Agent vertex keyed by the natural key
   // (agency_id, agent.agent_id).
   rpc UpsertAgent(UpsertAgentRequest) returns (UpsertAgentResponse);
@@ -328,6 +332,16 @@ message FailTodoRequest {
   string reason    = 3;
 }
 message FailTodoResponse {}
+
+message ListTaskTodosRequest {
+  string agency_id        = 1;
+  // workflow_run_id filters results to todos belonging to the given run.
+  // When empty all todos for the agency are returned.
+  string workflow_run_id  = 2;
+}
+message ListTaskTodosResponse {
+  repeated TaskTodo todos = 1;
+}
 
 message UpsertAgentRequest {
   string agency_id = 1;

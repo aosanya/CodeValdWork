@@ -28,6 +28,7 @@ const (
 	TaskService_AssignTask_FullMethodName                  = "/codevaldwork.v1.TaskService/AssignTask"
 	TaskService_UnassignTask_FullMethodName                = "/codevaldwork.v1.TaskService/UnassignTask"
 	TaskService_FailTodo_FullMethodName                    = "/codevaldwork.v1.TaskService/FailTodo"
+	TaskService_ListTaskTodos_FullMethodName               = "/codevaldwork.v1.TaskService/ListTaskTodos"
 	TaskService_UpsertAgent_FullMethodName                 = "/codevaldwork.v1.TaskService/UpsertAgent"
 	TaskService_GetAgent_FullMethodName                    = "/codevaldwork.v1.TaskService/GetAgent"
 	TaskService_ListAgents_FullMethodName                  = "/codevaldwork.v1.TaskService/ListAgents"
@@ -107,6 +108,9 @@ type TaskServiceClient interface {
 	//
 	// Error: NOT_FOUND if the todo does not exist.
 	FailTodo(ctx context.Context, in *FailTodoRequest, opts ...grpc.CallOption) (*FailTodoResponse, error)
+	// ListTaskTodos returns TaskTodos for the agency, optionally filtered by
+	// workflow_run_id. Returns an empty list (not an error) when none match.
+	ListTaskTodos(ctx context.Context, in *ListTaskTodosRequest, opts ...grpc.CallOption) (*ListTaskTodosResponse, error)
 	// UpsertAgent creates or merges an Agent vertex keyed by the natural key
 	// (agency_id, agent.agent_id).
 	UpsertAgent(ctx context.Context, in *UpsertAgentRequest, opts ...grpc.CallOption) (*UpsertAgentResponse, error)
@@ -321,6 +325,16 @@ func (c *taskServiceClient) FailTodo(ctx context.Context, in *FailTodoRequest, o
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FailTodoResponse)
 	err := c.cc.Invoke(ctx, TaskService_FailTodo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) ListTaskTodos(ctx context.Context, in *ListTaskTodosRequest, opts ...grpc.CallOption) (*ListTaskTodosResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTaskTodosResponse)
+	err := c.cc.Invoke(ctx, TaskService_ListTaskTodos_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -638,6 +652,9 @@ type TaskServiceServer interface {
 	//
 	// Error: NOT_FOUND if the todo does not exist.
 	FailTodo(context.Context, *FailTodoRequest) (*FailTodoResponse, error)
+	// ListTaskTodos returns TaskTodos for the agency, optionally filtered by
+	// workflow_run_id. Returns an empty list (not an error) when none match.
+	ListTaskTodos(context.Context, *ListTaskTodosRequest) (*ListTaskTodosResponse, error)
 	// UpsertAgent creates or merges an Agent vertex keyed by the natural key
 	// (agency_id, agent.agent_id).
 	UpsertAgent(context.Context, *UpsertAgentRequest) (*UpsertAgentResponse, error)
@@ -794,6 +811,9 @@ func (UnimplementedTaskServiceServer) UnassignTask(context.Context, *UnassignTas
 }
 func (UnimplementedTaskServiceServer) FailTodo(context.Context, *FailTodoRequest) (*FailTodoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FailTodo not implemented")
+}
+func (UnimplementedTaskServiceServer) ListTaskTodos(context.Context, *ListTaskTodosRequest) (*ListTaskTodosResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTaskTodos not implemented")
 }
 func (UnimplementedTaskServiceServer) UpsertAgent(context.Context, *UpsertAgentRequest) (*UpsertAgentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpsertAgent not implemented")
@@ -1052,6 +1072,24 @@ func _TaskService_FailTodo_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskServiceServer).FailTodo(ctx, req.(*FailTodoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_ListTaskTodos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTaskTodosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).ListTaskTodos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_ListTaskTodos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).ListTaskTodos(ctx, req.(*ListTaskTodosRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1566,6 +1604,10 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FailTodo",
 			Handler:    _TaskService_FailTodo_Handler,
+		},
+		{
+			MethodName: "ListTaskTodos",
+			Handler:    _TaskService_ListTaskTodos_Handler,
 		},
 		{
 			MethodName: "UpsertAgent",
