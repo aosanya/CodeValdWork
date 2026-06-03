@@ -29,5 +29,22 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 
 | Bug ID | Title | Severity | Status | Depends On |
 |--------|-------|----------|--------|------------|
+| [BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) | WorkflowRun status never advances past PENDING | Medium | 📋 Open | — |
 
-_No open bugs._
+---
+
+### BUG-20260603-001 — WorkflowRun status never advances past PENDING
+
+**Severity:** Medium
+**Status:** 📋 Open
+
+WorkflowRun is created at `PENDING` and never transitions to `IN_PROGRESS`, `COMPLETED`, or `FAILED` during normal pipeline execution. The cancel flow (FEAT-20260602-008) already handles `CANCELLING → CANCELLED`; the other three transitions are missing.
+
+**Root cause:** The event dispatcher does not hook `work.task.assigned` / `work.task.completed` / `work.task.failed` to look up the task's parent WorkflowRun and advance its status.
+
+**Fix:** Add three dispatcher hooks in `internal/server/event_dispatcher.go`:
+1. `work.task.assigned` → flip run PENDING → IN_PROGRESS (first assignment only).
+2. `work.task.completed` → check all run tasks; flip IN_PROGRESS → COMPLETED when all are terminal.
+3. `work.task.failed` → flip IN_PROGRESS → FAILED immediately.
+
+See [bug-details/BUG-20260603-001_workflow-run-status-never-advances.md](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) for full fix plan.
