@@ -61,7 +61,7 @@ func (h *RunStatusHandler) HandleEvent(ctx context.Context, topic, payloadStr st
 
 	switch {
 	case run.Status == codevaldwork.WorkflowRunStatusPending &&
-		topic == codevaldwork.TopicTaskAssigned:
+		(topic == codevaldwork.TopicTaskAssigned || topic == codevaldwork.TopicPipelineStarted):
 		nextStatus = codevaldwork.WorkflowRunStatusInProgress
 
 	case run.Status == codevaldwork.WorkflowRunStatusInProgress && failureTopics[topic]:

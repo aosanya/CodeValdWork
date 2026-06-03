@@ -30,6 +30,8 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 | Bug ID | Title | Severity | Status | Depends On |
 |--------|-------|----------|--------|------------|
 | [BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) | WorkflowRun status never advances past PENDING | Medium | 📋 Open | — |
+| [BUG-20260603-002](bug-details/BUG-20260603-002_rollback-deletes-tasks-instead-of-resetting.md) | RollbackWorkflowRun hard-deletes Tasks instead of resetting to pending | High | 📋 Open | BUG-20260603-003 |
+| [BUG-20260603-003](bug-details/BUG-20260603-003_task-workflow-run-id-not-set.md) | Tasks completed by a workflow run have workflow_run_id null or empty | High | 📋 Open | — |
 
 ---
 
@@ -48,3 +50,26 @@ WorkflowRun is created at `PENDING` and never transitions to `IN_PROGRESS`, `COM
 3. `work.task.failed` → flip IN_PROGRESS → FAILED immediately.
 
 See [bug-details/BUG-20260603-001_workflow-run-status-never-advances.md](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) for full fix plan.
+
+---
+
+### BUG-20260603-002 — RollbackWorkflowRun hard-deletes Tasks instead of resetting to pending
+
+**Severity:** High
+**Status:** 📋 Open
+**Depends on:** BUG-20260603-003
+
+`DeleteWorkflowRunArtifacts` issues hard deletes on every Task anchored to the run ID. Tasks are long-lived project work items and must not be deleted on rollback — only their status should be reset to `pending` and `workflow_run_id` cleared. TaskTodos (ephemeral per-run decomposition artifacts) should continue to be deleted.
+
+See [bug-details/BUG-20260603-002](bug-details/BUG-20260603-002_rollback-deletes-tasks-instead-of-resetting.md) for full fix plan.
+
+---
+
+### BUG-20260603-003 — Tasks completed by a workflow run have `workflow_run_id` null or empty
+
+**Severity:** High
+**Status:** 📋 Open
+
+Tasks transitioned to `completed` (or `in_progress`) as part of a workflow run do not have `workflow_run_id` stamped onto the task document. The rollback filter (`FILTER doc.properties.workflow_run_id == @run_id`) silently skips these tasks, leaving them in their completed state after rollback.
+
+See [bug-details/BUG-20260603-003](bug-details/BUG-20260603-003_task-workflow-run-id-not-set.md) for full fix plan.

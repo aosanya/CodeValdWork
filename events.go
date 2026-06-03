@@ -63,6 +63,12 @@ const (
 	// CodeValdAI / CodeValdFunctions subscribe to drop in-flight work for
 	// the task. Payload: [TaskCancelledPayload].
 	TopicTaskCancelled = "work.task.cancelled"
+
+	// TopicPipelineStarted is published by start-pipeline (CodeValdFunctions)
+	// immediately after a WorkflowRun is minted. CodeValdWork subscribes so
+	// RunStatusHandler can flip the run from PENDING → IN_PROGRESS without
+	// waiting for the first work.task.assigned event (BUG-09-025 fix).
+	TopicPipelineStarted = "work.pipeline.started"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -374,5 +380,7 @@ func ConsumedTopics() []string {
 		// Watchdog timeout topics (FEAT-20260602-006):
 		TopicRunTimeout,
 		TopicTaskTimeout,
+		// Pipeline start: flip PENDING → IN_PROGRESS immediately (BUG-09-025):
+		TopicPipelineStarted,
 	}
 }
