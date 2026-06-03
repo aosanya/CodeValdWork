@@ -1,13 +1,14 @@
 // workflow_run_rollback.go — WorkflowRun rollback coordinator and artifact cleanup
 // (FEAT-20260602-004).
 //
-// RollbackWorkflowRun orchestrates the compensation sequence across CodeValdWork's
-// own entities. Cross-service legs (AI, Functions, Git, Comm) are stubbed here and
-// will be wired when each service implements DELETE /by-workflow-run/{id}.
+// RollbackWorkflowRun orchestrates the compensation sequence: it calls each
+// cross-service compensation leg (Git, AI, Comm, Functions) via the injected
+// RollbackClients, then runs CodeValdWork's own artifact cleanup.
 //
-// DeleteWorkflowRunArtifacts is the CodeValdWork leg of the per-service DELETE
-// contract: it hard-deletes every Task and TaskTodo anchored by the run ID,
-// removes their incident edges, and emits work.task.rolled_back per deleted Task.
+// DeleteWorkflowRunArtifacts is the CodeValdWork leg: it resets every Task
+// anchored by the run ID to pending (clearing workflow_run_id and completed_at,
+// keeping all other task fields and non-run edges intact), hard-deletes every
+// TaskTodo anchored to the run, and emits work.task.rolled_back per affected Task.
 package codevaldwork
 
 import (
@@ -15,13 +16,14 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
 	"github.com/aosanya/CodeValdSharedLib/eventbus"
 )
 
 // RollbackWorkflowRun implements [TaskManager.RollbackWorkflowRun].
-// Sequence: rolling_back → compensate artifacts → rolled_back (or rollback_failed).
+// Sequence: rolling_back → compensate cross-service artifacts → compensate own artifacts → rolled_back (or rollback_failed).
 func (m *taskManager) RollbackWorkflowRun(ctx context.Context, agencyID, runID, reason string) (WorkflowRun, error) {
 	run, err := m.GetWorkflowRun(ctx, agencyID, runID)
 	if err != nil {
@@ -40,12 +42,11 @@ func (m *taskManager) RollbackWorkflowRun(ctx context.Context, agencyID, runID, 
 		return WorkflowRun{}, fmt.Errorf("RollbackWorkflowRun: acquire: %w", err)
 	}
 
-	// Step 2 — cross-service compensation stubs (to be wired once each service
-	// exposes DELETE /by-workflow-run/{id}).
-	m.stubCompensateComm(ctx, agencyID, runID, reason)
-	m.stubCompensateGit(ctx, agencyID, runID)
-	m.stubCompensateFunctions(ctx, agencyID, runID)
-	m.stubCompensateAI(ctx, agencyID, runID)
+	// Step 2 — cross-service compensation legs (best-effort; failures are logged but do not abort).
+	m.compensateGit(ctx, runID)
+	m.compensateAI(ctx, runID, reason)
+	m.compensateComm(ctx, agencyID, runID, reason)
+	m.compensateFunctions(ctx, agencyID, runID, reason)
 
 	// Step 3 — CodeValdWork's own artifact cleanup.
 	if err := m.DeleteWorkflowRunArtifacts(ctx, agencyID, runID); err != nil {
@@ -72,6 +73,7 @@ func (m *taskManager) RollbackWorkflowRun(ctx context.Context, agencyID, runID, 
 }
 
 // DeleteWorkflowRunArtifacts implements [TaskManager.DeleteWorkflowRunArtifacts].
+// Tasks are reset to pending (not deleted). TaskTodos are hard-deleted.
 func (m *taskManager) DeleteWorkflowRunArtifacts(ctx context.Context, agencyID, runID string) error {
 	if _, err := m.GetWorkflowRun(ctx, agencyID, runID); err != nil {
 		return err
@@ -104,16 +106,24 @@ func (m *taskManager) DeleteWorkflowRunArtifacts(ctx context.Context, agencyID, 
 		}
 	}
 
-	// Delete Tasks: remove all incident edges first, then soft-delete the entity.
+	// Reset Tasks: status → pending, clear workflow_run_id + completed_at, remove started_task edge.
+	// All other task fields and edges (member_of, has_tag, blocks, depends_on) are preserved.
+	now := time.Now().UTC().Format(time.RFC3339)
 	for _, task := range tasks {
-		m.deleteEntityEdges(ctx, agencyID, task.ID)
-		if err := m.dm.DeleteEntity(ctx, agencyID, task.ID); err != nil {
-			slog.ErrorContext(ctx, "DeleteWorkflowRunArtifacts: delete task", "task_id", task.ID, "err", err)
+		m.removeStartedTaskEdge(ctx, agencyID, task.ID)
+		task.Status = TaskStatusPending
+		task.WorkflowRunID = ""
+		task.CompletedAt = ""
+		task.UpdatedAt = now
+		if _, err := m.dm.UpdateEntity(ctx, agencyID, task.ID, entitygraph.UpdateEntityRequest{
+			Properties: taskToProperties(task),
+		}); err != nil {
+			slog.ErrorContext(ctx, "DeleteWorkflowRunArtifacts: reset task", "task_id", task.ID, "err", err)
 		}
 		m.publishTaskRolledBack(ctx, agencyID, task.ID, runID)
 	}
 
-	// Delete TaskTodos anchored to this run.
+	// Delete TaskTodos anchored to this run (ephemeral decomposition artifacts).
 	todos, err := m.ListTaskTodos(ctx, agencyID, runID)
 	if err != nil {
 		return fmt.Errorf("DeleteWorkflowRunArtifacts: list todos: %w", err)
@@ -126,6 +136,25 @@ func (m *taskManager) DeleteWorkflowRunArtifacts(ctx context.Context, agencyID, 
 	}
 
 	return nil
+}
+
+// removeStartedTaskEdge removes all inbound started_task edges pointing to taskID.
+// There is normally exactly one (from the owning run), but we remove all to stay clean on re-invocation.
+func (m *taskManager) removeStartedTaskEdge(ctx context.Context, agencyID, taskID string) {
+	rels, err := m.dm.ListRelationships(ctx, entitygraph.RelationshipFilter{
+		AgencyID: agencyID,
+		ToID:     taskID,
+		Name:     RelLabelStartedTask,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "removeStartedTaskEdge: list", "task_id", taskID, "err", err)
+		return
+	}
+	for _, rel := range rels {
+		if err := m.dm.DeleteRelationship(ctx, agencyID, rel.ID); err != nil {
+			slog.ErrorContext(ctx, "removeStartedTaskEdge: delete", "rel_id", rel.ID, "err", err)
+		}
+	}
 }
 
 // deleteEntityEdges removes all incident (from + to) relationships for an entity.
@@ -159,7 +188,7 @@ func (m *taskManager) ListTaskTodos(ctx context.Context, agencyID, runID string)
 	return out, nil
 }
 
-// publishTaskRolledBack emits work.task.rolled_back for observability after a Task is deleted.
+// publishTaskRolledBack emits work.task.rolled_back for observability after a Task is rolled back.
 func (m *taskManager) publishTaskRolledBack(ctx context.Context, agencyID, taskID, runID string) {
 	if m.publisher == nil {
 		return
@@ -171,27 +200,47 @@ func (m *taskManager) publishTaskRolledBack(ctx context.Context, agencyID, taskI
 	})
 }
 
-// ── Cross-service compensation stubs ──────────────────────────────────────────
-// Each stub will be replaced with a real gRPC call once the target service
-// implements DELETE /by-workflow-run/{id} (FEAT-20260602-004 Phase 2).
+// ── Cross-service compensation ────────────────────────────────────────────────
+// Each compensate* method calls the injected RollbackClients function if set.
+// Failures are logged as warnings but never abort the rollback — cross-service
+// legs are best-effort; the Work leg in DeleteWorkflowRunArtifacts is authoritative.
 
-func (m *taskManager) stubCompensateComm(ctx context.Context, agencyID, runID, reason string) {
-	slog.InfoContext(ctx, "RollbackWorkflowRun: comm compensation stub (not yet implemented)",
-		"agency_id", agencyID, "run_id", runID)
+func (m *taskManager) compensateGit(ctx context.Context, runID string) {
+	if m.rollback.Git == nil {
+		slog.InfoContext(ctx, "RollbackWorkflowRun: git compensation skipped (client not configured)", "run_id", runID)
+		return
+	}
+	if err := m.rollback.Git(ctx, runID); err != nil {
+		slog.WarnContext(ctx, "RollbackWorkflowRun: git compensation failed", "run_id", runID, "err", err)
+	}
 }
 
-func (m *taskManager) stubCompensateGit(ctx context.Context, agencyID, runID string) {
-	slog.InfoContext(ctx, "RollbackWorkflowRun: git compensation stub (not yet implemented)",
-		"agency_id", agencyID, "run_id", runID)
+func (m *taskManager) compensateAI(ctx context.Context, runID, reason string) {
+	if m.rollback.AI == nil {
+		slog.InfoContext(ctx, "RollbackWorkflowRun: ai compensation skipped (client not configured)", "run_id", runID)
+		return
+	}
+	if err := m.rollback.AI(ctx, runID, reason); err != nil {
+		slog.WarnContext(ctx, "RollbackWorkflowRun: ai compensation failed", "run_id", runID, "err", err)
+	}
 }
 
-func (m *taskManager) stubCompensateFunctions(ctx context.Context, agencyID, runID string) {
-	slog.InfoContext(ctx, "RollbackWorkflowRun: functions compensation stub (not yet implemented)",
-		"agency_id", agencyID, "run_id", runID)
+func (m *taskManager) compensateComm(ctx context.Context, agencyID, runID, reason string) {
+	if m.rollback.Comm == nil {
+		slog.InfoContext(ctx, "RollbackWorkflowRun: comm compensation skipped (client not configured)", "run_id", runID)
+		return
+	}
+	if err := m.rollback.Comm(ctx, agencyID, runID, reason); err != nil {
+		slog.WarnContext(ctx, "RollbackWorkflowRun: comm compensation failed", "run_id", runID, "err", err)
+	}
 }
 
-func (m *taskManager) stubCompensateAI(ctx context.Context, agencyID, runID string) {
-	slog.InfoContext(ctx, "RollbackWorkflowRun: ai compensation stub (not yet implemented)",
-		"agency_id", agencyID, "run_id", runID)
+func (m *taskManager) compensateFunctions(ctx context.Context, agencyID, runID, reason string) {
+	if m.rollback.Functions == nil {
+		slog.InfoContext(ctx, "RollbackWorkflowRun: functions compensation skipped (client not configured)", "run_id", runID)
+		return
+	}
+	if err := m.rollback.Functions(ctx, agencyID, runID, reason); err != nil {
+		slog.WarnContext(ctx, "RollbackWorkflowRun: functions compensation failed", "run_id", runID, "err", err)
+	}
 }
-

@@ -20,12 +20,18 @@ import (
 	"github.com/aosanya/CodeValdWork/internal/registrar"
 	"github.com/aosanya/CodeValdWork/internal/server"
 	workarangodb "github.com/aosanya/CodeValdWork/storage/arangodb"
+	aipb "github.com/aosanya/CodeValdAI/gen/go/codevaldai/v1"
+	commpb "github.com/aosanya/CodeValdComm/gen/go/codevaldcomm/v1"
+	functionspb "github.com/aosanya/CodeValdFunctions/gen/go/codevaldfunctions/v1"
+	gitpb "github.com/aosanya/CodeValdGit/gen/go/codevaldgit/v1"
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
 	healthpb "github.com/aosanya/CodeValdSharedLib/gen/go/codevaldhealth/v1"
 	entitygraphpb "github.com/aosanya/CodeValdSharedLib/gen/go/entitygraph/v1"
 	sharedev1 "github.com/aosanya/CodeValdSharedLib/gen/go/codevaldshared/v1"
 	"github.com/aosanya/CodeValdSharedLib/health"
 	"github.com/aosanya/CodeValdSharedLib/serverutil"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Run starts all CodeValdWork subsystems (Cross registrar, ArangoDB
@@ -80,8 +86,11 @@ func Run(cfg config.Config) error {
 		log.Println("codevaldwork: CODEVALDWORK_AGENCY_ID not set — skipping schema seed")
 	}
 
+	// ── Cross-service rollback gRPC clients (all optional) ───────────────────
+	rollback := buildRollbackClients(cfg)
+
 	// ── TaskManager ──────────────────────────────────────────────────────────
-	mgr, err := codevaldwork.NewTaskManager(backend, pub)
+	mgr, err := codevaldwork.NewTaskManager(backend, pub, rollback)
 	if err != nil {
 		return fmt.Errorf("NewTaskManager: %w", err)
 	}
@@ -115,4 +124,66 @@ func Run(cfg config.Config) error {
 	log.Printf("codevaldwork: gRPC server listening on :%s", cfg.GRPCPort)
 	serverutil.RunWithGracefulShutdown(ctx, grpcServer, lis, 30*time.Second)
 	return nil
+}
+
+// buildRollbackClients creates gRPC-backed compensation functions for each
+// cross-service rollback leg. Any leg whose address is empty is left nil —
+// the coordinator will log a skip for that service rather than failing.
+func buildRollbackClients(cfg config.Config) codevaldwork.RollbackClients {
+	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	var rc codevaldwork.RollbackClients
+
+	if cfg.GitGRPCAddr != "" {
+		conn, err := grpc.NewClient(cfg.GitGRPCAddr, dialOpts...)
+		if err != nil {
+			log.Printf("codevaldwork: git rollback client: %v — skipping git compensation", err)
+		} else {
+			c := gitpb.NewGitServiceClient(conn)
+			rc.Git = func(ctx context.Context, runID string) error {
+				_, err := c.RollbackByWorkflowRun(ctx, &gitpb.RollbackByWorkflowRunRequest{WorkflowRunId: runID})
+				return err
+			}
+		}
+	}
+
+	if cfg.AIGRPCAddr != "" {
+		conn, err := grpc.NewClient(cfg.AIGRPCAddr, dialOpts...)
+		if err != nil {
+			log.Printf("codevaldwork: ai rollback client: %v — skipping ai compensation", err)
+		} else {
+			c := aipb.NewAIServiceClient(conn)
+			rc.AI = func(ctx context.Context, runID, reason string) error {
+				_, err := c.RollbackByWorkflowRun(ctx, &aipb.RollbackByWorkflowRunRequest{WorkflowRunId: runID, Reason: reason})
+				return err
+			}
+		}
+	}
+
+	if cfg.CommGRPCAddr != "" {
+		conn, err := grpc.NewClient(cfg.CommGRPCAddr, dialOpts...)
+		if err != nil {
+			log.Printf("codevaldwork: comm rollback client: %v — skipping comm compensation", err)
+		} else {
+			c := commpb.NewCommServiceClient(conn)
+			rc.Comm = func(ctx context.Context, agencyID, runID, reason string) error {
+				_, err := c.RollbackByWorkflowRun(ctx, &commpb.RollbackByWorkflowRunRequest{AgencyId: agencyID, WorkflowRunId: runID, Reason: reason})
+				return err
+			}
+		}
+	}
+
+	if cfg.FunctionsGRPCAddr != "" {
+		conn, err := grpc.NewClient(cfg.FunctionsGRPCAddr, dialOpts...)
+		if err != nil {
+			log.Printf("codevaldwork: functions rollback client: %v — skipping functions compensation", err)
+		} else {
+			c := functionspb.NewFunctionsServiceClient(conn)
+			rc.Functions = func(ctx context.Context, agencyID, runID, reason string) error {
+				_, err := c.RollbackByWorkflowRun(ctx, &functionspb.RollbackByWorkflowRunRequest{AgencyId: agencyID, WorkflowRunId: runID, Reason: reason})
+				return err
+			}
+		}
+	}
+
+	return rc
 }

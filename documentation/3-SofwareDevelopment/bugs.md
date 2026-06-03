@@ -29,9 +29,23 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 
 | Bug ID | Title | Severity | Status | Depends On |
 |--------|-------|----------|--------|------------|
+| [BUG-20260603-004](bug-details/BUG-20260603-004_project-name-routing-case-sensitive.md) | Project-name URL routing is case-sensitive; display-name casing returns 404 | Medium | 📋 Open | — |
 | [BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) | WorkflowRun status never advances past PENDING | Medium | 📋 Open | — |
 | [BUG-20260603-002](bug-details/BUG-20260603-002_rollback-deletes-tasks-instead-of-resetting.md) | RollbackWorkflowRun hard-deletes Tasks instead of resetting to pending | High | 📋 Open | BUG-20260603-003 |
 | [BUG-20260603-003](bug-details/BUG-20260603-003_task-workflow-run-id-not-set.md) | Tasks completed by a workflow run have workflow_run_id null or empty | High | 📋 Open | — |
+
+---
+
+### BUG-20260603-004 — Project-name URL routing is case-sensitive; display-name casing returns 404
+
+**Severity:** Medium
+**Status:** 📋 Open
+
+`GET /projects/{projectName}/tasks` (and all project-scoped routes) performs an exact-match ArangoDB lookup on `projectName`. Slugs are stored lowercase (`sharedfarms`) but callers deriving the URL from the display name (`SharedFarms`) receive 404. CodeValdWorkFrontend renders "Failed to load project." when the QA doc URL used the display-name casing.
+
+**Fix:** Apply `strings.ToLower()` to `projectName` in the request handler (or at the query layer) in `internal/server/project_server.go` before passing it to ArangoDB.
+
+See [bug-details/BUG-20260603-004](bug-details/BUG-20260603-004_project-name-routing-case-sensitive.md) for full fix plan and workaround.
 
 ---
 

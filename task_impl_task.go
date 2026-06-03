@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"time"
 
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
@@ -122,6 +123,13 @@ func (m *taskManager) UpdateTask(ctx context.Context, agencyID string, task Task
 	}
 
 	out := taskFromEntity(updated)
+
+	// If workflow_run_id was just stamped for the first time, create the started_task edge.
+	if out.WorkflowRunID != "" && current.WorkflowRunID == "" {
+		if err := m.LinkTaskToRun(ctx, agencyID, out.WorkflowRunID, out.ID); err != nil {
+			slog.WarnContext(ctx, "UpdateTask: LinkTaskToRun", "run_id", out.WorkflowRunID, "task_id", out.ID, "err", err)
+		}
+	}
 
 	if changed := nonStatusChangedFields(current, out); len(changed) > 0 {
 		m.publish(ctx, TopicTaskUpdated, agencyID, TaskUpdatedPayload{

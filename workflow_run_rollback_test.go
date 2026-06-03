@@ -121,7 +121,7 @@ func TestRollbackWorkflowRun_NotFound_ReturnsNotFound(t *testing.T) {
 
 // ── DeleteWorkflowRunArtifacts ─────────────────────────────────────────────
 
-func TestDeleteWorkflowRunArtifacts_DeletesTasksAndEmitsEvents(t *testing.T) {
+func TestDeleteWorkflowRunArtifacts_ResetsTasksToPendingAndEmitsEvents(t *testing.T) {
 	ctx := context.Background()
 	mgr, pub := newManagerWithPublisher(t)
 	const agencyID = "ag"
@@ -137,7 +137,6 @@ func TestDeleteWorkflowRunArtifacts_DeletesTasksAndEmitsEvents(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateTask: %v", err)
 	}
-	// Link run → task edge.
 	if err := mgr.LinkTaskToRun(ctx, agencyID, run.ID, task.ID); err != nil {
 		t.Fatalf("LinkTaskToRun: %v", err)
 	}
@@ -146,11 +145,18 @@ func TestDeleteWorkflowRunArtifacts_DeletesTasksAndEmitsEvents(t *testing.T) {
 		t.Fatalf("DeleteWorkflowRunArtifacts: %v", err)
 	}
 
-	// Task should be gone.
-	if _, err := mgr.GetTask(ctx, agencyID, task.ID); !errors.Is(err, codevaldwork.ErrTaskNotFound) {
-		t.Errorf("GetTask after delete: err = %v, want ErrTaskNotFound", err)
+	// Task must still exist, reset to pending with workflow_run_id cleared.
+	after, err := mgr.GetTask(ctx, agencyID, task.ID)
+	if err != nil {
+		t.Fatalf("GetTask after rollback: %v", err)
 	}
-	// work.task.rolled_back event should have fired.
+	if after.Status != codevaldwork.TaskStatusPending {
+		t.Errorf("task status = %s, want pending", after.Status)
+	}
+	if after.WorkflowRunID != "" {
+		t.Errorf("task.WorkflowRunID = %q, want empty", after.WorkflowRunID)
+	}
+	// work.task.rolled_back event must have fired.
 	if !contains(pub.topicList(), codevaldwork.TopicTaskRolledBack) {
 		t.Errorf("expected work.task.rolled_back event; got %v", pub.topicList())
 	}

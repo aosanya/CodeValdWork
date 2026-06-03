@@ -135,6 +135,8 @@ func applyTaskMask(current, incoming codevaldwork.Task, paths []string) codevald
 			out.DueAt = incoming.DueAt
 		case "completed_at":
 			out.CompletedAt = incoming.CompletedAt
+		case "workflow_run_id":
+			out.WorkflowRunID = incoming.WorkflowRunID
 		default:
 			log.Printf("codevaldwork: UpdateTask: ignoring unknown update_mask path %q", p)
 		}

@@ -50,6 +50,12 @@ type Config struct {
 	// SubscribeTopics is the list of pub/sub topics CodeValdWork subscribes to
 	// (comma-separated WORK_SUBSCRIBE_TOPICS env var).
 	SubscribeTopics []string
+
+	// Cross-service rollback gRPC addresses (all optional; empty = skip that leg).
+	GitGRPCAddr       string
+	AIGRPCAddr        string
+	CommGRPCAddr      string
+	FunctionsGRPCAddr string
 }
 
 // Load reads runtime configuration from environment variables, falling back to
@@ -81,7 +87,11 @@ func Load() Config {
 		AgencyID:       serverutil.EnvOrDefault("CODEVALDWORK_AGENCY_ID", ""),
 		PingInterval:    serverutil.ParseDurationString("CROSS_PING_INTERVAL", 10*time.Second),
 		PingTimeout:     serverutil.ParseDurationString("CROSS_PING_TIMEOUT", 5*time.Second),
-		SubscribeTopics: parseTopics(serverutil.EnvOrDefault("WORK_SUBSCRIBE_TOPICS", "ai.task.started,ai.task.completed,ai.task.failed,ai.todo.created,work.task.update,work.task.completed,work.task.assigned,work.task.failed,git.file.written,functions.job.failed,functions.job.completed,ai.run.failed,ai.run.completed,git.merge.failed,git.merge.completed")),
+		SubscribeTopics:   parseTopics(serverutil.EnvOrDefault("WORK_SUBSCRIBE_TOPICS", "ai.task.started,ai.task.completed,ai.task.failed,ai.todo.created,work.task.update,work.task.completed,work.task.assigned,work.task.failed,git.file.written,functions.job.failed,functions.job.completed,ai.run.failed,ai.run.completed,git.merge.failed,git.merge.completed")),
+		GitGRPCAddr:       serverutil.EnvOrDefault("CODEVALDGIT_GRPC_ADDR", ""),
+		AIGRPCAddr:        serverutil.EnvOrDefault("CODEVALDAI_GRPC_ADDR", ""),
+		CommGRPCAddr:      serverutil.EnvOrDefault("CODEVALDCOMM_GRPC_ADDR", ""),
+		FunctionsGRPCAddr: serverutil.EnvOrDefault("CODEVALDFUNCTIONS_GRPC_ADDR", ""),
 	}
 }
 
