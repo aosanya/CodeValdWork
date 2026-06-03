@@ -238,6 +238,21 @@ func taskRoutes() []types.RouteInfo {
 				{URLParam: "todoId", Field: "todo_id"},
 			},
 		},
+		{
+			// POST /work/{agencyId}/tasks/{taskId}/unblock
+			// Transitions a blocked task back to awaiting-direction and
+			// re-emits work.task.needs-direction so the human can choose
+			// a new resolution option (FEAT-20260603-003 / GAP-20260603-004).
+			Method:     "POST",
+			Pattern:    "/work/{agencyId}/tasks/{taskId}/unblock",
+			Capability: "unblock_task",
+			GrpcMethod: "/codevaldwork.v1.TaskService/UnblockTask",
+			IsWrite:    true,
+			PathBindings: []types.PathBinding{
+				agencyBinding,
+				{URLParam: "taskId", Field: "task_id"},
+			},
+		},
 	}
 }
 

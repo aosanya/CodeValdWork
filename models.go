@@ -70,7 +70,10 @@ func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
 		// On dependency completion the dispatch flow flips back to pending,
 		// re-publishes work.task.assigned, and then UpdateTask transitions
 		// to in_progress. Cancel is always allowed as an escape hatch.
-		return next == TaskStatusPending || next == TaskStatusCancelled
+		// awaiting-direction is allowed for the operator unblock path: a task
+		// that was blocked by a human (mark-blocked direction) can be re-opened
+		// for a new direction cycle without losing the escalation context.
+		return next == TaskStatusPending || next == TaskStatusCancelled || next == TaskStatusAwaitingDirection
 	case TaskStatusInProgress:
 		return next == TaskStatusCompleted || next == TaskStatusFailed ||
 			next == TaskStatusCancelled || next == TaskStatusAwaitingDirection
@@ -177,6 +180,23 @@ type Task struct {
 	// event payload. Empty for tasks not produced under a WorkflowRun
 	// (FEAT-20260602-002).
 	WorkflowRunID string `json:"workflow_run_id,omitempty"`
+
+	// RecoveryRunsUsed is the number of automatic retry cycles already charged
+	// against the task's recovery budget. Incremented by the failure handler
+	// each time a task is re-dispatched after failing. Once it reaches the
+	// max_recovery_runs threshold (default 3) the task escalates to
+	// AI classification before entering awaiting-direction.
+	RecoveryRunsUsed int `json:"recovery_runs_used,omitempty"`
+
+	// BlockerNote is the human-readable note supplied by an operator when
+	// choosing the mark-blocked direction option. Stored so the blocker reason
+	// is visible on the task without parsing the description field.
+	BlockerNote string `json:"blocker_note,omitempty"`
+
+	// DirectionHistory is a JSON-encoded []string of past direction options
+	// submitted for this task. Appended each time a work.task.direction event
+	// is handled so the full recovery trajectory is visible.
+	DirectionHistory string `json:"direction_history,omitempty"`
 }
 
 // ImportResult is returned by [TaskManager.ImportProject].

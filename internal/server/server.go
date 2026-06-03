@@ -205,6 +205,21 @@ func (s *Server) FailTodo(ctx context.Context, req *pb.FailTodoRequest) (*pb.Fai
 	return &pb.FailTodoResponse{}, nil
 }
 
+// UnblockTask implements pb.TaskServiceServer.
+// Transitions a blocked task to awaiting-direction and re-emits the direction
+// form so the human can choose a new resolution option.
+func (s *Server) UnblockTask(ctx context.Context, req *pb.UnblockTaskRequest) (*pb.UnblockTaskResponse, error) {
+	task, err := s.mgr.UnblockTask(ctx, req.GetAgencyId(), req.GetTaskId(), req.GetNote())
+	if err != nil {
+		return nil, mapError(err)
+	}
+	// Re-escalate: emit work.task.needs-direction so the frontend shows the form.
+	if s.dispatcher != nil {
+		s.dispatcher.EscalateToHumanDirection(ctx, task, task.ID)
+	}
+	return &pb.UnblockTaskResponse{Task: taskToProto(task)}, nil
+}
+
 // ListTaskTodos implements pb.TaskServiceServer.
 // Returns all TaskTodos for the agency, filtered by workflow_run_id when set.
 func (s *Server) ListTaskTodos(ctx context.Context, req *pb.ListTaskTodosRequest) (*pb.ListTaskTodosResponse, error) {

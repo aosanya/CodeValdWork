@@ -361,6 +361,10 @@ func TestAllTopics_StableSurface(t *testing.T) {
 		codevaldwork.TopicRunCancelled,
 		codevaldwork.TopicRunTimeout,
 		codevaldwork.TopicTaskTimeout,
+		codevaldwork.TopicTaskNeedsDirection,
+		codevaldwork.TopicRunPaused,
+		codevaldwork.TopicRunResumed,
+		codevaldwork.TopicTaskClassifyFailure,
 	}
 	for _, topic := range extras {
 		if !gotSet[topic] {

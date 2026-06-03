@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"time"
 
 	codevaldwork "github.com/aosanya/CodeValdWork"
 	"github.com/aosanya/CodeValdSharedLib/eventbus"
@@ -23,6 +24,14 @@ const (
 	// topicTaskDirection is the inbound direction response from the AI failure
 	// reviewer or a human submitting the direction form.
 	topicTaskDirection = codevaldwork.TopicTaskDirection
+	// topicTaskFailureClassified is the AI classification response for the
+	// retry-ladder escalation path (FEAT-20260603-003).
+	topicTaskFailureClassified = codevaldwork.TopicTaskFailureClassified
+
+	// defaultMaxRecoveryRuns is the platform-default retry budget per task.
+	// Configurable per WorkPlan via max_recovery_runs; this value is used
+	// when the WorkPlan property is absent (FEAT-20260603-003).
+	defaultMaxRecoveryRuns = 3
 )
 
 // aiTaskPayload is the common shape of ai.task.started/completed/failed payloads.
@@ -99,6 +108,8 @@ func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload strin
 		d.handleTaskTimeout(ctx, payload)
 	case topicTaskDirection:
 		d.handleTaskDirection(ctx, payload)
+	case topicTaskFailureClassified:
+		d.handleTaskFailureClassified(ctx, payload)
 	}
 	// Always check for WorkflowRun status transitions on every event that
 	// carries a workflow_run_id — handles both the hardcoded failure topics
@@ -219,6 +230,22 @@ func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic strin
 		return
 	}
 
+	// Retry ladder (FEAT-20260603-003): on failure, try automatic retries before
+	// escalating to AI classification and then human direction.
+	if topic == topicTaskFailed {
+		runID := p.WorkflowRunID
+		if runID == "" {
+			runID = task.WorkflowRunID
+		}
+		if d.handleTaskFailureWithRetry(ctx, task, p.RunID, p.Reason, runID) {
+			// Retry or escalation path handled — do not fall through to the
+			// standard failed-status update or work.task.failed bridge.
+			return
+		}
+		// Budget exhausted and classification emitted; fall through to mark
+		// the task failed so the run status handler sees the transition.
+	}
+
 	task.Status = nextStatus
 	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
 		log.Printf("codevaldwork: TaskEventDispatcher: UpdateTask %s → %s: %v", p.TaskID, nextStatus, err)
@@ -248,6 +275,234 @@ func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic strin
 		})
 		log.Printf("codevaldwork: TaskEventDispatcher: bridged work.task.failed for task=%s run=%s", p.TaskID, p.RunID)
 	}
+}
+
+// handleTaskFailureWithRetry implements the three-phase recovery ladder
+// (FEAT-20260603-003). Returns true when the failure was intercepted by the
+// ladder (retry dispatched or classification emitted) so the caller should
+// not proceed with the normal failed-status path.
+//
+// Phase 1 — budget not exhausted: increment recovery_runs_used, re-dispatch.
+// Phase 2 — budget exhausted: emit work.task.classify-failure for AI to classify.
+// The classification response is handled by handleTaskFailureClassified.
+func (d *TaskEventDispatcher) handleTaskFailureWithRetry(ctx context.Context, task codevaldwork.Task, runID, reason, workflowRunID string) bool {
+	task.RecoveryRunsUsed++
+	task.UpdatedAt = nowRFC3339()
+	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
+		log.Printf("codevaldwork: handleTaskFailureWithRetry: UpdateTask %s: %v", task.ID, err)
+		// Fall through to normal failure path on storage error.
+		return false
+	}
+
+	if task.RecoveryRunsUsed < defaultMaxRecoveryRuns {
+		// Phase 1: automatic retry. Re-publish work.task.assigned so the
+		// developer-assigned-handler fires another AI run.
+		agentEntityID, _ := d.resolveAgentForTask(ctx, task.ID, task.AssignedTo)
+		roleName := ""
+		if agentEntityID != "" {
+			if ag, err := d.mgr.GetAgent(ctx, d.agencyID, agentEntityID); err == nil {
+				roleName = ag.RoleName
+			}
+		}
+		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+			Topic:    codevaldwork.TopicTaskAssigned,
+			AgencyID: d.agencyID,
+			Payload: codevaldwork.TaskAssignedPayload{
+				TaskID:        task.ID,
+				AgentID:       task.AssignedTo,
+				RoleName:      roleName,
+				TaskCode:      task.TaskName,
+				Title:         task.Title,
+				Description:   task.Description,
+				WorkflowRunID: workflowRunID,
+			},
+		})
+		log.Printf("codevaldwork: handleTaskFailureWithRetry: retry %d/%d task=%s",
+			task.RecoveryRunsUsed, defaultMaxRecoveryRuns, task.ID)
+		return true
+	}
+
+	// Phase 2: budget exhausted — request AI classification.
+	// Find the most-recently-failed todo for context.
+	var failedTodoTitle, failedTodoInstructions string
+	edges, _ := d.mgr.TraverseRelationships(ctx, d.agencyID, task.ID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
+	for _, edge := range edges {
+		if todo, err := d.mgr.GetTaskTodo(ctx, d.agencyID, edge.ToID); err == nil && todo.Status == codevaldwork.TodoStatusFailed {
+			failedTodoTitle = todo.Title
+			failedTodoInstructions = todo.Instructions
+		}
+	}
+	eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+		Topic:    codevaldwork.TopicTaskClassifyFailure,
+		AgencyID: d.agencyID,
+		Payload: codevaldwork.TaskClassifyFailurePayload{
+			TaskID:                 task.ID,
+			WorkflowRunID:          workflowRunID,
+			FailureCount:           task.RecoveryRunsUsed,
+			LastFailureReason:      reason,
+			TaskDescription:        task.Description,
+			FailedTodoTitle:        failedTodoTitle,
+			FailedTodoInstructions: failedTodoInstructions,
+		},
+	})
+	log.Printf("codevaldwork: handleTaskFailureWithRetry: budget exhausted — emitted classify-failure task=%s", task.ID)
+	// Return true: caller should NOT immediately mark the task as failed.
+	// The classification response will determine the next transition.
+	return true
+}
+
+// handleTaskFailureClassified processes a work.task.failure-classified event.
+// transient → grant one extra retry (re-dispatch work.task.assigned).
+// requires-human (or classification failure) → transition task → awaiting-direction,
+// emit work.task.needs-direction, pause the WorkflowRun.
+func (d *TaskEventDispatcher) handleTaskFailureClassified(ctx context.Context, payloadStr string) {
+	var p codevaldwork.TaskFailureClassifiedPayload
+	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.TaskID == "" {
+		log.Printf("codevaldwork: handleTaskFailureClassified: bad payload: %v", err)
+		return
+	}
+	log.Printf("codevaldwork: handleTaskFailureClassified: task=%s type=%s", p.TaskID, p.FailureType)
+
+	task, err := d.mgr.GetTask(ctx, d.agencyID, p.TaskID)
+	if err != nil {
+		log.Printf("codevaldwork: handleTaskFailureClassified: GetTask %s: %v", p.TaskID, err)
+		return
+	}
+
+	if p.FailureType == "transient" {
+		// Grant one extra retry beyond the budget.
+		agentEntityID, _ := d.resolveAgentForTask(ctx, task.ID, task.AssignedTo)
+		roleName := ""
+		if agentEntityID != "" {
+			if ag, err := d.mgr.GetAgent(ctx, d.agencyID, agentEntityID); err == nil {
+				roleName = ag.RoleName
+			}
+		}
+		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+			Topic:    codevaldwork.TopicTaskAssigned,
+			AgencyID: d.agencyID,
+			Payload: codevaldwork.TaskAssignedPayload{
+				TaskID:        task.ID,
+				AgentID:       task.AssignedTo,
+				RoleName:      roleName,
+				TaskCode:      task.TaskName,
+				Title:         task.Title,
+				Description:   task.Description,
+				WorkflowRunID: task.WorkflowRunID,
+			},
+		})
+		log.Printf("codevaldwork: handleTaskFailureClassified: transient — retrying task=%s", task.ID)
+		return
+	}
+
+	// requires-human (or unknown type — default safe): escalate.
+	d.EscalateToHumanDirection(ctx, task, p.TaskID)
+}
+
+// EscalateToHumanDirection transitions a task to awaiting-direction, emits
+// work.task.needs-direction (carrying a default direction form), and pauses
+// the associated WorkflowRun. Called when AI classification returns
+// "requires-human" or times out.
+func (d *TaskEventDispatcher) EscalateToHumanDirection(ctx context.Context, task codevaldwork.Task, taskID string) {
+	task.Status = codevaldwork.TaskStatusAwaitingDirection
+	task.UpdatedAt = nowRFC3339()
+	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
+		log.Printf("codevaldwork: EscalateToHumanDirection: UpdateTask %s: %v", taskID, err)
+		return
+	}
+	log.Printf("codevaldwork: EscalateToHumanDirection: task=%s → awaiting-direction", taskID)
+
+	// Find the most-recently-failed todo for context in the direction form.
+	var failedTodoTitle, lastFailureReason string
+	edges, _ := d.mgr.TraverseRelationships(ctx, d.agencyID, taskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
+	for _, edge := range edges {
+		if todo, err := d.mgr.GetTaskTodo(ctx, d.agencyID, edge.ToID); err == nil && todo.Status == codevaldwork.TodoStatusFailed {
+			failedTodoTitle = todo.Title
+		}
+	}
+
+	form := codevaldwork.DirectionForm{
+		Title:         "Task needs your direction",
+		Description:   "The task has exhausted its automatic retry budget.",
+		FailureOutput: lastFailureReason,
+		Question:      "How should the agent proceed?",
+		Options: []codevaldwork.FormOption{
+			{
+				ID:               string(codevaldwork.DirectionRetry),
+				Label:            "Retry with new instructions",
+				Description:      "Tell the agent what to do differently.",
+				RequiresInput:    true,
+				InputLabel:       "Instructions",
+				InputPlaceholder: "e.g. The compile step is a stub — skip it and mark as completed.",
+			},
+			{
+				ID:            string(codevaldwork.DirectionSkip),
+				Label:         "Skip this step",
+				Description:   "Mark the failed todo as skipped and continue.",
+				RequiresInput: false,
+			},
+			{
+				ID:               string(codevaldwork.DirectionMarkBlocked),
+				Label:            "Mark task as blocked",
+				Description:      "Pause indefinitely — note what is blocking.",
+				RequiresInput:    true,
+				InputLabel:       "Blocker",
+				InputPlaceholder: "e.g. Flutter toolchain not installed in CI.",
+			},
+			{
+				ID:            string(codevaldwork.DirectionCancel),
+				Label:         "Cancel task",
+				Description:   "Terminate this task and fail the workflow run cleanly.",
+				RequiresInput: false,
+			},
+		},
+		AllowFreetext: true,
+		FreetextLabel: "Other — write your own direction",
+	}
+	_ = failedTodoTitle // available for richer form descriptions when needed
+
+	eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+		Topic:    codevaldwork.TopicTaskNeedsDirection,
+		AgencyID: d.agencyID,
+		Payload: codevaldwork.TaskNeedsDirectionPayload{
+			TaskID:            taskID,
+			WorkflowRunID:     task.WorkflowRunID,
+			AgencyID:          d.agencyID,
+			FailureCount:      task.RecoveryRunsUsed,
+			LastFailureReason: lastFailureReason,
+			Form:              form,
+		},
+	})
+
+	// Pause the WorkflowRun if one is associated.
+	if task.WorkflowRunID != "" {
+		run, err := d.mgr.GetWorkflowRun(ctx, d.agencyID, task.WorkflowRunID)
+		if err != nil {
+			log.Printf("codevaldwork: EscalateToHumanDirection: GetWorkflowRun %s: %v", task.WorkflowRunID, err)
+			return
+		}
+		if run.Status.CanTransitionTo(codevaldwork.WorkflowRunStatusPaused) {
+			if _, err := d.mgr.UpdateWorkflowRunStatus(ctx, d.agencyID, task.WorkflowRunID, codevaldwork.WorkflowRunStatusPaused, ""); err != nil {
+				log.Printf("codevaldwork: EscalateToHumanDirection: pause run %s: %v", task.WorkflowRunID, err)
+			} else {
+				eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+					Topic:    codevaldwork.TopicRunPaused,
+					AgencyID: d.agencyID,
+					Payload: codevaldwork.RunPausedPayload{
+						WorkflowRunID:  task.WorkflowRunID,
+						PausedByTaskID: taskID,
+						FailureCount:   task.RecoveryRunsUsed,
+					},
+				})
+				log.Printf("codevaldwork: EscalateToHumanDirection: run=%s → paused", task.WorkflowRunID)
+			}
+		}
+	}
+}
+
+// nowRFC3339 returns the current UTC time formatted as RFC3339.
+func nowRFC3339() string {
+	return time.Now().UTC().Format(time.RFC3339)
 }
 
 // FailTodoWithCascade marks todoID as failed and runs the full cascade:
@@ -493,6 +748,9 @@ func (d *TaskEventDispatcher) handleTaskDirection(ctx context.Context, payloadSt
 		return
 	}
 
+	// Append to direction_history before routing.
+	task.DirectionHistory = appendDirectionHistory(task.DirectionHistory, string(p.SelectedOption))
+
 	switch p.SelectedOption {
 	case codevaldwork.DirectionRetry:
 		// Append human/AI instructions to the task description so the next
@@ -558,14 +816,14 @@ func (d *TaskEventDispatcher) handleTaskDirection(ctx context.Context, payloadSt
 		log.Printf("codevaldwork: handleTaskDirection: skip: no failed todo found for task=%s", p.TaskID)
 
 	case codevaldwork.DirectionMarkBlocked:
-		if p.Instructions != "" {
-			task.Description = task.Description + "\n\nBlocked: " + p.Instructions
-		}
+		task.BlockerNote = p.Instructions
 		task.Status = codevaldwork.TaskStatusBlocked
 		if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
 			log.Printf("codevaldwork: handleTaskDirection: mark-blocked: UpdateTask %s: %v", p.TaskID, err)
 		}
 		log.Printf("codevaldwork: handleTaskDirection: mark-blocked: task=%s", p.TaskID)
+		// Run stays paused — no resume check needed.
+		return
 
 	case codevaldwork.DirectionCancel:
 		task.Status = codevaldwork.TaskStatusCancelled
@@ -582,10 +840,77 @@ func (d *TaskEventDispatcher) handleTaskDirection(ctx context.Context, payloadSt
 			},
 		})
 		log.Printf("codevaldwork: handleTaskDirection: cancel: task=%s", p.TaskID)
+		// Fall through to run-resume check — cancellation may complete the run.
 
 	default:
 		log.Printf("codevaldwork: handleTaskDirection: unknown option %q for task=%s", p.SelectedOption, p.TaskID)
+		return
 	}
+
+	// After retry or cancel direction: check whether the WorkflowRun can resume.
+	if task.WorkflowRunID != "" {
+		d.maybeResumeWorkflowRun(ctx, task.WorkflowRunID, p.TaskID, string(p.SelectedOption))
+	}
+}
+
+// maybeResumeWorkflowRun transitions a paused WorkflowRun back to in_progress
+// when no tasks in the run remain in awaiting-direction or blocked status.
+// Called after a direction event resolves a task.
+func (d *TaskEventDispatcher) maybeResumeWorkflowRun(ctx context.Context, runID, resolvedTaskID, selectedOption string) {
+	run, err := d.mgr.GetWorkflowRun(ctx, d.agencyID, runID)
+	if err != nil || run.Status != codevaldwork.WorkflowRunStatusPaused {
+		return
+	}
+	closure, err := d.mgr.GetWorkflowRunClosure(ctx, d.agencyID, runID)
+	if err != nil {
+		log.Printf("codevaldwork: maybeResumeWorkflowRun: GetWorkflowRunClosure run=%s: %v", runID, err)
+		return
+	}
+	for _, task := range closure.Tasks {
+		if task.Status == codevaldwork.TaskStatusAwaitingDirection {
+			return // at least one task still waiting — stay paused
+		}
+	}
+	// All tasks resolved — transition run based on the direction taken.
+	nextStatus := codevaldwork.WorkflowRunStatusInProgress
+	reason := ""
+	if selectedOption == string(codevaldwork.DirectionCancel) {
+		nextStatus = codevaldwork.WorkflowRunStatusFailed
+		reason = "task cancelled by direction"
+	}
+	if !run.Status.CanTransitionTo(nextStatus) {
+		return
+	}
+	if _, err := d.mgr.UpdateWorkflowRunStatus(ctx, d.agencyID, runID, nextStatus, reason); err != nil {
+		log.Printf("codevaldwork: maybeResumeWorkflowRun: UpdateWorkflowRunStatus run=%s → %s: %v", runID, nextStatus, err)
+		return
+	}
+	if nextStatus == codevaldwork.WorkflowRunStatusInProgress {
+		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
+			Topic:    codevaldwork.TopicRunResumed,
+			AgencyID: d.agencyID,
+			Payload: codevaldwork.RunResumedPayload{
+				WorkflowRunID:   runID,
+				ResumedByTaskID: resolvedTaskID,
+				SelectedOption:  selectedOption,
+			},
+		})
+		log.Printf("codevaldwork: maybeResumeWorkflowRun: run=%s → in_progress (resumed)", runID)
+	} else {
+		log.Printf("codevaldwork: maybeResumeWorkflowRun: run=%s → %s", runID, nextStatus)
+	}
+}
+
+// appendDirectionHistory appends selectedOption to the JSON-encoded direction
+// history string. If history is empty or invalid JSON, starts fresh.
+func appendDirectionHistory(history, selectedOption string) string {
+	var past []string
+	if history != "" {
+		_ = json.Unmarshal([]byte(history), &past)
+	}
+	past = append(past, selectedOption)
+	b, _ := json.Marshal(past)
+	return string(b)
 }
 
 // handleAITodoCreated consumes an ai.todo.created decomposition payload:

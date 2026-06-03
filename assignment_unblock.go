@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 )
 
 // UnblockDependents implements the inverse trigger of [taskManager.AssignTask]:
@@ -85,4 +86,31 @@ func (m *taskManager) maybeUnblockDependent(ctx context.Context, agencyID, compl
 	})
 	log.Printf("codevaldwork: UnblockDependents: task %s blocked→pending (dep %s satisfied)",
 		dependentID, completedTaskID)
+}
+
+// UnblockTask transitions a task from the `blocked` status (entered when an
+// operator chose the mark-blocked direction option) back to
+// `awaiting-direction` so the direction form can be re-opened for a new
+// resolution cycle. Appends note to the task description when non-empty.
+//
+// Returns [ErrInvalidStatusTransition] if the task is not currently blocked.
+func (m *taskManager) UnblockTask(ctx context.Context, agencyID, taskID, note string) (Task, error) {
+	task, err := m.GetTask(ctx, agencyID, taskID)
+	if err != nil {
+		return Task{}, err
+	}
+	if !task.Status.CanTransitionTo(TaskStatusAwaitingDirection) {
+		return Task{}, fmt.Errorf("%w: %s → awaiting-direction", ErrInvalidStatusTransition, task.Status)
+	}
+	if note != "" {
+		task.Description = task.Description + "\n\nUnblocked: " + note
+	}
+	task.Status = TaskStatusAwaitingDirection
+	task.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+	updated, err := m.UpdateTask(ctx, agencyID, task)
+	if err != nil {
+		return Task{}, fmt.Errorf("UnblockTask: %w", err)
+	}
+	log.Printf("codevaldwork: UnblockTask: task %s blocked→awaiting-direction", taskID)
+	return updated, nil
 }
