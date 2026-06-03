@@ -73,6 +73,14 @@ func (h *RunStatusHandler) HandleEvent(ctx context.Context, topic, payloadStr st
 		matchesTerminalEvent(run.TerminalEvent, topic, payloadMap):
 		nextStatus = codevaldwork.WorkflowRunStatusCompleted
 
+	case run.Status == codevaldwork.WorkflowRunStatusInProgress &&
+		topic == codevaldwork.TopicTaskCompleted:
+		// All tasks in the run have reached a terminal state → close the run.
+		nextStatus, reason = h.allTasksTerminalStatus(ctx, runID)
+		if nextStatus == "" {
+			return // non-terminal tasks still pending
+		}
+
 	default:
 		return // no applicable transition
 	}
@@ -114,6 +122,35 @@ func extractReason(m map[string]any) string {
 		}
 	}
 	return ""
+}
+
+// allTasksTerminalStatus checks every Task in the run's closure. If all are
+// terminal it returns the appropriate target WorkflowRun status and a reason
+// string. It returns ("", "") when at least one task is still active.
+func (h *RunStatusHandler) allTasksTerminalStatus(ctx context.Context, runID string) (codevaldwork.WorkflowRunStatus, string) {
+	closure, err := h.mgr.GetWorkflowRunClosure(ctx, h.agencyID, runID)
+	if err != nil {
+		log.Printf("codevaldwork: RunStatusHandler: GetWorkflowRunClosure run=%s: %v", runID, err)
+		return "", ""
+	}
+	if len(closure.Tasks) == 0 {
+		return "", "" // no tasks linked yet — don't close prematurely
+	}
+	anyFailed := false
+	for _, task := range closure.Tasks {
+		switch task.Status {
+		case codevaldwork.TaskStatusCompleted, codevaldwork.TaskStatusCancelled:
+			// terminal — fine
+		case codevaldwork.TaskStatusFailed:
+			anyFailed = true
+		default:
+			return "", "" // still active
+		}
+	}
+	if anyFailed {
+		return codevaldwork.WorkflowRunStatusFailed, "one or more tasks failed"
+	}
+	return codevaldwork.WorkflowRunStatusCompleted, ""
 }
 
 // matchesTerminalEvent reports whether topic + payloadMap satisfy the
