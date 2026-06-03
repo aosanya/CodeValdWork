@@ -1,6 +1,6 @@
 # BUG-20260603-003 — Tasks created by a workflow run have `workflow_run_id` null or empty
 
-**Status:** 📋 Open
+**Status:** ✅ Fixed (2026-06-03)
 **Severity:** High — rollback cannot find tasks by run ID; they survive the rollback in their completed state and must be cleaned up manually
 **Owner:** CodeValdWork
 **Estimated effort:** ~0.5 day (identify creation path, ensure field is stamped)

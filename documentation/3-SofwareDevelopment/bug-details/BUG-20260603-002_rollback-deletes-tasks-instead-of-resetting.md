@@ -1,6 +1,6 @@
 # BUG-20260603-002 — `RollbackWorkflowRun` hard-deletes Tasks instead of resetting them to `pending`
 
-**Status:** 📋 Open
+**Status:** ✅ Fixed (2026-06-03)
 **Severity:** High — rollback is destructive and data-lossy; tasks created or completed by a workflow run are permanently deleted rather than returned to their pre-run state
 **Owner:** CodeValdWork
 **Estimated effort:** ~1 day (replace delete logic with status reset + clear workflow_run_id)

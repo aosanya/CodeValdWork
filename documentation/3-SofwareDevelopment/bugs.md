@@ -31,8 +31,6 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 |--------|-------|----------|--------|------------|
 | [BUG-20260603-004](bug-details/BUG-20260603-004_project-name-routing-case-sensitive.md) | Project-name URL routing is case-sensitive; display-name casing returns 404 | Medium | 📋 Open | — |
 | [BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) | WorkflowRun status never advances past PENDING | Medium | 📋 Open | — |
-| [BUG-20260603-002](bug-details/BUG-20260603-002_rollback-deletes-tasks-instead-of-resetting.md) | RollbackWorkflowRun hard-deletes Tasks instead of resetting to pending | High | 📋 Open | BUG-20260603-003 |
-| [BUG-20260603-003](bug-details/BUG-20260603-003_task-workflow-run-id-not-set.md) | Tasks completed by a workflow run have workflow_run_id null or empty | High | 📋 Open | — |
 
 ---
 
