@@ -43,8 +43,8 @@ import (
 func DefaultWorkSchema() types.Schema {
 	return types.Schema{
 		ID:      "work-schema-v1",
-		Version: 2,
-		Tag:     "v2",
+		Version: 3,
+		Tag:     "v3",
 		Types: append([]types.TypeDefinition{
 			{
 				Name:              "Task",
@@ -87,6 +87,16 @@ func DefaultWorkSchema() types.Schema {
 					// the started_task edge. Empty for tasks not produced under a
 					// run (FEAT-20260602-002).
 					{Name: "workflow_run_id", Type: types.PropertyTypeString},
+					// recovery_runs_used counts the automatic retries consumed so far
+					// for this task. Compared to max_recovery_runs (WorkPlan default: 3)
+					// to decide when to escalate to AI classification.
+					{Name: "recovery_runs_used", Type: types.PropertyTypeInteger},
+					// blocker_note is the human-readable reason stored when the
+					// mark-blocked direction option is chosen (FEAT-20260603-003).
+					{Name: "blocker_note", Type: types.PropertyTypeString},
+					// direction_history is a JSON-encoded []string of past selected_option
+					// values submitted for this task via work.task.direction events.
+					{Name: "direction_history", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},

@@ -71,6 +71,13 @@ service TaskService {
   // Error: NOT_FOUND if the todo does not exist.
   rpc FailTodo(FailTodoRequest) returns (FailTodoResponse);
 
+  // UnblockTask transitions a task from the `blocked` status (set by the
+  // mark-blocked direction option) back to `awaiting-direction`, re-opening
+  // the direction form so the human can choose a new action. Returns
+  // FAILED_PRECONDITION if the task is not currently in the `blocked` status.
+  // Error: NOT_FOUND if the task does not exist.
+  rpc UnblockTask(UnblockTaskRequest) returns (UnblockTaskResponse);
+
   // ListTaskTodos returns TaskTodos for the agency, optionally filtered by
   // workflow_run_id. Returns an empty list (not an error) when none match.
   rpc ListTaskTodos(ListTaskTodosRequest) returns (ListTaskTodosResponse);
@@ -332,6 +339,17 @@ message FailTodoRequest {
   string reason    = 3;
 }
 message FailTodoResponse {}
+
+message UnblockTaskRequest {
+  string agency_id = 1;
+  string task_id   = 2;
+  // note is an optional human-readable reason for unblocking, stored in the
+  // direction event context (e.g. "Flutter toolchain installed — unblocking").
+  string note      = 3;
+}
+message UnblockTaskResponse {
+  Task task = 1;
+}
 
 message ListTaskTodosRequest {
   string agency_id        = 1;

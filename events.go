@@ -83,6 +83,18 @@ const (
 	// Payload: [TaskDirectionPayload].
 	TopicTaskDirection = "work.task.direction"
 
+	// TopicTaskClassifyFailure is published by CodeValdWork after a task exhausts
+	// its automatic retry budget. CodeValdAI subscribes and responds with
+	// [TopicTaskFailureClassified]. Payload: [TaskClassifyFailurePayload].
+	TopicTaskClassifyFailure = "work.task.classify-failure"
+
+	// TopicTaskFailureClassified is consumed by CodeValdWork — emitted by
+	// CodeValdAI in response to [TopicTaskClassifyFailure]. Carries a
+	// failure_type of "transient" or "requires-human" so Work can decide
+	// whether to grant one extra retry or escalate to human direction.
+	// Payload: [TaskFailureClassifiedPayload].
+	TopicTaskFailureClassified = "work.task.failure-classified"
+
 	// TopicRunPaused fires when a WorkflowRun transitions to paused status
 	// because at least one task is awaiting direction.
 	// Payload: [RunPausedPayload].
@@ -118,6 +130,7 @@ func AllTopics() []string {
 		TopicTaskNeedsDirection,
 		TopicRunPaused,
 		TopicRunResumed,
+		TopicTaskClassifyFailure,
 	)
 }
 
@@ -385,6 +398,29 @@ type WorkflowRunTaskTimeoutPayload struct {
 	DetectedAt           string `json:"detected_at"`
 }
 
+// TaskClassifyFailurePayload is the Payload for [TopicTaskClassifyFailure].
+// Emitted by CodeValdWork when a task exhausts its retry budget; CodeValdAI
+// responds with [TaskFailureClassifiedPayload].
+type TaskClassifyFailurePayload struct {
+	TaskID               string `json:"task_id"`
+	WorkflowRunID        string `json:"workflow_run_id,omitempty"`
+	FailureCount         int    `json:"failure_count"`
+	LastFailureReason    string `json:"last_failure_reason,omitempty"`
+	TaskDescription      string `json:"task_description,omitempty"`
+	FailedTodoTitle      string `json:"failed_todo_title,omitempty"`
+	FailedTodoInstructions string `json:"failed_todo_instructions,omitempty"`
+}
+
+// TaskFailureClassifiedPayload is the Payload for [TopicTaskFailureClassified].
+// Emitted by CodeValdAI in response to [TopicTaskClassifyFailure].
+type TaskFailureClassifiedPayload struct {
+	TaskID        string `json:"task_id"`
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
+	// FailureType is "transient" (allow one more retry) or "requires-human" (escalate).
+	FailureType string `json:"failure_type"`
+	Reasoning   string `json:"reasoning,omitempty"`
+}
+
 // ConsumedTopics is the closed list of topics CodeValdWork subscribes to.
 //
 // Self-subscriptions (work.task.completed, work.task.assigned, work.task.failed)
@@ -410,5 +446,7 @@ func ConsumedTopics() []string {
 		TopicPipelineStarted,
 		// Failure recovery: direction response from AI reviewer or human form submission:
 		TopicTaskDirection,
+		// Failure classification response from CodeValdAI:
+		TopicTaskFailureClassified,
 	}
 }

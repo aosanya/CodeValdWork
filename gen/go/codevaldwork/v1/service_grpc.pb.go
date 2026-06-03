@@ -28,6 +28,7 @@ const (
 	TaskService_AssignTask_FullMethodName                  = "/codevaldwork.v1.TaskService/AssignTask"
 	TaskService_UnassignTask_FullMethodName                = "/codevaldwork.v1.TaskService/UnassignTask"
 	TaskService_FailTodo_FullMethodName                    = "/codevaldwork.v1.TaskService/FailTodo"
+	TaskService_UnblockTask_FullMethodName                 = "/codevaldwork.v1.TaskService/UnblockTask"
 	TaskService_ListTaskTodos_FullMethodName               = "/codevaldwork.v1.TaskService/ListTaskTodos"
 	TaskService_UpsertAgent_FullMethodName                 = "/codevaldwork.v1.TaskService/UpsertAgent"
 	TaskService_GetAgent_FullMethodName                    = "/codevaldwork.v1.TaskService/GetAgent"
@@ -108,6 +109,12 @@ type TaskServiceClient interface {
 	//
 	// Error: NOT_FOUND if the todo does not exist.
 	FailTodo(ctx context.Context, in *FailTodoRequest, opts ...grpc.CallOption) (*FailTodoResponse, error)
+	// UnblockTask transitions a task from the `blocked` status (set by the
+	// mark-blocked direction option) back to `awaiting-direction`, re-opening
+	// the direction form so the human can choose a new action. Returns
+	// FAILED_PRECONDITION if the task is not currently in the `blocked` status.
+	// Error: NOT_FOUND if the task does not exist.
+	UnblockTask(ctx context.Context, in *UnblockTaskRequest, opts ...grpc.CallOption) (*UnblockTaskResponse, error)
 	// ListTaskTodos returns TaskTodos for the agency, optionally filtered by
 	// workflow_run_id. Returns an empty list (not an error) when none match.
 	ListTaskTodos(ctx context.Context, in *ListTaskTodosRequest, opts ...grpc.CallOption) (*ListTaskTodosResponse, error)
@@ -325,6 +332,16 @@ func (c *taskServiceClient) FailTodo(ctx context.Context, in *FailTodoRequest, o
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FailTodoResponse)
 	err := c.cc.Invoke(ctx, TaskService_FailTodo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) UnblockTask(ctx context.Context, in *UnblockTaskRequest, opts ...grpc.CallOption) (*UnblockTaskResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnblockTaskResponse)
+	err := c.cc.Invoke(ctx, TaskService_UnblockTask_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -652,6 +669,12 @@ type TaskServiceServer interface {
 	//
 	// Error: NOT_FOUND if the todo does not exist.
 	FailTodo(context.Context, *FailTodoRequest) (*FailTodoResponse, error)
+	// UnblockTask transitions a task from the `blocked` status (set by the
+	// mark-blocked direction option) back to `awaiting-direction`, re-opening
+	// the direction form so the human can choose a new action. Returns
+	// FAILED_PRECONDITION if the task is not currently in the `blocked` status.
+	// Error: NOT_FOUND if the task does not exist.
+	UnblockTask(context.Context, *UnblockTaskRequest) (*UnblockTaskResponse, error)
 	// ListTaskTodos returns TaskTodos for the agency, optionally filtered by
 	// workflow_run_id. Returns an empty list (not an error) when none match.
 	ListTaskTodos(context.Context, *ListTaskTodosRequest) (*ListTaskTodosResponse, error)
@@ -811,6 +834,9 @@ func (UnimplementedTaskServiceServer) UnassignTask(context.Context, *UnassignTas
 }
 func (UnimplementedTaskServiceServer) FailTodo(context.Context, *FailTodoRequest) (*FailTodoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FailTodo not implemented")
+}
+func (UnimplementedTaskServiceServer) UnblockTask(context.Context, *UnblockTaskRequest) (*UnblockTaskResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnblockTask not implemented")
 }
 func (UnimplementedTaskServiceServer) ListTaskTodos(context.Context, *ListTaskTodosRequest) (*ListTaskTodosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTaskTodos not implemented")
@@ -1072,6 +1098,24 @@ func _TaskService_FailTodo_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskServiceServer).FailTodo(ctx, req.(*FailTodoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_UnblockTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnblockTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).UnblockTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_UnblockTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).UnblockTask(ctx, req.(*UnblockTaskRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1604,6 +1648,10 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FailTodo",
 			Handler:    _TaskService_FailTodo_Handler,
+		},
+		{
+			MethodName: "UnblockTask",
+			Handler:    _TaskService_UnblockTask_Handler,
 		},
 		{
 			MethodName: "ListTaskTodos",

@@ -48,6 +48,8 @@ func TestWorkRoutes_StaticCapabilitySnapshot(t *testing.T) {
 		// Todo lifecycle
 		"list_task_todos",
 		"fail_todo",
+		// Failure recovery (FEAT-20260603-003)
+		"unblock_task",
 		// JSON import
 		"import_project",
 		// Generic graph relationships (WORK-009)
@@ -112,6 +114,7 @@ func TestWorkRoutes_IsWriteFlags(t *testing.T) {
 		"create_relationship":    true,
 		"delete_relationship":    true,
 		"fail_todo":              true,
+		"unblock_task":          true,
 	}
 	for _, r := range staticRoutes() {
 		if r.IsWrite != writes[r.Capability] {

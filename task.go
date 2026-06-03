@@ -222,6 +222,12 @@ type TaskManager interface {
 	// [ErrImportJobNotCancellable] if it has already reached a terminal state.
 	CancelImportProject(ctx context.Context, agencyID, jobID string) error
 
+	// UnblockTask transitions a task from the `blocked` status (entered when a
+	// human chose mark-blocked) back to `awaiting-direction`, re-opening the
+	// direction form for a new resolution cycle. Returns [ErrInvalidStatusTransition]
+	// if the task is not currently blocked. Returns [ErrTaskNotFound] if missing.
+	UnblockTask(ctx context.Context, agencyID, taskID, note string) (Task, error)
+
 	// CreateTaskTodo creates a new TaskTodo entity for a decomposed sub-task.
 	// Required fields: Title, Instructions, ParentTaskID. Returns [ErrInvalidTask]
 	// if any required field is empty.
