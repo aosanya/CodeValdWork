@@ -59,8 +59,8 @@ const (
 //	blocked            → pending, cancelled
 //	in_progress        → completed, failed, cancelled, awaiting-direction
 //	awaiting-direction → in_progress, blocked, cancelled
+//	failed             → in_progress, blocked, cancelled (direction-driven recovery only)
 //	completed          → (none — terminal)
-//	failed             → (none — terminal)
 //	cancelled          → (none — terminal)
 func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
 	switch s {
@@ -81,8 +81,14 @@ func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
 		// Direction received: retry (→ in_progress), external blocker noted
 		// (→ blocked), or operator abort (→ cancelled).
 		return next == TaskStatusInProgress || next == TaskStatusBlocked || next == TaskStatusCancelled
+	case TaskStatusFailed:
+		// A FAILED task is normally terminal, but a work.task.direction event
+		// (from the AI Failure Reviewer or a human operator) can reopen it to
+		// recover. Mirrors the awaiting-direction exits. Legacy FAILED tasks
+		// that predate the retry ladder rely on this path for recovery.
+		return next == TaskStatusInProgress || next == TaskStatusBlocked || next == TaskStatusCancelled
 	default:
-		// completed, failed, cancelled are terminal — no further transitions.
+		// completed and cancelled are terminal — no further transitions.
 		return false
 	}
 }

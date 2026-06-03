@@ -505,6 +505,44 @@ func nowRFC3339() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
+// latestDecomposition returns only the todos belonging to the most-recent
+// AI decomposition for a task. Todos are grouped by DecompRunID; the group
+// containing the latest CreatedAt timestamp wins. A retry-with-instructions
+// direction creates a fresh decomposition with a new DecompRunID — older
+// (failed) decompositions are superseded and must not count toward parent-task
+// completion. Todos with an empty DecompRunID are treated as their own group
+// keyed on "" so non-AI-decomposed work continues to behave as before.
+func latestDecomposition(todos []codevaldwork.TaskTodo) []codevaldwork.TaskTodo {
+	if len(todos) == 0 {
+		return todos
+	}
+	type groupInfo struct {
+		latestCreatedAt string
+		members         []codevaldwork.TaskTodo
+	}
+	groups := make(map[string]*groupInfo)
+	for _, t := range todos {
+		g := groups[t.DecompRunID]
+		if g == nil {
+			g = &groupInfo{}
+			groups[t.DecompRunID] = g
+		}
+		g.members = append(g.members, t)
+		if t.CreatedAt > g.latestCreatedAt {
+			g.latestCreatedAt = t.CreatedAt
+		}
+	}
+	var winnerKey string
+	var winnerCreatedAt string
+	for key, g := range groups {
+		if g.latestCreatedAt > winnerCreatedAt {
+			winnerCreatedAt = g.latestCreatedAt
+			winnerKey = key
+		}
+	}
+	return groups[winnerKey].members
+}
+
 // FailTodoWithCascade marks todoID as failed and runs the full cascade:
 // blockDependentTodos → maybeCompleteParentTask. It is the public entry point
 // for the FailTodo gRPC method (and QA test tooling) so the cascade logic is
@@ -577,18 +615,30 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 
 // maybeCompleteParentTask marks a Task completed or failed once all child todos
 // are terminal. Terminal states: completed, skipped (non-failing), failed, blocked (cascade-failed).
+//
+// Only the latest decomposition is considered. A `retry-with-instructions`
+// direction creates a fresh decomposition (new DecompRunID) on the same parent
+// task; the prior decomposition's FAILED todos must be ignored so the retry can
+// succeed. Todos are grouped by DecompRunID and the group with the most-recent
+// CreatedAt wins. Todos with no DecompRunID (legacy or non-AI-decomposed) are
+// treated as their own group.
 func (d *TaskEventDispatcher) maybeCompleteParentTask(ctx context.Context, taskID string) {
 	edges, err := d.mgr.TraverseRelationships(ctx, d.agencyID, taskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
 	if err != nil {
 		log.Printf("codevaldwork: maybeCompleteParentTask: TraverseRelationships task=%s: %v", taskID, err)
 		return
 	}
-	anyFailed := false
+	allTodos := make([]codevaldwork.TaskTodo, 0, len(edges))
 	for _, edge := range edges {
 		todo, err := d.mgr.GetTaskTodo(ctx, d.agencyID, edge.ToID)
 		if err != nil {
 			return
 		}
+		allTodos = append(allTodos, todo)
+	}
+	todos := latestDecomposition(allTodos)
+	anyFailed := false
+	for _, todo := range todos {
 		switch todo.Status {
 		case codevaldwork.TodoStatusCompleted, codevaldwork.TodoStatusSkipped:
 			// skipped is non-failing terminal — treat same as completed
