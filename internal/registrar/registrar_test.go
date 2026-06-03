@@ -46,6 +46,7 @@ func TestWorkRoutes_StaticCapabilitySnapshot(t *testing.T) {
 		"assign_task_in_project",
 		"unassign_task_in_project",
 		// Todo lifecycle
+		"list_task_todos",
 		"fail_todo",
 		// JSON import
 		"import_project",

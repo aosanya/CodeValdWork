@@ -212,6 +212,17 @@ func taskRoutes() []types.RouteInfo {
 		},
 		// ── Todo lifecycle ─────────────────────────────────────────────────────
 		{
+			// GET /work/{agencyId}/task-todos[?workflow_run_id=<id>]
+			// Returns TaskTodos for the agency, optionally filtered by run.
+			// Cross merges the ?workflow_run_id= query param into the request
+			// body via its QueryBindings mechanism (BUG-20260603-005).
+			Method:       "GET",
+			Pattern:      "/work/{agencyId}/task-todos",
+			Capability:   "list_task_todos",
+			GrpcMethod:   "/codevaldwork.v1.TaskService/ListTaskTodos",
+			PathBindings: []types.PathBinding{agencyBinding},
+		},
+		{
 			// PATCH /work/{agencyId}/todos/{todoId}/status
 			// Marks a todo as failed and runs blockDependentTodos +
 			// maybeCompleteParentTask — the same cascade CodeValdWork

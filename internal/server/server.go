@@ -205,6 +205,20 @@ func (s *Server) FailTodo(ctx context.Context, req *pb.FailTodoRequest) (*pb.Fai
 	return &pb.FailTodoResponse{}, nil
 }
 
+// ListTaskTodos implements pb.TaskServiceServer.
+// Returns all TaskTodos for the agency, filtered by workflow_run_id when set.
+func (s *Server) ListTaskTodos(ctx context.Context, req *pb.ListTaskTodosRequest) (*pb.ListTaskTodosResponse, error) {
+	todos, err := s.mgr.ListTaskTodos(ctx, req.GetAgencyId(), req.GetWorkflowRunId())
+	if err != nil {
+		return nil, mapError(err)
+	}
+	out := make([]*pb.TaskTodo, 0, len(todos))
+	for _, t := range todos {
+		out = append(out, taskTodoToProto(t))
+	}
+	return &pb.ListTaskTodosResponse{Todos: out}, nil
+}
+
 // ── Conversion helpers ────────────────────────────────────────────────────────
 
 func taskToProto(t codevaldwork.Task) *pb.Task {
