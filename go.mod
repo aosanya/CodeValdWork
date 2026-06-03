@@ -3,26 +3,12 @@ module github.com/aosanya/CodeValdWork
 go 1.25.3
 
 require (
-	github.com/aosanya/CodeValdAI v0.0.0-00010101000000-000000000000
-	github.com/aosanya/CodeValdComm v0.0.0-00010101000000-000000000000
-	github.com/aosanya/CodeValdFunctions v0.0.0-00010101000000-000000000000
-	github.com/aosanya/CodeValdGit v0.0.0-00010101000000-000000000000
 	github.com/aosanya/CodeValdSharedLib v0.0.0
 	github.com/arangodb/go-driver v1.6.0
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.79.1
 	google.golang.org/protobuf v1.36.11
 )
-
-replace github.com/aosanya/CodeValdAI => ../CodeValdAI
-
-replace github.com/aosanya/CodeValdAgency => ../CodeValdAgency
-
-replace github.com/aosanya/CodeValdComm => ../CodeValdComm
-
-replace github.com/aosanya/CodeValdFunctions => ../CodeValdFunctions
-
-replace github.com/aosanya/CodeValdGit => ../CodeValdGit
 
 replace github.com/aosanya/CodeValdSharedLib => ../CodeValdSharedLib
 
