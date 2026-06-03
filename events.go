@@ -84,6 +84,8 @@ func AllTopics() []string {
 		TopicTaskCancelled,
 		TopicRunCancelling,
 		TopicRunCancelled,
+		TopicRunTimeout,
+		TopicTaskTimeout,
 	)
 }
 
@@ -246,6 +248,15 @@ const (
 	// transitions a WorkflowRun from cancelling to the cancelled terminal
 	// state (FEAT-20260602-008).
 	TopicRunCancelled = "work.run.cancelled"
+
+	// TopicRunTimeout fires when the watchdog detects a WorkflowRun has been
+	// in_progress for longer than its inactivity timeout without any event.
+	// CodeValdWork subscribes and flips the run to failed (FEAT-20260602-006).
+	TopicRunTimeout = "work.run.timeout"
+
+	// TopicTaskTimeout fires when the watchdog detects a per-step stall
+	// (current_step_started_at older than step_timeout) (FEAT-20260602-006).
+	TopicTaskTimeout = "work.task.timeout"
 )
 
 // WorkflowRunInProgressPayload is the Payload for [TopicRunInProgress].
@@ -319,6 +330,29 @@ type TaskCancelledPayload struct {
 	Reason        string `json:"reason,omitempty"`
 }
 
+// WorkflowRunTimeoutPayload is the Payload for [TopicRunTimeout]
+// (FEAT-20260602-006). Published by the Cross watchdog when a WorkflowRun
+// exceeds its inactivity timeout.
+type WorkflowRunTimeoutPayload struct {
+	WorkflowRunID    string `json:"workflow_run_id"`
+	AgencyID         string `json:"agency_id"`
+	LastEventAt      string `json:"last_event_at,omitempty"`
+	InactivityWindow string `json:"inactivity_window,omitempty"`
+	DetectedAt       string `json:"detected_at"`
+}
+
+// WorkflowRunTaskTimeoutPayload is the Payload for [TopicTaskTimeout]
+// (FEAT-20260602-006). Published by the Cross watchdog when a per-step
+// stall is detected.
+type WorkflowRunTaskTimeoutPayload struct {
+	WorkflowRunID        string `json:"workflow_run_id"`
+	AgencyID             string `json:"agency_id"`
+	StepID               string `json:"step_id"`
+	CurrentStepStartedAt string `json:"current_step_started_at,omitempty"`
+	StepTimeout          string `json:"step_timeout,omitempty"`
+	DetectedAt           string `json:"detected_at"`
+}
+
 // ConsumedTopics is the closed list of topics CodeValdWork subscribes to.
 //
 // Self-subscriptions (work.task.completed, work.task.assigned, work.task.failed)
@@ -337,5 +371,8 @@ func ConsumedTopics() []string {
 		"functions.job.completed",
 		"git.merge.completed",
 		"ai.run.completed",
+		// Watchdog timeout topics (FEAT-20260602-006):
+		TopicRunTimeout,
+		TopicTaskTimeout,
 	}
 }

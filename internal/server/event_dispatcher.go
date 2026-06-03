@@ -90,12 +90,42 @@ func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload strin
 		d.handleWorkTaskCompleted(ctx, payload)
 	case topicFileWritten:
 		d.handleFileWritten(ctx, payload)
+	case codevaldwork.TopicRunTimeout:
+		d.handleRunTimeout(ctx, payload)
+	case codevaldwork.TopicTaskTimeout:
+		d.handleTaskTimeout(ctx, payload)
 	}
 	// Always check for WorkflowRun status transitions on every event that
 	// carries a workflow_run_id — handles both the hardcoded failure topics
 	// and any terminal_event topic configured on the run.
 	if d.runStatus != nil {
 		d.runStatus.HandleEvent(ctx, topic, payload)
+	}
+}
+
+// handleRunTimeout processes a work.run.timeout event by delegating to
+// TaskManager.HandleRunTimeout (FEAT-20260602-006).
+func (d *TaskEventDispatcher) handleRunTimeout(ctx context.Context, payloadStr string) {
+	var p codevaldwork.WorkflowRunTimeoutPayload
+	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.WorkflowRunID == "" {
+		log.Printf("codevaldwork: handleRunTimeout: bad payload: %v", err)
+		return
+	}
+	if err := d.mgr.HandleRunTimeout(ctx, d.agencyID, p.WorkflowRunID); err != nil {
+		log.Printf("codevaldwork: handleRunTimeout: run=%s: %v", p.WorkflowRunID, err)
+	}
+}
+
+// handleTaskTimeout processes a work.task.timeout event by delegating to
+// TaskManager.HandleTaskTimeout (FEAT-20260602-006).
+func (d *TaskEventDispatcher) handleTaskTimeout(ctx context.Context, payloadStr string) {
+	var p codevaldwork.WorkflowRunTaskTimeoutPayload
+	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.WorkflowRunID == "" {
+		log.Printf("codevaldwork: handleTaskTimeout: bad payload: %v", err)
+		return
+	}
+	if err := d.mgr.HandleTaskTimeout(ctx, d.agencyID, p.StepID, p.WorkflowRunID); err != nil {
+		log.Printf("codevaldwork: handleTaskTimeout: step=%s run=%s: %v", p.StepID, p.WorkflowRunID, err)
 	}
 }
 

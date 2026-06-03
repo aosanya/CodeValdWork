@@ -19,39 +19,41 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TaskService_CreateTask_FullMethodName             = "/codevaldwork.v1.TaskService/CreateTask"
-	TaskService_GetTask_FullMethodName                = "/codevaldwork.v1.TaskService/GetTask"
-	TaskService_GetTaskByName_FullMethodName          = "/codevaldwork.v1.TaskService/GetTaskByName"
-	TaskService_UpdateTask_FullMethodName             = "/codevaldwork.v1.TaskService/UpdateTask"
-	TaskService_DeleteTask_FullMethodName             = "/codevaldwork.v1.TaskService/DeleteTask"
-	TaskService_ListTasks_FullMethodName              = "/codevaldwork.v1.TaskService/ListTasks"
-	TaskService_AssignTask_FullMethodName             = "/codevaldwork.v1.TaskService/AssignTask"
-	TaskService_UnassignTask_FullMethodName           = "/codevaldwork.v1.TaskService/UnassignTask"
-	TaskService_FailTodo_FullMethodName               = "/codevaldwork.v1.TaskService/FailTodo"
-	TaskService_UpsertAgent_FullMethodName            = "/codevaldwork.v1.TaskService/UpsertAgent"
-	TaskService_GetAgent_FullMethodName               = "/codevaldwork.v1.TaskService/GetAgent"
-	TaskService_ListAgents_FullMethodName             = "/codevaldwork.v1.TaskService/ListAgents"
-	TaskService_CreateTaskInProject_FullMethodName    = "/codevaldwork.v1.TaskService/CreateTaskInProject"
-	TaskService_CreateProject_FullMethodName          = "/codevaldwork.v1.TaskService/CreateProject"
-	TaskService_GetProject_FullMethodName             = "/codevaldwork.v1.TaskService/GetProject"
-	TaskService_GetProjectByName_FullMethodName       = "/codevaldwork.v1.TaskService/GetProjectByName"
-	TaskService_UpdateProject_FullMethodName          = "/codevaldwork.v1.TaskService/UpdateProject"
-	TaskService_DeleteProject_FullMethodName          = "/codevaldwork.v1.TaskService/DeleteProject"
-	TaskService_ListProjects_FullMethodName           = "/codevaldwork.v1.TaskService/ListProjects"
-	TaskService_AddTaskToProject_FullMethodName       = "/codevaldwork.v1.TaskService/AddTaskToProject"
-	TaskService_RemoveTaskFromProject_FullMethodName  = "/codevaldwork.v1.TaskService/RemoveTaskFromProject"
-	TaskService_ListTasksInProject_FullMethodName     = "/codevaldwork.v1.TaskService/ListTasksInProject"
-	TaskService_ListProjectsForTask_FullMethodName    = "/codevaldwork.v1.TaskService/ListProjectsForTask"
-	TaskService_CreateRelationship_FullMethodName     = "/codevaldwork.v1.TaskService/CreateRelationship"
-	TaskService_DeleteRelationship_FullMethodName     = "/codevaldwork.v1.TaskService/DeleteRelationship"
-	TaskService_TraverseRelationships_FullMethodName  = "/codevaldwork.v1.TaskService/TraverseRelationships"
-	TaskService_CreateWorkflowRun_FullMethodName      = "/codevaldwork.v1.TaskService/CreateWorkflowRun"
-	TaskService_GetWorkflowRun_FullMethodName         = "/codevaldwork.v1.TaskService/GetWorkflowRun"
-	TaskService_ListWorkflowRuns_FullMethodName       = "/codevaldwork.v1.TaskService/ListWorkflowRuns"
-	TaskService_RollbackWorkflowRun_FullMethodName    = "/codevaldwork.v1.TaskService/RollbackWorkflowRun"
-	TaskService_CancelWorkflowRun_FullMethodName      = "/codevaldwork.v1.TaskService/CancelWorkflowRun"
-	TaskService_IncrementFailureBudget_FullMethodName = "/codevaldwork.v1.TaskService/IncrementFailureBudget"
-	TaskService_ImportProject_FullMethodName          = "/codevaldwork.v1.TaskService/ImportProject"
+	TaskService_CreateTask_FullMethodName                  = "/codevaldwork.v1.TaskService/CreateTask"
+	TaskService_GetTask_FullMethodName                     = "/codevaldwork.v1.TaskService/GetTask"
+	TaskService_GetTaskByName_FullMethodName               = "/codevaldwork.v1.TaskService/GetTaskByName"
+	TaskService_UpdateTask_FullMethodName                  = "/codevaldwork.v1.TaskService/UpdateTask"
+	TaskService_DeleteTask_FullMethodName                  = "/codevaldwork.v1.TaskService/DeleteTask"
+	TaskService_ListTasks_FullMethodName                   = "/codevaldwork.v1.TaskService/ListTasks"
+	TaskService_AssignTask_FullMethodName                  = "/codevaldwork.v1.TaskService/AssignTask"
+	TaskService_UnassignTask_FullMethodName                = "/codevaldwork.v1.TaskService/UnassignTask"
+	TaskService_FailTodo_FullMethodName                    = "/codevaldwork.v1.TaskService/FailTodo"
+	TaskService_UpsertAgent_FullMethodName                 = "/codevaldwork.v1.TaskService/UpsertAgent"
+	TaskService_GetAgent_FullMethodName                    = "/codevaldwork.v1.TaskService/GetAgent"
+	TaskService_ListAgents_FullMethodName                  = "/codevaldwork.v1.TaskService/ListAgents"
+	TaskService_CreateTaskInProject_FullMethodName         = "/codevaldwork.v1.TaskService/CreateTaskInProject"
+	TaskService_CreateProject_FullMethodName               = "/codevaldwork.v1.TaskService/CreateProject"
+	TaskService_GetProject_FullMethodName                  = "/codevaldwork.v1.TaskService/GetProject"
+	TaskService_GetProjectByName_FullMethodName            = "/codevaldwork.v1.TaskService/GetProjectByName"
+	TaskService_UpdateProject_FullMethodName               = "/codevaldwork.v1.TaskService/UpdateProject"
+	TaskService_DeleteProject_FullMethodName               = "/codevaldwork.v1.TaskService/DeleteProject"
+	TaskService_ListProjects_FullMethodName                = "/codevaldwork.v1.TaskService/ListProjects"
+	TaskService_AddTaskToProject_FullMethodName            = "/codevaldwork.v1.TaskService/AddTaskToProject"
+	TaskService_RemoveTaskFromProject_FullMethodName       = "/codevaldwork.v1.TaskService/RemoveTaskFromProject"
+	TaskService_ListTasksInProject_FullMethodName          = "/codevaldwork.v1.TaskService/ListTasksInProject"
+	TaskService_ListProjectsForTask_FullMethodName         = "/codevaldwork.v1.TaskService/ListProjectsForTask"
+	TaskService_CreateRelationship_FullMethodName          = "/codevaldwork.v1.TaskService/CreateRelationship"
+	TaskService_DeleteRelationship_FullMethodName          = "/codevaldwork.v1.TaskService/DeleteRelationship"
+	TaskService_TraverseRelationships_FullMethodName       = "/codevaldwork.v1.TaskService/TraverseRelationships"
+	TaskService_CreateWorkflowRun_FullMethodName           = "/codevaldwork.v1.TaskService/CreateWorkflowRun"
+	TaskService_GetWorkflowRun_FullMethodName              = "/codevaldwork.v1.TaskService/GetWorkflowRun"
+	TaskService_ListWorkflowRuns_FullMethodName            = "/codevaldwork.v1.TaskService/ListWorkflowRuns"
+	TaskService_RollbackWorkflowRun_FullMethodName         = "/codevaldwork.v1.TaskService/RollbackWorkflowRun"
+	TaskService_CancelWorkflowRun_FullMethodName           = "/codevaldwork.v1.TaskService/CancelWorkflowRun"
+	TaskService_IncrementFailureBudget_FullMethodName      = "/codevaldwork.v1.TaskService/IncrementFailureBudget"
+	TaskService_TouchWorkflowRunLastEventAt_FullMethodName = "/codevaldwork.v1.TaskService/TouchWorkflowRunLastEventAt"
+	TaskService_ListWorkflowRunsStaleSince_FullMethodName  = "/codevaldwork.v1.TaskService/ListWorkflowRunsStaleSince"
+	TaskService_ImportProject_FullMethodName               = "/codevaldwork.v1.TaskService/ImportProject"
 )
 
 // TaskServiceClient is the client API for TaskService service.
@@ -208,6 +210,14 @@ type TaskServiceClient interface {
 	// (FEAT-20260602-007).
 	// Errors: NOT_FOUND if the root run does not exist.
 	IncrementFailureBudget(ctx context.Context, in *IncrementFailureBudgetRequest, opts ...grpc.CallOption) (*IncrementFailureBudgetResponse, error)
+	// TouchWorkflowRunLastEventAt bumps last_event_at on the identified run.
+	// Best-effort: ignores NotFound. Called by Cross on every published event
+	// that carries a workflow_run_id (FEAT-20260602-006).
+	TouchWorkflowRunLastEventAt(ctx context.Context, in *TouchWorkflowRunLastEventAtRequest, opts ...grpc.CallOption) (*TouchWorkflowRunLastEventAtResponse, error)
+	// ListWorkflowRunsStaleSince returns all non-terminal, unpaused WorkflowRuns
+	// whose last_event_at is before cutoff. Used by the Cross watchdog sweeper
+	// to find runs eligible for a work.run.timeout event (FEAT-20260602-006).
+	ListWorkflowRunsStaleSince(ctx context.Context, in *ListWorkflowRunsStaleSinceRequest, opts ...grpc.CallOption) (*ListWorkflowRunsResponse, error)
 	// ImportProject parses a JSON document describing a project and creates a
 	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
 	// from every Task to the Project, and depends_on edges for each entry in a
@@ -547,6 +557,26 @@ func (c *taskServiceClient) IncrementFailureBudget(ctx context.Context, in *Incr
 	return out, nil
 }
 
+func (c *taskServiceClient) TouchWorkflowRunLastEventAt(ctx context.Context, in *TouchWorkflowRunLastEventAtRequest, opts ...grpc.CallOption) (*TouchWorkflowRunLastEventAtResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TouchWorkflowRunLastEventAtResponse)
+	err := c.cc.Invoke(ctx, TaskService_TouchWorkflowRunLastEventAt_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) ListWorkflowRunsStaleSince(ctx context.Context, in *ListWorkflowRunsStaleSinceRequest, opts ...grpc.CallOption) (*ListWorkflowRunsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListWorkflowRunsResponse)
+	err := c.cc.Invoke(ctx, TaskService_ListWorkflowRunsStaleSince_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *taskServiceClient) ImportProject(ctx context.Context, in *ImportProjectRequest, opts ...grpc.CallOption) (*ImportProjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ImportProjectResponse)
@@ -711,6 +741,14 @@ type TaskServiceServer interface {
 	// (FEAT-20260602-007).
 	// Errors: NOT_FOUND if the root run does not exist.
 	IncrementFailureBudget(context.Context, *IncrementFailureBudgetRequest) (*IncrementFailureBudgetResponse, error)
+	// TouchWorkflowRunLastEventAt bumps last_event_at on the identified run.
+	// Best-effort: ignores NotFound. Called by Cross on every published event
+	// that carries a workflow_run_id (FEAT-20260602-006).
+	TouchWorkflowRunLastEventAt(context.Context, *TouchWorkflowRunLastEventAtRequest) (*TouchWorkflowRunLastEventAtResponse, error)
+	// ListWorkflowRunsStaleSince returns all non-terminal, unpaused WorkflowRuns
+	// whose last_event_at is before cutoff. Used by the Cross watchdog sweeper
+	// to find runs eligible for a work.run.timeout event (FEAT-20260602-006).
+	ListWorkflowRunsStaleSince(context.Context, *ListWorkflowRunsStaleSinceRequest) (*ListWorkflowRunsResponse, error)
 	// ImportProject parses a JSON document describing a project and creates a
 	// Project vertex, a Task vertex for each entry in "tasks", member_of edges
 	// from every Task to the Project, and depends_on edges for each entry in a
@@ -825,6 +863,12 @@ func (UnimplementedTaskServiceServer) CancelWorkflowRun(context.Context, *Cancel
 }
 func (UnimplementedTaskServiceServer) IncrementFailureBudget(context.Context, *IncrementFailureBudgetRequest) (*IncrementFailureBudgetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IncrementFailureBudget not implemented")
+}
+func (UnimplementedTaskServiceServer) TouchWorkflowRunLastEventAt(context.Context, *TouchWorkflowRunLastEventAtRequest) (*TouchWorkflowRunLastEventAtResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TouchWorkflowRunLastEventAt not implemented")
+}
+func (UnimplementedTaskServiceServer) ListWorkflowRunsStaleSince(context.Context, *ListWorkflowRunsStaleSinceRequest) (*ListWorkflowRunsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListWorkflowRunsStaleSince not implemented")
 }
 func (UnimplementedTaskServiceServer) ImportProject(context.Context, *ImportProjectRequest) (*ImportProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ImportProject not implemented")
@@ -1426,6 +1470,42 @@ func _TaskService_IncrementFailureBudget_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaskService_TouchWorkflowRunLastEventAt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TouchWorkflowRunLastEventAtRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).TouchWorkflowRunLastEventAt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_TouchWorkflowRunLastEventAt_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).TouchWorkflowRunLastEventAt(ctx, req.(*TouchWorkflowRunLastEventAtRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_ListWorkflowRunsStaleSince_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkflowRunsStaleSinceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).ListWorkflowRunsStaleSince(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_ListWorkflowRunsStaleSince_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).ListWorkflowRunsStaleSince(ctx, req.(*ListWorkflowRunsStaleSinceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TaskService_ImportProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ImportProjectRequest)
 	if err := dec(in); err != nil {
@@ -1578,6 +1658,14 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IncrementFailureBudget",
 			Handler:    _TaskService_IncrementFailureBudget_Handler,
+		},
+		{
+			MethodName: "TouchWorkflowRunLastEventAt",
+			Handler:    _TaskService_TouchWorkflowRunLastEventAt_Handler,
+		},
+		{
+			MethodName: "ListWorkflowRunsStaleSince",
+			Handler:    _TaskService_ListWorkflowRunsStaleSince_Handler,
 		},
 		{
 			MethodName: "ImportProject",

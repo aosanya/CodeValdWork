@@ -460,6 +460,29 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "cancelled_by", Type: types.PropertyTypeString},
 					{Name: "cancel_reason", Type: types.PropertyTypeString},
 					{Name: "cancelling_until", Type: types.PropertyTypeString},
+					// last_event_at is the RFC3339 UTC timestamp of the most recent
+					// event observed by Cross that carried this run's workflow_run_id.
+					// Updated best-effort by Cross on every matching event publish.
+					// Initialised to created_at. Used by the watchdog sweeper to
+					// detect stale runs (FEAT-20260602-006).
+					{Name: "last_event_at", Type: types.PropertyTypeString},
+					// timeout_published is true once Cross has emitted work.run.timeout
+					// for this run. Prevents duplicate timeout events on Cross restart
+					// (FEAT-20260602-006).
+					{Name: "timeout_published", Type: types.PropertyTypeBoolean},
+					// paused_at is set by the future operator-pause endpoint. A non-null
+					// value causes the watchdog to skip this run entirely
+					// (FEAT-20260602-006; pause endpoint is a separate future FEAT).
+					{Name: "paused_at", Type: types.PropertyTypeString},
+					// current_step_id is the WorkPlan code of the step currently
+					// executing. Set by Cross when it dispatches the step's trigger
+					// event; cleared when the step's success or failure event is
+					// observed. Used by the per-step timeout sweep (FEAT-20260602-006).
+					{Name: "current_step_id", Type: types.PropertyTypeString},
+					// current_step_started_at is the RFC3339 UTC timestamp when the
+					// current step was dispatched. Used with WorkPlan.step_timeout to
+					// detect stalled steps (FEAT-20260602-006).
+					{Name: "current_step_started_at", Type: types.PropertyTypeString},
 				},
 				Relationships: []types.RelationshipDefinition{
 					{

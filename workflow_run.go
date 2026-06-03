@@ -57,6 +57,7 @@ func (m *taskManager) CreateWorkflowRun(ctx context.Context, agencyID, name, tri
 		StartedAt:    now.Format(time.RFC3339),
 		CreatedAt:    now.Format(time.RFC3339),
 		UpdatedAt:    now.Format(time.RFC3339),
+		LastEventAt:  now.Format(time.RFC3339),
 	}
 	created, err := m.dm.CreateEntity(ctx, entitygraph.CreateEntityRequest{
 		AgencyID:   agencyID,
@@ -406,6 +407,11 @@ func workflowRunToProperties(r WorkflowRun) map[string]any {
 		"cancelled_by":            r.CancelledBy,
 		"cancel_reason":           r.CancelReason,
 		"cancelling_until":        r.CancellingUntil,
+		"last_event_at":           r.LastEventAt,
+		"timeout_published":       r.TimeoutPublished,
+		"paused_at":               r.PausedAt,
+		"current_step_id":         r.CurrentStepID,
+		"current_step_started_at": r.CurrentStepStartedAt,
 	}
 	if len(r.AgentRunIDs) > 0 {
 		props["agent_run_ids"] = append([]string(nil), r.AgentRunIDs...)
@@ -441,15 +447,33 @@ func workflowRunFromEntity(e entitygraph.Entity) WorkflowRun {
 		RootWorkflowRunID:     entitygraph.StringProp(e.Properties, "root_workflow_run_id"),
 		FailurePipelineBudget: intProp(e.Properties, "failure_pipeline_budget"),
 		FailurePipelinesUsed:  intProp(e.Properties, "failure_pipelines_used"),
-		CancelledBy:           entitygraph.StringProp(e.Properties, "cancelled_by"),
-		CancelReason:          entitygraph.StringProp(e.Properties, "cancel_reason"),
-		CancellingUntil:       entitygraph.StringProp(e.Properties, "cancelling_until"),
+		CancelledBy:          entitygraph.StringProp(e.Properties, "cancelled_by"),
+		CancelReason:         entitygraph.StringProp(e.Properties, "cancel_reason"),
+		CancellingUntil:      entitygraph.StringProp(e.Properties, "cancelling_until"),
+		LastEventAt:          entitygraph.StringProp(e.Properties, "last_event_at"),
+		TimeoutPublished:     boolProp(e.Properties, "timeout_published"),
+		PausedAt:             entitygraph.StringProp(e.Properties, "paused_at"),
+		CurrentStepID:        entitygraph.StringProp(e.Properties, "current_step_id"),
+		CurrentStepStartedAt: entitygraph.StringProp(e.Properties, "current_step_started_at"),
 	}
 	r.AgentRunIDs = stringSliceProp(e.Properties, "agent_run_ids")
 	r.FunctionJobIDs = stringSliceProp(e.Properties, "function_job_ids")
 	r.BranchNames = stringSliceProp(e.Properties, "branch_names")
 	r.CountedChildRunIDs = stringSliceProp(e.Properties, "counted_child_run_ids")
 	return r
+}
+
+// boolProp extracts a bool property from an entity property map.
+// Returns false when the key is absent or the value is not a bool.
+func boolProp(props map[string]any, key string) bool {
+	v, ok := props[key]
+	if !ok {
+		return false
+	}
+	if b, ok := v.(bool); ok {
+		return b
+	}
+	return false
 }
 
 // intProp extracts an int property from an entity property map, accepting
@@ -495,4 +519,18 @@ func stringSliceProp(props map[string]any, key string) []string {
 	default:
 		return nil
 	}
+}
+
+// TouchWorkflowRunLastEventAt bumps last_event_at to ts for the given run.
+// Best-effort: returns nil on NotFound (run may belong to another agency).
+// Called by the CodeValdCross gRPC handler on every published event that
+// carries a workflow_run_id (FEAT-20260602-006).
+func (m *taskManager) TouchWorkflowRunLastEventAt(ctx context.Context, agencyID, runID, ts string) error {
+	_, err := m.dm.UpdateEntity(ctx, agencyID, runID, entitygraph.UpdateEntityRequest{
+		Properties: map[string]any{"last_event_at": ts},
+	})
+	if err != nil && errors.Is(err, entitygraph.ErrEntityNotFound) {
+		return nil
+	}
+	return err
 }
