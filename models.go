@@ -480,6 +480,17 @@ func (s WorkflowRunStatus) CanTransitionTo(next WorkflowRunStatus) bool {
 	}
 }
 
+// IsTerminal reports whether s is a terminal (non-recoverable) status.
+func (s WorkflowRunStatus) IsTerminal() bool {
+	switch s {
+	case WorkflowRunStatusCompleted, WorkflowRunStatusFailed,
+		WorkflowRunStatusRolledBack, WorkflowRunStatusRollbackFailed,
+		WorkflowRunStatusCancelled:
+		return true
+	}
+	return false
+}
+
 // WorkflowRun anchors the closure of a single orchestrated execution.
 // Created by a producer (e.g. the next-task function) at run start; linked
 // to every Task / TaskTodo it produces via started_task / started_todo edges.
@@ -578,6 +589,30 @@ type WorkflowRun struct {
 	// The finalization step transitions the run from cancelling → cancelled
 	// at or after this time (FEAT-20260602-008). Empty for non-cancelled runs.
 	CancellingUntil string `json:"cancelling_until,omitempty"`
+
+	// LastEventAt is the RFC 3339 timestamp of the most recent event carrying
+	// this run's workflow_run_id. Initialised to created_at; bumped by Cross
+	// on every observed event (best-effort). Used by the watchdog sweeper.
+	LastEventAt string `json:"last_event_at,omitempty"`
+
+	// TimeoutPublished records that work.run.timeout was published for this
+	// run. The sweeper skips runs with TimeoutPublished=true to avoid
+	// duplicate timeout events across restarts.
+	TimeoutPublished bool `json:"timeout_published,omitempty"`
+
+	// PausedAt, when non-empty, suspends watchdog sweeping for this run.
+	// Reserved for the future operator-pause API — set it now so the AQL
+	// queries and watchdog are correct before the pause endpoint ships.
+	PausedAt string `json:"paused_at,omitempty"`
+
+	// CurrentStepID is the plan code of the step currently executing. Set
+	// by Cross when it dispatches the step's trigger event; cleared when the
+	// step's terminal event is observed. Used by the per-step sweep pass.
+	CurrentStepID string `json:"current_step_id,omitempty"`
+
+	// CurrentStepStartedAt is the RFC 3339 timestamp when CurrentStepID
+	// was set. Used with the step's step_timeout to detect stalled steps.
+	CurrentStepStartedAt string `json:"current_step_started_at,omitempty"`
 }
 
 // WorkflowRunClosure is the full read returned by GetWorkflowRunClosure —

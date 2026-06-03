@@ -203,6 +203,16 @@ service TaskService {
   // Errors: NOT_FOUND if the root run does not exist.
   rpc IncrementFailureBudget(IncrementFailureBudgetRequest) returns (IncrementFailureBudgetResponse);
 
+  // TouchWorkflowRunLastEventAt bumps last_event_at on the identified run.
+  // Best-effort: ignores NotFound. Called by Cross on every published event
+  // that carries a workflow_run_id (FEAT-20260602-006).
+  rpc TouchWorkflowRunLastEventAt(TouchWorkflowRunLastEventAtRequest) returns (TouchWorkflowRunLastEventAtResponse);
+
+  // ListWorkflowRunsStaleSince returns all non-terminal, unpaused WorkflowRuns
+  // whose last_event_at is before cutoff. Used by the Cross watchdog sweeper
+  // to find runs eligible for a work.run.timeout event (FEAT-20260602-006).
+  rpc ListWorkflowRunsStaleSince(ListWorkflowRunsStaleSinceRequest) returns (ListWorkflowRunsResponse);
+
   // ── Markdown import ────────────────────────────────────────────────────────
 
   // ImportProject parses a JSON document describing a project and creates a
@@ -595,4 +605,23 @@ message ImportProjectResponse {
   repeated Task  tasks        = 2;
   // deps_created is the number of depends_on edges created between tasks.
   int32          deps_created = 3;
+}
+
+// ── Watchdog messages (FEAT-20260602-006) ─────────────────────────────────────
+
+message TouchWorkflowRunLastEventAtRequest {
+  string agency_id       = 1;
+  string workflow_run_id = 2;
+  // timestamp is the RFC 3339 value to write into last_event_at.
+  string timestamp       = 3;
+}
+
+message TouchWorkflowRunLastEventAtResponse {}
+
+// ListWorkflowRunsStaleSinceRequest selects runs whose last_event_at is before cutoff.
+message ListWorkflowRunsStaleSinceRequest {
+  string agency_id = 1;
+  // cutoff is the RFC 3339 UTC timestamp. Runs with last_event_at < cutoff
+  // and non-terminal status are returned.
+  string cutoff    = 2;
 }

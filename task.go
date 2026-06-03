@@ -372,6 +372,39 @@ type TaskManager interface {
 	//
 	// Returns [ErrWorkflowRunNotFound] when the run does not exist.
 	FinalizeWorkflowRunCancellation(ctx context.Context, agencyID, runID string) (WorkflowRun, error)
+
+	// TouchWorkflowRunLastEventAt bumps last_event_at to ts for the given run.
+	// Best-effort: returns nil on NotFound (run may belong to another agency).
+	// Called by Cross on every published event that carries a workflow_run_id
+	// (FEAT-20260602-006).
+	TouchWorkflowRunLastEventAt(ctx context.Context, agencyID, runID, ts string) error
+
+	// ListWorkflowRunsStaleSince returns all non-terminal, unpaused WorkflowRuns
+	// whose last_event_at is before cutoff and whose timeout_published is false.
+	// Used by the Cross watchdog sweeper (FEAT-20260602-006).
+	ListWorkflowRunsStaleSince(ctx context.Context, agencyID string, cutoff time.Time) ([]WorkflowRun, error)
+
+	// ListWorkflowRunsStepStaleSince returns non-terminal, unpaused WorkflowRuns
+	// that have a current_step_id set and current_step_started_at before cutoff.
+	// Used by the Cross watchdog per-step sweep pass (FEAT-20260602-006).
+	ListWorkflowRunsStepStaleSince(ctx context.Context, agencyID string, cutoff time.Time) ([]WorkflowRun, error)
+
+	// MarkTimeoutPublished sets timeout_published=true on the run so the sweeper
+	// skips it on subsequent ticks. Called before publishing work.run.timeout
+	// for idempotency (FEAT-20260602-006).
+	MarkTimeoutPublished(ctx context.Context, agencyID, runID string) error
+
+	// HandleRunTimeout processes a work.run.timeout event: flips the run to
+	// failed (if not already terminal) and cascades to non-terminal tasks
+	// (FEAT-20260602-006).
+	HandleRunTimeout(ctx context.Context, agencyID, runID string) error
+
+	// HandleTaskTimeout processes a work.task.timeout event: flips the task to
+	// failed (FEAT-20260602-006).
+	HandleTaskTimeout(ctx context.Context, agencyID, taskOrTodoID string, runID string) error
+
+	// ListTasksForRun returns every Task linked to runID.
+	ListTasksForRun(ctx context.Context, agencyID, runID string) ([]Task, error)
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].

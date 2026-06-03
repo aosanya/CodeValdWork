@@ -2,8 +2,11 @@ package server
 
 import (
 	"context"
+	"log"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	codevaldwork "github.com/aosanya/CodeValdWork"
@@ -55,6 +58,20 @@ func (s *Server) IncrementFailureBudget(ctx context.Context, req *pb.IncrementFa
 		Budget:    int32(budget),
 		Exhausted: exhausted,
 	}, nil
+}
+
+// TouchWorkflowRunLastEventAt implements pb.TaskServiceServer (FEAT-20260602-006).
+// Bumps last_event_at on the identified run. Best-effort: ignores NotFound.
+// Called by Cross on every published event that carries a workflow_run_id.
+func (s *Server) TouchWorkflowRunLastEventAt(ctx context.Context, req *pb.TouchWorkflowRunLastEventAtRequest) (*pb.TouchWorkflowRunLastEventAtResponse, error) {
+	if req.GetAgencyId() == "" || req.GetWorkflowRunId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "agency_id and workflow_run_id required")
+	}
+	if err := s.mgr.TouchWorkflowRunLastEventAt(ctx, req.GetAgencyId(), req.GetWorkflowRunId(), req.GetTimestamp()); err != nil {
+		log.Printf("codevaldwork: TouchWorkflowRunLastEventAt run=%s: %v", req.GetWorkflowRunId(), err)
+		return nil, status.Errorf(codes.Internal, "touch last_event_at: %v", err)
+	}
+	return &pb.TouchWorkflowRunLastEventAtResponse{}, nil
 }
 
 // GetWorkflowRun implements pb.TaskServiceServer (FEAT-20260601-001).
@@ -234,4 +251,26 @@ func todoStatusToProto(s codevaldwork.TodoStatus) pb.TodoStatus {
 	default:
 		return pb.TodoStatus_TODO_STATUS_UNSPECIFIED
 	}
+}
+
+// ListWorkflowRunsStaleSince implements pb.TaskServiceServer (FEAT-20260602-006).
+// Returns non-terminal, unpaused WorkflowRuns whose last_event_at < cutoff.
+// Used by the Cross watchdog sweeper to find stale runs.
+func (s *Server) ListWorkflowRunsStaleSince(ctx context.Context, req *pb.ListWorkflowRunsStaleSinceRequest) (*pb.ListWorkflowRunsResponse, error) {
+	if req.GetAgencyId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "agency_id required")
+	}
+	cutoff, err := time.Parse(time.RFC3339, req.GetCutoff())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "cutoff: %v", err)
+	}
+	runs, err := s.mgr.ListWorkflowRunsStaleSince(ctx, req.GetAgencyId(), cutoff)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list stale runs: %v", err)
+	}
+	out := make([]*pb.WorkflowRun, 0, len(runs))
+	for _, r := range runs {
+		out = append(out, workflowRunToProto(r))
+	}
+	return &pb.ListWorkflowRunsResponse{Runs: out}, nil
 }
