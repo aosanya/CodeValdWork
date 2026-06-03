@@ -1,10 +1,19 @@
 # BUG-20260603-001 — WorkflowRun status stays PENDING throughout pipeline execution
 
-**Status:** 📋 Open
+**Status:** ✅ Fixed (2026-06-03)
 **Severity:** Medium — the WorkflowRun record exists and the pipeline executes, but every run shows Pending indefinitely in the UI; operators cannot distinguish an active run from a stalled one
 **Owner:** CodeValdWork
 **Estimated effort:** ~0.5 day (two subscriber hooks + a state-machine helper)
-**Source finding:** QA scenario 09 run (2026-06-03) — `ce0b3d84-2782-4433-a14a-138163af87de` showed Pending 7 minutes after tasks were assigned and an AI run completed
+**Source finding:** QA scenario 09 run (2026-06-03) — `ce0b3d84-2782-4433-a14a-138163af87de` showed Pending 7 minutes after tasks were assigned and an AI run completed. Re-surfaced 2026-06-03 evening via QA scenario 11 setup: `pipeline-2026-06-03-193315-132b73` (id `2e870cda-...`) stuck Pending forever despite `work.pipeline.started` firing — the handler had been implemented but Work wasn't subscribed to the topic.
+
+## Resolution
+
+Fix landed in two pieces:
+
+1. **Handler implemented earlier** — `internal/server/run_status_handler.go` consumes `work.task.assigned`, `work.pipeline.started`, `work.task.failed`, `functions.job.failed`, etc. and drives the lifecycle transitions (PENDING → IN_PROGRESS → COMPLETED / FAILED).
+2. **Subscription list completed 2026-06-03 evening** — `internal/config/config.go` was using a hand-maintained `WORK_SUBSCRIBE_TOPICS` env default that was missing five topics that `events.go ConsumedTopics()` listed (`work.pipeline.started`, `work.run.timeout`, `work.task.timeout`, `work.task.failure-classified`, plus `ai.task.*` / `git.file.written` that were referenced from the dispatcher but not in either list). Fix replaces the hand-maintained default with `strings.Join(codevaldwork.ConsumedTopics(), ",")` so there is a single source of truth, and adds the missing topics to `ConsumedTopics()` so the dispatcher's switch cases are matched by the registry's subscription set.
+
+**Verification:** Cross's `/services/registry?agencyId=utility-app-builder` for `codevaldwork` now lists 20 consumed topics (was 16), including `work.pipeline.started`. New pipeline runs created via `start-pipeline` flip PENDING → IN_PROGRESS within seconds of the `work.pipeline.started` event, even when no task is assigned by `next-task` (dependents blocked, empty queue, etc.).
 
 ## Problem
 

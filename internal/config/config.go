@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	codevaldwork "github.com/aosanya/CodeValdWork"
 	"github.com/aosanya/CodeValdSharedLib/serverutil"
 )
 
@@ -81,7 +82,7 @@ func Load() Config {
 		AgencyID:       serverutil.EnvOrDefault("CODEVALDWORK_AGENCY_ID", ""),
 		PingInterval:    serverutil.ParseDurationString("CROSS_PING_INTERVAL", 10*time.Second),
 		PingTimeout:     serverutil.ParseDurationString("CROSS_PING_TIMEOUT", 5*time.Second),
-		SubscribeTopics: parseTopics(serverutil.EnvOrDefault("WORK_SUBSCRIBE_TOPICS", "ai.task.started,ai.task.completed,ai.task.failed,ai.todo.created,work.task.update,work.task.completed,work.task.assigned,work.task.failed,git.file.written,functions.job.failed,functions.job.completed,ai.run.failed,ai.run.completed,git.merge.failed,git.merge.completed,work.task.direction")),
+		SubscribeTopics: parseTopics(serverutil.EnvOrDefault("WORK_SUBSCRIBE_TOPICS", strings.Join(codevaldwork.ConsumedTopics(), ","))),
 	}
 }
 

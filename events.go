@@ -431,6 +431,11 @@ func ConsumedTopics() []string {
 		TopicTaskCompleted,
 		TopicTaskAssigned, // self-subscription: pending→in_progress run transition
 		TopicTaskFailed,   // self-subscription: in_progress→failed run transition
+		// AI bridge topics (consumed by TaskEventDispatcher):
+		"ai.task.started",
+		"ai.task.completed",
+		"ai.task.failed",
+		"ai.todo.created",
 		// External failure topics for run → failed transitions:
 		"functions.job.failed",
 		"ai.run.failed",
@@ -439,6 +444,8 @@ func ConsumedTopics() []string {
 		"functions.job.completed",
 		"git.merge.completed",
 		"ai.run.completed",
+		// Git file-written gate (BUG-09-020 Phase 2):
+		"git.file.written",
 		// Watchdog timeout topics (FEAT-20260602-006):
 		TopicRunTimeout,
 		TopicTaskTimeout,

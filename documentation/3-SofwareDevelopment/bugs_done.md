@@ -4,6 +4,7 @@ Bugs marked Fixed are removed from `bugs.md` and recorded here with their resolu
 
 | Bug ID | Title | Severity | Fixed Date | Commit / Branch | Detail |
 |--------|-------|----------|------------|-----------------|--------|
+| BUG-20260603-001 | WorkflowRun status never advances past PENDING (handler existed but Work wasn't subscribed to `work.pipeline.started`; fixed by routing config default through `events.go ConsumedTopics()`) | Medium | 2026-06-03 | main | [bug-details/BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) |
 | BUG-20260603-005 | `GET /work/{agency}/task-todos` ignores `workflow_run_id` query param — returns empty list | Medium | 2026-06-03 | main (bcbdf28) | [bug-details/BUG-20260603-005](bug-details/BUG-20260603-005_task-todos-api-ignores-workflow-run-id-filter.md) |
 | BUG-20260603-003 | Tasks completed by a workflow run have workflow_run_id null or empty | High | 2026-06-03 | main | [bug-details/BUG-20260603-003](bug-details/BUG-20260603-003_task-workflow-run-id-not-set.md) |
 | BUG-20260603-002 | RollbackWorkflowRun hard-deletes Tasks instead of resetting to pending | High | 2026-06-03 | main | [bug-details/BUG-20260603-002](bug-details/BUG-20260603-002_rollback-deletes-tasks-instead-of-resetting.md) |

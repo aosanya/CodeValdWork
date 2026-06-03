@@ -31,7 +31,7 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 |--------|-------|----------|--------|------------|
 | ~~[BUG-20260603-005](bug-details/BUG-20260603-005_task-todos-api-ignores-workflow-run-id-filter.md)~~ | ~~`GET /work/{agency}/task-todos` ignores `workflow_run_id` query param — returns empty list~~ | Medium | ✅ Fixed (2026-06-03) | — |
 | [BUG-20260603-004](bug-details/BUG-20260603-004_project-name-routing-case-sensitive.md) | Project-name URL routing is case-sensitive; display-name casing returns 404 | Medium | 📋 Open | — |
-| [BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) | WorkflowRun status never advances past PENDING | Medium | 📋 Open | — |
+| ~~[BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md)~~ | ~~WorkflowRun status never advances past PENDING~~ | Medium | ✅ Fixed (2026-06-03) | — |
 
 ---
 
