@@ -104,6 +104,13 @@ const (
 	// in_progress after all awaiting-direction tasks have been resolved.
 	// Payload: [RunResumedPayload].
 	TopicRunResumed = "work.run.resumed"
+
+	// TopicTaskPlanSplit is emitted by the CodeValdAI planner agent when it
+	// decides to break a task into child Task entities instead of decomposing
+	// it into todos. CodeValdWork consumes this to create the child tasks,
+	// write subtask_of edges, and transition the parent to TaskStatusSplit.
+	// Payload: [TaskPlanSplitPayload]. (FEAT-20260604-001)
+	TopicTaskPlanSplit = "task.plan.split"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -256,6 +263,29 @@ type TodoCompletedPayload struct {
 	RunCount     int    `json:"run_count,omitempty"` // current count of todos of this TodoType for the parent task at the time of completion
 	// WorkflowRunID propagates the run anchor onto every work.* event payload.
 	WorkflowRunID string `json:"workflow_run_id,omitempty"`
+}
+
+// TaskPlanSplitChildSpec describes one child Task to be created by the
+// split-handler on receipt of [TopicTaskPlanSplit].
+type TaskPlanSplitChildSpec struct {
+	// TempID is a planner-assigned string used to resolve depends_on references
+	// within the same payload. Not stored on the created Task entity.
+	TempID      string `json:"temp_id"`
+	TaskName    string `json:"task_name,omitempty"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	RoleName    string `json:"role_name,omitempty"`
+	// DependsOn lists TempID values of sibling children that must complete
+	// before this child is dispatched.
+	DependsOn []string `json:"depends_on,omitempty"`
+}
+
+// TaskPlanSplitPayload is the [Event.Payload] for [TopicTaskPlanSplit].
+// Emitted by the CodeValdAI planner agent when it decides to split a task.
+type TaskPlanSplitPayload struct {
+	TaskID        string                   `json:"task_id"`
+	WorkflowRunID string                   `json:"workflow_run_id,omitempty"`
+	Children      []TaskPlanSplitChildSpec `json:"children"`
 }
 
 // TaskUpdatePayload is the [Event.Payload] for [TopicTaskUpdate].
@@ -455,5 +485,7 @@ func ConsumedTopics() []string {
 		TopicTaskDirection,
 		// Failure classification response from CodeValdAI:
 		TopicTaskFailureClassified,
+		// Planner split decision — creates child tasks and marks parent SPLIT:
+		TopicTaskPlanSplit,
 	}
 }

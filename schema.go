@@ -97,6 +97,10 @@ func DefaultWorkSchema() types.Schema {
 					// direction_history is a JSON-encoded []string of past selected_option
 					// values submitted for this task via work.task.direction events.
 					{Name: "direction_history", Type: types.PropertyTypeString},
+					// parent_task_id is the ID of the Task that was split to produce
+					// this child. Empty for root tasks. Denormalises the subtask_of
+					// edge so child lookups do not require a graph traversal.
+					{Name: "parent_task_id", Type: types.PropertyTypeString},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
 				},

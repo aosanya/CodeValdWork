@@ -26,6 +26,7 @@ func taskToProperties(t Task) map[string]any {
 		"recovery_runs_used": t.RecoveryRunsUsed,
 		"blocker_note":       t.BlockerNote,
 		"direction_history":  t.DirectionHistory,
+		"parent_task_id":     t.ParentTaskID,
 		"created_at":         t.CreatedAt,
 		"updated_at":         t.UpdatedAt,
 	}
@@ -70,6 +71,7 @@ func taskFromEntity(e entitygraph.Entity) Task {
 		RecoveryRunsUsed: int(entitygraph.Int64Prop(e.Properties, "recovery_runs_used")),
 		BlockerNote:      entitygraph.StringProp(e.Properties, "blocker_note"),
 		DirectionHistory: entitygraph.StringProp(e.Properties, "direction_history"),
+		ParentTaskID:     entitygraph.StringProp(e.Properties, "parent_task_id"),
 		CreatedAt:        entitygraph.StringProp(e.Properties, "created_at"),
 		UpdatedAt:        entitygraph.StringProp(e.Properties, "updated_at"),
 		EstimatedHours:   entitygraph.Float64Prop(e.Properties, "estimated_hours"),
