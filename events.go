@@ -1,109 +1,112 @@
 package codevaldwork
 
-import "github.com/aosanya/CodeValdSharedLib/types"
+import (
+	"github.com/aosanya/CodeValdSharedLib/eventbus"
+	"github.com/aosanya/CodeValdSharedLib/types"
+)
 
 // Event topic constants — the closed set CodeValdWork publishes.
 const (
 	// TopicTaskCreated fires after a Task entity is created.
 	// Payload: [TaskCreatedPayload].
-	TopicTaskCreated = "work.task.created"
+	TopicTaskCreated = eventbus.DomainWork + "task.created"
 
 	// TopicTaskUpdated fires after a non-status mutable field changes.
 	// Payload: [TaskUpdatedPayload].
-	TopicTaskUpdated = "work.task.updated"
+	TopicTaskUpdated = eventbus.DomainWork + "task.updated"
 
 	// TopicTaskStatusChanged fires on every successful status transition.
 	// Payload: [TaskStatusChangedPayload].
-	TopicTaskStatusChanged = "work.task.status.changed"
+	TopicTaskStatusChanged = eventbus.DomainWork + "task.status.changed"
 
 	// TopicTaskCompleted fires when a transition reaches a terminal status
 	// (completed, failed, cancelled). Published in addition to
 	// [TopicTaskStatusChanged]. Payload: [TaskCompletedPayload].
-	TopicTaskCompleted = "work.task.completed"
+	TopicTaskCompleted = eventbus.DomainWork + "task.completed"
 
 	// TopicTaskFailed fires when an AI agent run fails to satisfy the required
 	// output contract (e.g. no actions block emitted). Published in addition to
 	// [TopicTaskCompleted] when the failure is agent-driven.
 	// Payload: [TaskFailedPayload].
-	TopicTaskFailed = "work.task.failed"
+	TopicTaskFailed = eventbus.DomainWork + "task.failed"
 
 	// TopicTaskAssigned fires when an `assigned_to` edge is created or
 	// replaced. Payload: [TaskAssignedPayload].
-	TopicTaskAssigned = "work.task.assigned"
+	TopicTaskAssigned = eventbus.DomainWork + "task.assigned"
 
 	// TopicRelationshipCreated fires when any whitelisted graph edge is
 	// created. Payload: [RelationshipCreatedPayload].
-	TopicRelationshipCreated = "work.relationship.created"
+	TopicRelationshipCreated = eventbus.DomainWork + "relationship.created"
 
 	// TopicTodoDispatched fires when a [TaskTodo] entity is created — once per
 	// todo item produced by an ai.todo.created decomposition payload. CodeValdAI
 	// agents subscribe to this topic via work plans and execute each todo.
 	// Payload: [TodoDispatchedPayload].
-	TopicTodoDispatched = "work.todo.dispatched"
+	TopicTodoDispatched = eventbus.DomainWork + "todo.dispatched"
 
 	// TopicTodoCompleted fires when a TaskTodo reaches a terminal status
 	// (completed or failed). Carries todo_type and max_runs so downstream
 	// consumers (e.g. compile-on-todo-completed) can act without fetching
 	// the entity separately.
 	// Payload: [TodoCompletedPayload].
-	TopicTodoCompleted = "work.todo.completed"
+	TopicTodoCompleted = eventbus.DomainWork + "todo.completed"
 
 	// TopicTaskUpdate is consumed by CodeValdWork to patch mutable task fields.
 	// Published by CodeValdAI when the LLM emits a work.task.update action
 	// (e.g. after choosing a branch name). Currently only branch_name is patched.
 	// Payload: [TaskUpdatePayload].
-	TopicTaskUpdate = "work.task.update"
+	TopicTaskUpdate = eventbus.DomainWork + "task.update"
 
 	// TopicTaskRolledBack fires once per Task deleted by [DeleteWorkflowRunArtifacts].
 	// Payload: [TaskRolledBackPayload].
-	TopicTaskRolledBack = "work.task.rolled_back"
+	TopicTaskRolledBack = eventbus.DomainWork + "task.rolled_back"
 
 	// TopicTaskCancelled fires once per non-terminal Task whose status was
 	// flipped to cancelled by the run-cancel cascade (FEAT-20260602-008).
 	// CodeValdAI / CodeValdFunctions subscribe to drop in-flight work for
 	// the task. Payload: [TaskCancelledPayload].
-	TopicTaskCancelled = "work.task.cancelled"
+	TopicTaskCancelled = eventbus.DomainWork + "task.cancelled"
 
 	// TopicPipelineStarted is published by start-pipeline (CodeValdFunctions)
 	// immediately after a WorkflowRun is minted. CodeValdWork subscribes so
 	// RunStatusHandler can flip the run from PENDING → IN_PROGRESS without
 	// waiting for the first work.task.assigned event (BUG-09-025 fix).
-	TopicPipelineStarted = "work.pipeline.started"
+	TopicPipelineStarted = eventbus.DomainWork + "pipeline.started"
 
 	// TopicTaskNeedsDirection is published by CodeValdWork when a task has
 	// exhausted its retry budget and requires direction to resume. The payload
 	// carries a [DirectionForm] JSON object renderable on any platform.
 	// Payload: [TaskNeedsDirectionPayload].
-	TopicTaskNeedsDirection = "work.task.needs-direction"
+	TopicTaskNeedsDirection = eventbus.DomainWork + "task.needs-direction"
 
 	// TopicTaskDirection is consumed by CodeValdWork from the bus — emitted by
 	// CodeValdAI (failure-direction-handler) or the frontend after the human
 	// resolves the direction form. Routes to the direction handler which resumes
 	// the task according to selected_option.
 	// Payload: [TaskDirectionPayload].
-	TopicTaskDirection = "work.task.direction"
+	TopicTaskDirection = eventbus.DomainWork + "task.direction"
 
 	// TopicTaskClassifyFailure is published by CodeValdWork after a task exhausts
 	// its automatic retry budget. CodeValdAI subscribes and responds with
 	// [TopicTaskFailureClassified]. Payload: [TaskClassifyFailurePayload].
-	TopicTaskClassifyFailure = "work.task.classify-failure"
+	TopicTaskClassifyFailure = eventbus.DomainWork + "task.classify-failure"
 
 	// TopicTaskFailureClassified is consumed by CodeValdWork — emitted by
 	// CodeValdAI in response to [TopicTaskClassifyFailure]. Carries a
 	// failure_type of "transient" or "requires-human" so Work can decide
 	// whether to grant one extra retry or escalate to human direction.
 	// Payload: [TaskFailureClassifiedPayload].
-	TopicTaskFailureClassified = "work.task.failure-classified"
+	TopicTaskFailureClassified = eventbus.DomainWork + "task.failure-classified"
 
 	// TopicRunPaused fires when a WorkflowRun transitions to paused status
 	// because at least one task is awaiting direction.
 	// Payload: [RunPausedPayload].
-	TopicRunPaused = "work.run.paused"
+	TopicRunPaused = eventbus.DomainWork + "run.paused"
 
 	// TopicRunResumed fires when a paused WorkflowRun transitions back to
 	// in_progress after all awaiting-direction tasks have been resolved.
 	// Payload: [RunResumedPayload].
-	TopicRunResumed = "work.run.resumed"
+	TopicRunResumed = eventbus.DomainWork + "run.resumed"
 
 	// TopicTaskPlanSplit is emitted by the CodeValdAI planner agent when it
 	// decides to break a task into child Task entities instead of decomposing
@@ -301,37 +304,37 @@ type TaskUpdatePayload struct {
 // WorkflowRun status event topic constants.
 const (
 	// TopicRunInProgress fires when a WorkflowRun first transitions to in_progress.
-	TopicRunInProgress = "work.run.in_progress"
+	TopicRunInProgress = eventbus.DomainWork + "run.in_progress"
 	// TopicRunCompleted fires when a WorkflowRun reaches the completed terminal state.
-	TopicRunCompleted = "work.run.completed"
+	TopicRunCompleted = eventbus.DomainWork + "run.completed"
 	// TopicRunFailed fires when a WorkflowRun reaches the failed terminal state.
-	TopicRunFailed = "work.run.failed"
+	TopicRunFailed = eventbus.DomainWork + "run.failed"
 	// TopicRunRolledBack fires when a WorkflowRun reaches the rolled_back terminal state.
-	TopicRunRolledBack = "work.run.rolled_back"
+	TopicRunRolledBack = eventbus.DomainWork + "run.rolled_back"
 	// TopicRunRollingBack fires when the rollback coordinator begins compensating artifacts.
 	// In-flight handlers should check the run status and quiesce on receiving this event.
-	TopicRunRollingBack = "work.run.rolling_back"
+	TopicRunRollingBack = eventbus.DomainWork + "run.rolling_back"
 	// TopicRunRollbackFailed fires when the rollback coordinator encountered a partial
 	// failure and the run reached rollback_failed. Operator intervention is required.
-	TopicRunRollbackFailed = "work.run.rollback_failed"
+	TopicRunRollbackFailed = eventbus.DomainWork + "run.rollback_failed"
 	// TopicRunCancelling fires when an operator-issued cancel transitions a
 	// WorkflowRun from in_progress to the cancelling transient state
 	// (FEAT-20260602-008). In-flight subscribers should quiesce their work
 	// on behalf of the run.
-	TopicRunCancelling = "work.run.cancelling"
+	TopicRunCancelling = eventbus.DomainWork + "run.cancelling"
 	// TopicRunCancelled fires when the cancellation finalization step
 	// transitions a WorkflowRun from cancelling to the cancelled terminal
 	// state (FEAT-20260602-008).
-	TopicRunCancelled = "work.run.cancelled"
+	TopicRunCancelled = eventbus.DomainWork + "run.cancelled"
 
 	// TopicRunTimeout fires when the watchdog detects a WorkflowRun has been
 	// in_progress for longer than its inactivity timeout without any event.
 	// CodeValdWork subscribes and flips the run to failed (FEAT-20260602-006).
-	TopicRunTimeout = "work.run.timeout"
+	TopicRunTimeout = eventbus.DomainWork + "run.timeout"
 
 	// TopicTaskTimeout fires when the watchdog detects a per-step stall
 	// (current_step_started_at older than step_timeout) (FEAT-20260602-006).
-	TopicTaskTimeout = "work.task.timeout"
+	TopicTaskTimeout = eventbus.DomainWork + "task.timeout"
 )
 
 // WorkflowRunInProgressPayload is the Payload for [TopicRunInProgress].
