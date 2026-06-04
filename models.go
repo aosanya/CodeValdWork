@@ -48,6 +48,11 @@ const (
 	// Resolved by a work.task.direction event — transitions to in_progress
 	// (retry), blocked (awaiting external fix), or cancelled (abort).
 	TaskStatusAwaitingDirection TaskStatus = "awaiting-direction"
+
+	// TaskStatusSplit marks a task whose planner decided to break it into child
+	// Task entities (FEAT-20260604-001). The parent is inactive; completion is
+	// driven by the roll-up of its children via maybeCompleteSplitParent.
+	TaskStatusSplit TaskStatus = "split"
 )
 
 // CanTransitionTo reports whether transitioning from the receiver status to
@@ -57,9 +62,10 @@ const (
 //
 //	pending            → in_progress, cancelled, blocked
 //	blocked            → pending, cancelled
-//	in_progress        → completed, failed, cancelled, awaiting-direction
+//	in_progress        → completed, failed, cancelled, awaiting-direction, split
 //	awaiting-direction → in_progress, blocked, cancelled
 //	failed             → in_progress, blocked, cancelled (direction-driven recovery only)
+//	split              → completed, failed, cancelled (roll-up from children only)
 //	completed          → (none — terminal)
 //	cancelled          → (none — terminal)
 func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
@@ -76,7 +82,8 @@ func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
 		return next == TaskStatusPending || next == TaskStatusCancelled || next == TaskStatusAwaitingDirection
 	case TaskStatusInProgress:
 		return next == TaskStatusCompleted || next == TaskStatusFailed ||
-			next == TaskStatusCancelled || next == TaskStatusAwaitingDirection
+			next == TaskStatusCancelled || next == TaskStatusAwaitingDirection ||
+			next == TaskStatusSplit
 	case TaskStatusAwaitingDirection:
 		// Direction received: retry (→ in_progress), external blocker noted
 		// (→ blocked), or operator abort (→ cancelled).
@@ -87,6 +94,10 @@ func (s TaskStatus) CanTransitionTo(next TaskStatus) bool {
 		// recover. Mirrors the awaiting-direction exits. Legacy FAILED tasks
 		// that predate the retry ladder rely on this path for recovery.
 		return next == TaskStatusInProgress || next == TaskStatusBlocked || next == TaskStatusCancelled
+	case TaskStatusSplit:
+		// A SPLIT parent's outcome is determined by its children's roll-up.
+		// Cancel is allowed as an emergency abort.
+		return next == TaskStatusCompleted || next == TaskStatusFailed || next == TaskStatusCancelled
 	default:
 		// completed and cancelled are terminal — no further transitions.
 		return false
@@ -203,6 +214,11 @@ type Task struct {
 	// submitted for this task. Appended each time a work.task.direction event
 	// is handled so the full recovery trajectory is visible.
 	DirectionHistory string `json:"direction_history,omitempty"`
+
+	// ParentTaskID is the ID of the Task that was split to produce this one.
+	// Empty for root tasks. Set by the split-handler (FEAT-20260604-001) and
+	// stored as a denormalised property alongside the subtask_of edge.
+	ParentTaskID string `json:"parent_task_id,omitempty"`
 }
 
 // ImportResult is returned by [TaskManager.ImportProject].

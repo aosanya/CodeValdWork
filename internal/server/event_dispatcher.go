@@ -28,6 +28,10 @@ const (
 	// retry-ladder escalation path (FEAT-20260603-003).
 	topicTaskFailureClassified = codevaldwork.TopicTaskFailureClassified
 
+	// topicTaskPlanSplit is emitted by the planner agent when it decides to
+	// break a task into child Task entities (FEAT-20260604-001).
+	topicTaskPlanSplit = codevaldwork.TopicTaskPlanSplit
+
 	// defaultMaxRecoveryRuns is the platform-default retry budget per task.
 	// Configurable per WorkPlan via max_recovery_runs; this value is used
 	// when the WorkPlan property is absent (FEAT-20260603-003).
@@ -110,6 +114,8 @@ func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload strin
 		d.handleTaskDirection(ctx, payload)
 	case topicTaskFailureClassified:
 		d.handleTaskFailureClassified(ctx, payload)
+	case topicTaskPlanSplit:
+		d.handleTaskPlanSplit(ctx, payload)
 	}
 	// Always check for WorkflowRun status transitions on every event that
 	// carries a workflow_run_id — handles both the hardcoded failure topics
@@ -274,6 +280,12 @@ func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic strin
 			},
 		})
 		log.Printf("codevaldwork: TaskEventDispatcher: bridged work.task.failed for task=%s run=%s", p.TaskID, p.RunID)
+	}
+
+	// If this task is a child of a split-plan parent, roll up completion once
+	// all siblings reach a terminal state.
+	if (nextStatus == codevaldwork.TaskStatusCompleted || nextStatus == codevaldwork.TaskStatusFailed) && task.ParentTaskID != "" {
+		d.maybeCompleteSplitParent(ctx, task.ParentTaskID)
 	}
 }
 
@@ -890,6 +902,9 @@ func (d *TaskEventDispatcher) handleTaskDirection(ctx context.Context, payloadSt
 			},
 		})
 		log.Printf("codevaldwork: handleTaskDirection: cancel: task=%s", p.TaskID)
+		if task.ParentTaskID != "" {
+			d.maybeCompleteSplitParent(ctx, task.ParentTaskID)
+		}
 		// Fall through to run-resume check — cancellation may complete the run.
 
 	default:

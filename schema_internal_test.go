@@ -43,6 +43,7 @@ func TestDefaultWorkSchema_TaskPropertyTypes(t *testing.T) {
 		"recovery_runs_used": types.PropertyTypeInteger,
 		"blocker_note":       types.PropertyTypeString,
 		"direction_history":  types.PropertyTypeString,
+		"parent_task_id":     types.PropertyTypeString,
 		"created_at":         types.PropertyTypeString,
 		"updated_at":         types.PropertyTypeString,
 	}
