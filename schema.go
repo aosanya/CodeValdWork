@@ -4,32 +4,40 @@
 // for CodeValdWork. cmd/server seeds this schema idempotently on startup via
 // entitygraph.SeedSchema (see internal/app).
 //
-// The schema declares six TypeDefinitions:
-//   - Task              — a unit of work assigned to an AI Agent (mutable)
-//   - TaskTodo          — a decomposed sub-task produced by an AI decomposition run; carries todo_type and max_runs for per-type run-count enforcement (mutable)
-//   - Project           — optional container that groups related Tasks via `member_of` edges
-//   - Agent             — Work-domain projection of an AI agent; vertex for `assigned_to` edges
-//   - Tag               — free-form label attached to Tasks via `has_tag` edges
-//   - ImportProjectJob  — tracks async project-import operations
+// The schema declares eight TypeDefinitions:
+//   - Task               — a unit of work assigned to an AI Agent (mutable)
+//   - TaskTodo           — a decomposed sub-task produced by an AI decomposition run; carries todo_type and max_runs for per-type run-count enforcement (mutable)
+//   - Project            — optional container that groups related Tasks via `member_of` edges
+//   - Agent              — Work-domain projection of an AI agent; vertex for `assigned_to` edges
+//   - Tag                — free-form label attached to Tasks via `has_tag` edges
+//   - ImportProjectJob   — tracks async project-import operations
+//   - Deliverable        — specification of what a Task or TaskTodo must produce (v4)
+//   - AcceptanceCriteria — verifiable condition linked to a Task or TaskTodo; carries a reviewer-written result (v4)
 //
 // Graph topology:
 //
-//	Task ──assigned_to──► Agent
-//	Task ──member_of────► Project
-//	Task ──blocks───────► Task
-//	Task ──subtask_of───► Task
-//	Task ──depends_on───► Task
-//	Task ──has_tag──────► Tag
-//	Task ──has_todo─────► TaskTodo
+//	Task     ──assigned_to────────────► Agent
+//	Task     ──member_of──────────────► Project
+//	Task     ──blocks──────────────────► Task
+//	Task     ──subtask_of──────────────► Task
+//	Task     ──depends_on──────────────► Task
+//	Task     ──has_tag──────────────────► Tag
+//	Task     ──has_todo─────────────────► TaskTodo
+//	Task     ──has_deliverable──────────► Deliverable
+//	Task     ──has_acceptance_criteria──► AcceptanceCriteria
+//	TaskTodo ──has_deliverable──────────► Deliverable
+//	TaskTodo ──has_acceptance_criteria──► AcceptanceCriteria
 //
 // Storage:
-//   - Task             → "work_tasks"          document collection
-//   - TaskTodo         → "work_task_todos"     document collection
-//   - Project          → "work_projects"       document collection
-//   - Agent            → "work_agents"         document collection
-//   - Tag              → "work_tags"           document collection
-//   - ImportProjectJob → "work_import_jobs"    document collection
-//   - All edges        → "work_relationships"  edge collection
+//   - Task               → "work_tasks"               document collection
+//   - TaskTodo           → "work_task_todos"          document collection
+//   - Project            → "work_projects"            document collection
+//   - Agent              → "work_agents"              document collection
+//   - Tag                → "work_tags"                document collection
+//   - ImportProjectJob   → "work_import_jobs"         document collection
+//   - Deliverable        → "work_deliverables"        document collection
+//   - AcceptanceCriteria → "work_acceptance_criteria" document collection
+//   - All edges          → "work_relationships"       edge collection
 package codevaldwork
 
 import (
@@ -43,8 +51,8 @@ import (
 func DefaultWorkSchema() types.Schema {
 	return types.Schema{
 		ID:      "work-schema-v1",
-		Version: 3,
-		Tag:     "v3",
+		Version: 4,
+		Tag:     "v4",
 		Types: append([]types.TypeDefinition{
 			{
 				Name:              "Task",
@@ -214,6 +222,22 @@ func DefaultWorkSchema() types.Schema {
 						ToMany:      false,
 						Inverse:     RelLabelStartedTask,
 					},
+					{
+						Name:        RelLabelHasDeliverable,
+						Label:       "Has deliverable",
+						PathSegment: "deliverables",
+						ToType:      "Deliverable",
+						ToMany:      true,
+						Inverse:     "deliverable_of",
+					},
+					{
+						Name:        RelLabelHasAcceptanceCriteria,
+						Label:       "Has acceptance criteria",
+						PathSegment: "acceptance-criteria",
+						ToType:      "AcceptanceCriteria",
+						ToMany:      true,
+						Inverse:     "criteria_of",
+					},
 				},
 			},
 			{
@@ -290,6 +314,22 @@ func DefaultWorkSchema() types.Schema {
 						ToType:      "WorkflowRun",
 						ToMany:      false,
 						Inverse:     RelLabelStartedTodo,
+					},
+					{
+						Name:        RelLabelHasDeliverable,
+						Label:       "Has deliverable",
+						PathSegment: "deliverables",
+						ToType:      "Deliverable",
+						ToMany:      true,
+						Inverse:     "deliverable_of",
+					},
+					{
+						Name:        RelLabelHasAcceptanceCriteria,
+						Label:       "Has acceptance criteria",
+						PathSegment: "acceptance-criteria",
+						ToType:      "AcceptanceCriteria",
+						ToMany:      true,
+						Inverse:     "criteria_of",
 					},
 				},
 			},
@@ -539,6 +579,73 @@ func DefaultWorkSchema() types.Schema {
 					{Name: "deps_created", Type: types.PropertyTypeNumber},
 					{Name: "created_at", Type: types.PropertyTypeString},
 					{Name: "updated_at", Type: types.PropertyTypeString},
+				},
+			},
+			{
+				Name:              "Deliverable",
+				DisplayName:       "Deliverable",
+				StorageCollection: "work_deliverables",
+				PublishEvents:     true,
+				Properties: []types.PropertyDefinition{
+					// title is the short human-readable label.
+					{Name: "title", Type: types.PropertyTypeString},
+					// description is the fuller spec of what must be produced.
+					{Name: "description", Type: types.PropertyTypeString},
+					// deliverable_type classifies the output (e.g. "code", "document", "artifact", "test_output").
+					{Name: "deliverable_type", Type: types.PropertyTypeString},
+					// parent_id is the denormalised owner ID (Task or TaskTodo).
+					{Name: "parent_id", Type: types.PropertyTypeString},
+					// ordinality is the 1-based position within the owning entity's deliverables.
+					{Name: "ordinality", Type: types.PropertyTypeInteger},
+					// workflow_run_id is inherited from the parent at creation time.
+					{Name: "workflow_run_id", Type: types.PropertyTypeString},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
+				},
+				Relationships: []types.RelationshipDefinition{
+					{
+						Name:        "deliverable_of",
+						Label:       "Deliverable of",
+						PathSegment: "owner",
+						ToType:      "Task",
+						ToMany:      false,
+						Inverse:     RelLabelHasDeliverable,
+					},
+				},
+			},
+			{
+				Name:              "AcceptanceCriteria",
+				DisplayName:       "Acceptance Criteria",
+				StorageCollection: "work_acceptance_criteria",
+				PublishEvents:     true,
+				Properties: []types.PropertyDefinition{
+					// title is the short label (e.g. "All unit tests pass with race detector").
+					{Name: "title", Type: types.PropertyTypeString},
+					// description is the full verifiable condition.
+					{Name: "description", Type: types.PropertyTypeString},
+					// parent_id is the denormalised owner ID (Task or TaskTodo).
+					{Name: "parent_id", Type: types.PropertyTypeString},
+					// ordinality is the 1-based position within the owning entity's criteria.
+					{Name: "ordinality", Type: types.PropertyTypeInteger},
+					// workflow_run_id is inherited from the parent at creation time.
+					{Name: "workflow_run_id", Type: types.PropertyTypeString},
+					// result is the runtime outcome written by the reviewer: "passed", "failed", "skipped", "blocked".
+					// Empty until the reviewer runs (FEAT-20260605-003).
+					{Name: "result", Type: types.PropertyTypeString},
+					// result_notes is the free-form explanation written by the reviewer alongside result.
+					{Name: "result_notes", Type: types.PropertyTypeString},
+					{Name: "created_at", Type: types.PropertyTypeString},
+					{Name: "updated_at", Type: types.PropertyTypeString},
+				},
+				Relationships: []types.RelationshipDefinition{
+					{
+						Name:        "criteria_of",
+						Label:       "Criteria of",
+						PathSegment: "owner",
+						ToType:      "Task",
+						ToMany:      false,
+						Inverse:     RelLabelHasAcceptanceCriteria,
+					},
 				},
 			},
 		}, eventreceiver.ReceivedEventTypeDefinition("work")),

@@ -709,6 +709,80 @@ type WorkflowRunClosure struct {
 	BranchNames    []string       `json:"branch_names,omitempty"`
 }
 
+// Deliverable is a specification of what a Task or TaskTodo must produce.
+// It is a pure definition — no runtime state. Linked to its owner via a
+// has_deliverable edge.
+type Deliverable struct {
+	// ID is the entity-graph storage key — opaque to callers.
+	ID string `json:"id"`
+
+	// AgencyID is the agency that owns this deliverable.
+	AgencyID string `json:"agency_id"`
+
+	// Title is the short human-readable label.
+	Title string `json:"title"`
+
+	// Description is the fuller spec of what must be produced.
+	Description string `json:"description,omitempty"`
+
+	// DeliverableType classifies the output (e.g. "code", "document", "artifact", "test_output").
+	DeliverableType string `json:"deliverable_type,omitempty"`
+
+	// ParentID is the denormalised owner ID (Task or TaskTodo).
+	ParentID string `json:"parent_id"`
+
+	// Ordinality is the 1-based position within the owning entity's deliverables.
+	Ordinality int `json:"ordinality"`
+
+	// WorkflowRunID is inherited from the parent at creation time.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
+
+	// CreatedAt is the RFC 3339 timestamp when the deliverable was created.
+	CreatedAt string `json:"created_at"`
+
+	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.
+	UpdatedAt string `json:"updated_at"`
+}
+
+// AcceptanceCriteria is a verifiable condition that must be satisfied before
+// the owning Task or TaskTodo is considered done. A reviewer writes the
+// runtime result against each criterion (FEAT-20260605-003).
+type AcceptanceCriteria struct {
+	// ID is the entity-graph storage key — opaque to callers.
+	ID string `json:"id"`
+
+	// AgencyID is the agency that owns this criterion.
+	AgencyID string `json:"agency_id"`
+
+	// Title is the short label (e.g. "All unit tests pass with race detector").
+	Title string `json:"title"`
+
+	// Description is the full verifiable condition.
+	Description string `json:"description,omitempty"`
+
+	// ParentID is the denormalised owner ID (Task or TaskTodo).
+	ParentID string `json:"parent_id"`
+
+	// Ordinality is the 1-based position within the owning entity's criteria.
+	Ordinality int `json:"ordinality"`
+
+	// WorkflowRunID is inherited from the parent at creation time.
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
+
+	// Result is the runtime outcome written by the reviewer: "passed", "failed",
+	// "skipped", or "blocked". Empty until the reviewer runs (FEAT-20260605-003).
+	Result string `json:"result,omitempty"`
+
+	// ResultNotes is the free-form explanation written by the reviewer alongside Result.
+	ResultNotes string `json:"result_notes,omitempty"`
+
+	// CreatedAt is the RFC 3339 timestamp when the criterion was created.
+	CreatedAt string `json:"created_at"`
+
+	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.
+	UpdatedAt string `json:"updated_at"`
+}
+
 // Tag is a free-form label that can be attached to Tasks via `has_tag` graph
 // edges. Tags are unique by name within an agency (UniqueKey: ["name"]).
 type Tag struct {

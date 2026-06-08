@@ -100,6 +100,12 @@ const (
 	// RelLabelPartOfRun is the inverse of started_task / started_todo: lets callers
 	// look up "which run created this Task/Todo?" without scanning every run.
 	RelLabelPartOfRun = "part_of_run"
+
+	// RelLabelHasDeliverable links a Task or TaskTodo to a Deliverable it must produce.
+	RelLabelHasDeliverable = "has_deliverable"
+
+	// RelLabelHasAcceptanceCriteria links a Task or TaskTodo to a verifiable AcceptanceCriteria.
+	RelLabelHasAcceptanceCriteria = "has_acceptance_criteria"
 )
 
 // relationshipFromEntitygraph adapts a SharedLib edge into the Work-domain
@@ -124,22 +130,29 @@ func relationshipFromEntitygraph(r entitygraph.Relationship) Relationship {
 	}
 }
 
-// relationshipEndpointTypes maps each Work edge label to the (FromType, ToType)
-// pair declared in the schema's Relationships whitelist.
-var relationshipEndpointTypes = map[string]struct {
-	fromType string
-	toType   string
-}{
-	RelLabelAssignedTo: {fromType: taskTypeID, toType: agentTypeID},
-	RelLabelBlocks:     {fromType: taskTypeID, toType: taskTypeID},
-	RelLabelSubtaskOf:  {fromType: taskTypeID, toType: taskTypeID},
-	RelLabelDependsOn:  {fromType: taskTypeID, toType: taskTypeID},
-	RelLabelMemberOf:   {fromType: taskTypeID, toType: projectTypeID},
-	RelLabelHasTag:     {fromType: taskTypeID, toType: tagTypeID},
-	RelLabelHasTodo:        {fromType: taskTypeID, toType: taskTodoTypeID},
-	RelLabelTodoAssignedTo: {fromType: taskTodoTypeID, toType: agentTypeID},
-	RelLabelStartedTask:    {fromType: workflowRunTypeID, toType: taskTypeID},
-	RelLabelStartedTodo:    {fromType: workflowRunTypeID, toType: taskTodoTypeID},
+// relEndpoint describes the allowed (from, to) type pair for a Work edge label.
+// fromTypes contains one or more TypeDefinition names that are valid sources;
+// labels shared by Task and TaskTodo (has_deliverable, has_acceptance_criteria)
+// list both.
+type relEndpoint struct {
+	fromTypes []string
+	toType    string
+}
+
+// relationshipEndpointTypes maps each Work edge label to its endpoint constraints.
+var relationshipEndpointTypes = map[string]relEndpoint{
+	RelLabelAssignedTo:     {fromTypes: []string{taskTypeID}, toType: agentTypeID},
+	RelLabelBlocks:         {fromTypes: []string{taskTypeID}, toType: taskTypeID},
+	RelLabelSubtaskOf:      {fromTypes: []string{taskTypeID}, toType: taskTypeID},
+	RelLabelDependsOn:      {fromTypes: []string{taskTypeID}, toType: taskTypeID},
+	RelLabelMemberOf:       {fromTypes: []string{taskTypeID}, toType: projectTypeID},
+	RelLabelHasTag:         {fromTypes: []string{taskTypeID}, toType: tagTypeID},
+	RelLabelHasTodo:        {fromTypes: []string{taskTypeID}, toType: taskTodoTypeID},
+	RelLabelTodoAssignedTo: {fromTypes: []string{taskTodoTypeID}, toType: agentTypeID},
+	RelLabelStartedTask:    {fromTypes: []string{workflowRunTypeID}, toType: taskTypeID},
+	RelLabelStartedTodo:    {fromTypes: []string{workflowRunTypeID}, toType: taskTodoTypeID},
+	RelLabelHasDeliverable:        {fromTypes: []string{taskTypeID, taskTodoTypeID}, toType: deliverableTypeID},
+	RelLabelHasAcceptanceCriteria: {fromTypes: []string{taskTypeID, taskTodoTypeID}, toType: acceptanceCriteriaTypeID},
 }
 
 // notFoundForType returns the typed sentinel error for a vertex TypeID.
@@ -157,6 +170,10 @@ func notFoundForType(typeID string) error {
 		return ErrTaskTodoNotFound
 	case workflowRunTypeID:
 		return ErrWorkflowRunNotFound
+	case deliverableTypeID:
+		return ErrDeliverableNotFound
+	case acceptanceCriteriaTypeID:
+		return ErrAcceptanceCriteriaNotFound
 	default:
 		return entitygraph.ErrEntityNotFound
 	}
@@ -191,11 +208,18 @@ func (m *taskManager) CreateRelationship(ctx context.Context, agencyID string, r
 	from, err := m.dm.GetEntity(ctx, agencyID, rel.FromID)
 	if err != nil {
 		if errors.Is(err, entitygraph.ErrEntityNotFound) {
-			return Relationship{}, notFoundForType(allowed.fromType)
+			return Relationship{}, notFoundForType(allowed.fromTypes[0])
 		}
 		return Relationship{}, fmt.Errorf("CreateRelationship: get from: %w", err)
 	}
-	if from.AgencyID != agencyID || from.TypeID != allowed.fromType {
+	fromTypeOK := false
+	for _, ft := range allowed.fromTypes {
+		if ft == from.TypeID {
+			fromTypeOK = true
+			break
+		}
+	}
+	if from.AgencyID != agencyID || !fromTypeOK {
 		return Relationship{}, fmt.Errorf("%w: from-vertex type %q does not match label %q", ErrInvalidRelationship, from.TypeID, rel.Label)
 	}
 
