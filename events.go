@@ -114,6 +114,16 @@ const (
 	// write subtask_of edges, and transition the parent to TaskStatusSplit.
 	// Payload: [TaskPlanSplitPayload]. (FEAT-20260604-001)
 	TopicTaskPlanSplit = "ai.task.split"
+
+	// TopicReviewPassed fires when the reviewer evaluates all AcceptanceCriteria
+	// for a completed task and every criterion has result == "passed".
+	// Payload: [ReviewOutcomePayload]. (FEAT-20260605-003)
+	TopicReviewPassed = eventbus.DomainWork + "review.passed"
+
+	// TopicReviewFailed fires when the reviewer evaluates AcceptanceCriteria for
+	// a completed task and at least one criterion has result != "passed".
+	// Payload: [ReviewOutcomePayload]. (FEAT-20260605-003)
+	TopicReviewFailed = eventbus.DomainWork + "review.failed"
 )
 
 // AllTopics is the full list of topics this service publishes.
@@ -141,6 +151,8 @@ func AllTopics() []string {
 		TopicRunPaused,
 		TopicRunResumed,
 		TopicTaskClassifyFailure,
+		TopicReviewPassed,
+		TopicReviewFailed,
 	)
 }
 
@@ -452,6 +464,25 @@ type TaskFailureClassifiedPayload struct {
 	// FailureType is "transient" (allow one more retry) or "requires-human" (escalate).
 	FailureType string `json:"failure_type"`
 	Reasoning   string `json:"reasoning,omitempty"`
+}
+
+// FailedCriterionSummary carries the outcome of one failed AcceptanceCriteria
+// in a [ReviewOutcomePayload].
+type FailedCriterionSummary struct {
+	CriterionID string `json:"criterion_id"`
+	Title       string `json:"title"`
+	Result      string `json:"result"`
+	ResultNotes string `json:"result_notes,omitempty"`
+}
+
+// ReviewOutcomePayload is the Payload for [TopicReviewPassed] and [TopicReviewFailed].
+// Emitted by the reviewer after all AcceptanceCriteria have been evaluated.
+type ReviewOutcomePayload struct {
+	TaskID        string                   `json:"task_id"`
+	WorkflowRunID string                   `json:"workflow_run_id,omitempty"`
+	AgencyID      string                   `json:"agency_id"`
+	// FailedCriteria lists each criterion that did not pass; empty for work.review.passed.
+	FailedCriteria []FailedCriterionSummary `json:"failed_criteria,omitempty"`
 }
 
 // ConsumedTopics is the closed list of topics CodeValdWork subscribes to.

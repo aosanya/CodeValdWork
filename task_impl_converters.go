@@ -230,6 +230,68 @@ func projectToProperties(p Project) map[string]any {
 	}
 }
 
+// ── Deliverable ───────────────────────────────────────────────────────────────
+
+func deliverableToProperties(d Deliverable) map[string]any {
+	return map[string]any{
+		"title":            d.Title,
+		"description":      d.Description,
+		"deliverable_type": d.DeliverableType,
+		"parent_id":        d.ParentID,
+		"ordinality":       d.Ordinality,
+		"workflow_run_id":  d.WorkflowRunID,
+		"created_at":       d.CreatedAt,
+		"updated_at":       d.UpdatedAt,
+	}
+}
+
+func deliverableFromEntity(e entitygraph.Entity) Deliverable {
+	return Deliverable{
+		ID:              e.ID,
+		AgencyID:        e.AgencyID,
+		Title:           entitygraph.StringProp(e.Properties, "title"),
+		Description:     entitygraph.StringProp(e.Properties, "description"),
+		DeliverableType: entitygraph.StringProp(e.Properties, "deliverable_type"),
+		ParentID:        entitygraph.StringProp(e.Properties, "parent_id"),
+		Ordinality:      int(entitygraph.Int64Prop(e.Properties, "ordinality")),
+		WorkflowRunID:   entitygraph.StringProp(e.Properties, "workflow_run_id"),
+		CreatedAt:       entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:       entitygraph.StringProp(e.Properties, "updated_at"),
+	}
+}
+
+// ── AcceptanceCriteria ────────────────────────────────────────────────────────
+
+func acceptanceCriteriaToProperties(a AcceptanceCriteria) map[string]any {
+	return map[string]any{
+		"title":           a.Title,
+		"description":     a.Description,
+		"parent_id":       a.ParentID,
+		"ordinality":      a.Ordinality,
+		"workflow_run_id": a.WorkflowRunID,
+		"result":          a.Result,
+		"result_notes":    a.ResultNotes,
+		"created_at":      a.CreatedAt,
+		"updated_at":      a.UpdatedAt,
+	}
+}
+
+func acceptanceCriteriaFromEntity(e entitygraph.Entity) AcceptanceCriteria {
+	return AcceptanceCriteria{
+		ID:            e.ID,
+		AgencyID:      e.AgencyID,
+		Title:         entitygraph.StringProp(e.Properties, "title"),
+		Description:   entitygraph.StringProp(e.Properties, "description"),
+		ParentID:      entitygraph.StringProp(e.Properties, "parent_id"),
+		Ordinality:    int(entitygraph.Int64Prop(e.Properties, "ordinality")),
+		WorkflowRunID: entitygraph.StringProp(e.Properties, "workflow_run_id"),
+		Result:        entitygraph.StringProp(e.Properties, "result"),
+		ResultNotes:   entitygraph.StringProp(e.Properties, "result_notes"),
+		CreatedAt:     entitygraph.StringProp(e.Properties, "created_at"),
+		UpdatedAt:     entitygraph.StringProp(e.Properties, "updated_at"),
+	}
+}
+
 // projectFromEntity reconstructs a Project from an entitygraph Entity.
 func projectFromEntity(e entitygraph.Entity) Project {
 	p := Project{

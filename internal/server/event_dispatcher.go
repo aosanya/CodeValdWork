@@ -8,6 +8,7 @@ import (
 	"time"
 
 	codevaldwork "github.com/aosanya/CodeValdWork"
+	"github.com/aosanya/CodeValdWork/internal/reviewer"
 	"github.com/aosanya/CodeValdSharedLib/eventbus"
 )
 
@@ -79,6 +80,7 @@ type TaskEventDispatcher struct {
 	pub       eventbus.Publisher // optional; nil = skip work.task.failed bridging
 	writes    *writeTracker      // gates ai.task.completed on git.file.written (BUG-09-020 Phase 2)
 	runStatus *RunStatusHandler  // drives WorkflowRun status transitions
+	rev       *reviewer.Reviewer // optional; nil = skip review gate (FEAT-20260605-003)
 }
 
 // NewTaskEventDispatcher constructs a TaskEventDispatcher.
@@ -91,6 +93,12 @@ func NewTaskEventDispatcher(mgr codevaldwork.TaskManager, agencyID string, pub e
 		writes:    newWriteTracker(writeGateTimeout),
 		runStatus: NewRunStatusHandler(mgr, agencyID),
 	}
+}
+
+// WithReviewer attaches a Reviewer to the dispatcher so the review gate fires
+// after every work.task.completed event (FEAT-20260605-003).
+func (d *TaskEventDispatcher) WithReviewer(r *reviewer.Reviewer) {
+	d.rev = r
 }
 
 // Dispatch handles an incoming event by topic.
@@ -174,6 +182,10 @@ func (d *TaskEventDispatcher) handleWorkTaskCompleted(ctx context.Context, paylo
 		return
 	}
 	log.Printf("codevaldwork: handleWorkTaskCompleted: ran unblock cascade for task=%s", p.TaskID)
+
+	if d.rev != nil {
+		go d.rev.Review(context.Background(), p.TaskID, p.WorkflowRunID)
+	}
 }
 
 // handleAITaskStatus routes ai.task.started/completed/failed to a Task or

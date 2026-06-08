@@ -422,6 +422,19 @@ type TaskManager interface {
 	// workflowRunID. When workflowRunID is empty, all todos for the agency
 	// are returned (BUG-20260603-005).
 	ListTaskTodos(ctx context.Context, agencyID, workflowRunID string) ([]TaskTodo, error)
+
+	// ListDeliverablesForTask returns all Deliverable entities linked to taskID
+	// via a has_deliverable edge. Returns an empty slice when none exist.
+	ListDeliverablesForTask(ctx context.Context, agencyID, taskID string) ([]Deliverable, error)
+
+	// ListAcceptanceCriteriaForTask returns all AcceptanceCriteria entities linked
+	// to taskID via a has_acceptance_criteria edge. Returns an empty slice when none exist.
+	ListAcceptanceCriteriaForTask(ctx context.Context, agencyID, taskID string) ([]AcceptanceCriteria, error)
+
+	// WriteAcceptanceCriteriaResult writes the reviewer's result and result_notes
+	// onto a single AcceptanceCriteria entity. Returns [ErrAcceptanceCriteriaNotFound]
+	// if the entity does not exist.
+	WriteAcceptanceCriteriaResult(ctx context.Context, agencyID, criteriaID, result, notes string) error
 }
 
 // WorkSchemaManager is a type alias for [entitygraph.SchemaManager].
