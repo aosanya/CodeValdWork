@@ -16,9 +16,89 @@ func TestDefaultWorkSchema_TypeNames(t *testing.T) {
 	for _, td := range s.Types {
 		got[td.Name] = true
 	}
-	for _, want := range []string{"Task", "TaskTodo", "Project", "Agent", "Tag", "WorkflowRun", "ImportProjectJob"} {
+	for _, want := range []string{
+		"Task", "TaskTodo", "Project", "Agent", "Tag", "WorkflowRun", "ImportProjectJob",
+		"Deliverable", "AcceptanceCriteria",
+	} {
 		if !got[want] {
 			t.Errorf("missing TypeDefinition %q", want)
+		}
+	}
+}
+
+func TestDefaultWorkSchema_Version4(t *testing.T) {
+	s := DefaultWorkSchema()
+	if s.Version != 4 {
+		t.Errorf("schema Version = %d, want 4", s.Version)
+	}
+	if s.Tag != "v4" {
+		t.Errorf("schema Tag = %q, want %q", s.Tag, "v4")
+	}
+}
+
+func TestDefaultWorkSchema_DeliverableShape(t *testing.T) {
+	td := findType(t, DefaultWorkSchema(), "Deliverable")
+	if td.StorageCollection != "work_deliverables" {
+		t.Errorf("Deliverable.StorageCollection = %q, want %q", td.StorageCollection, "work_deliverables")
+	}
+	want := map[string]types.PropertyType{
+		"title":            types.PropertyTypeString,
+		"description":      types.PropertyTypeString,
+		"deliverable_type": types.PropertyTypeString,
+		"parent_id":        types.PropertyTypeString,
+		"ordinality":       types.PropertyTypeInteger,
+		"workflow_run_id":  types.PropertyTypeString,
+		"created_at":       types.PropertyTypeString,
+		"updated_at":       types.PropertyTypeString,
+	}
+	if got := propTypes(td); !reflect.DeepEqual(got, want) {
+		t.Errorf("Deliverable property types mismatch:\n got=%v\nwant=%v", got, want)
+	}
+}
+
+func TestDefaultWorkSchema_AcceptanceCriteriaShape(t *testing.T) {
+	td := findType(t, DefaultWorkSchema(), "AcceptanceCriteria")
+	if td.StorageCollection != "work_acceptance_criteria" {
+		t.Errorf("AcceptanceCriteria.StorageCollection = %q, want %q", td.StorageCollection, "work_acceptance_criteria")
+	}
+	want := map[string]types.PropertyType{
+		"title":           types.PropertyTypeString,
+		"description":     types.PropertyTypeString,
+		"parent_id":       types.PropertyTypeString,
+		"ordinality":      types.PropertyTypeInteger,
+		"workflow_run_id": types.PropertyTypeString,
+		"result":          types.PropertyTypeString,
+		"result_notes":    types.PropertyTypeString,
+		"created_at":      types.PropertyTypeString,
+		"updated_at":      types.PropertyTypeString,
+	}
+	if got := propTypes(td); !reflect.DeepEqual(got, want) {
+		t.Errorf("AcceptanceCriteria property types mismatch:\n got=%v\nwant=%v", got, want)
+	}
+}
+
+func TestDefaultWorkSchema_TaskHasDeliverableAndCriteriaRelationships(t *testing.T) {
+	td := findType(t, DefaultWorkSchema(), "Task")
+	relNames := make(map[string]bool, len(td.Relationships))
+	for _, r := range td.Relationships {
+		relNames[r.Name] = true
+	}
+	for _, want := range []string{RelLabelHasDeliverable, RelLabelHasAcceptanceCriteria} {
+		if !relNames[want] {
+			t.Errorf("Task missing relationship %q", want)
+		}
+	}
+}
+
+func TestDefaultWorkSchema_TaskTodoHasDeliverableAndCriteriaRelationships(t *testing.T) {
+	td := findType(t, DefaultWorkSchema(), "TaskTodo")
+	relNames := make(map[string]bool, len(td.Relationships))
+	for _, r := range td.Relationships {
+		relNames[r.Name] = true
+	}
+	for _, want := range []string{RelLabelHasDeliverable, RelLabelHasAcceptanceCriteria} {
+		if !relNames[want] {
+			t.Errorf("TaskTodo missing relationship %q", want)
 		}
 	}
 }

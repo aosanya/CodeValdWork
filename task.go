@@ -46,6 +46,12 @@ const taskTodoTypeID = "TaskTodo"
 // (FEAT-20260601-001).
 const workflowRunTypeID = "WorkflowRun"
 
+// deliverableTypeID is the TypeDefinition.Name used for Deliverable entities.
+const deliverableTypeID = "Deliverable"
+
+// acceptanceCriteriaTypeID is the TypeDefinition.Name used for AcceptanceCriteria entities.
+const acceptanceCriteriaTypeID = "AcceptanceCriteria"
+
 // TaskManager is the primary interface for task lifecycle management.
 // All operations are scoped to the manager's agencyID, fixed at construction.
 //

@@ -125,6 +125,14 @@ var ErrNotRootWorkflowRun = errors.New("workflow run is not a root run; budget o
 // returns the existing cancellation envelope.
 var ErrCannotCancelTerminalRun = errors.New("workflow run is not in_progress; cancel rejected")
 
+// ErrDeliverableNotFound is returned when a Deliverable vertex does not exist
+// for the given agencyID and entity ID.
+var ErrDeliverableNotFound = errors.New("deliverable not found")
+
+// ErrAcceptanceCriteriaNotFound is returned when an AcceptanceCriteria vertex does
+// not exist for the given agencyID and entity ID.
+var ErrAcceptanceCriteriaNotFound = errors.New("acceptance criteria not found")
+
 // ErrBlocked is the sentinel returned by [TaskManager.UpdateTask] when a
 // pending → in_progress transition is rejected because the task has one or
 // more non-terminal `blocks`-inbound predecessors. Match it with
