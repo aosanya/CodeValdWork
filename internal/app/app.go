@@ -18,6 +18,7 @@ import (
 	pb "github.com/aosanya/CodeValdWork/gen/go/codevaldwork/v1"
 	"github.com/aosanya/CodeValdWork/internal/config"
 	"github.com/aosanya/CodeValdWork/internal/registrar"
+	"github.com/aosanya/CodeValdWork/internal/reviewer"
 	"github.com/aosanya/CodeValdWork/internal/server"
 	workarangodb "github.com/aosanya/CodeValdWork/storage/arangodb"
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
@@ -96,6 +97,11 @@ func Run(cfg config.Config) error {
 	taskServer := server.New(mgr)
 	if cfg.AgencyID != "" {
 		dispatcher := server.NewTaskEventDispatcher(mgr, cfg.AgencyID, pub)
+		// Wire the review gate: on every work.task.completed the reviewer fetches
+		// AcceptanceCriteria + Deliverables, evaluates them, and emits the outcome.
+		// A nil evaluator (no LLM wired) causes all criteria to be marked "skipped".
+		rev := reviewer.New(mgr, pub, reviewer.NewPassThroughEvaluator(), cfg.AgencyID)
+		dispatcher.WithReviewer(rev)
 		taskServer.WithDispatcher(dispatcher)
 		sharedev1.RegisterEventReceiverServiceServer(grpcServer, server.NewEventReceiver(backend, cfg.AgencyID, dispatcher))
 	}

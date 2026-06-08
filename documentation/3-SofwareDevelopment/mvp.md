@@ -25,7 +25,7 @@ integration tests remain.
 | FEAT-20260604-001 | Unified planner — `TaskStatusSplit` constant + CanTransitionTo rules; `parent_task_id` on Task schema; `ai.task.split` consumer that creates child Tasks and transitions parent → SPLIT; `maybeCompleteSplitParent` roll-up logic | ✅ Done | — |
 | MVP-WORK-016 | Unit & integration tests — `fakeDataManager` updated for graph edges; ArangoDB end-to-end scenarios covering subtasks, blockers (gate), assignment via edge, TaskGroup membership, and verification of all six events published | ✅ Done | MVP-WORK-008…015 (done) |
 | FEAT-20260605-001 | Schema v4 — `Deliverable` + `AcceptanceCriteria` entity types; `has_deliverable` + `has_acceptance_criteria` edges on Task + TaskTodo; bump schema to v4 | ✅ Done | — |
-| FEAT-20260605-003 | Reviewer component — subscribes to `work.task.completed`; fetches Deliverables + AcceptanceCriteria; writes `result`/`result_notes`; emits `work.review.passed` or `work.review.failed` | 📋 Not Started | FEAT-20260605-001, FEAT-20260605-002 |
+| FEAT-20260605-003 | Reviewer component — subscribes to `work.task.completed`; fetches Deliverables + AcceptanceCriteria; writes `result`/`result_notes`; emits `work.review.passed` or `work.review.failed` | 🚀 In Progress | FEAT-20260605-001, FEAT-20260605-002 |
 
 See [mvp-details/integration-tests.md](mvp-details/integration-tests.md) for the test plan, [mvp-details/FEAT-20260601-001_workflow_run_rollup.md](mvp-details/FEAT-20260601-001_workflow_run_rollup.md) for the rollup endpoint design, and the FEAT-20260602-* set for the wider workflow-run expansion (anchored by the [Cross umbrella](../../../CodeValdCross/documentation/3-SofwareDevelopment/mvp-details/FEAT-20260602-001_workflow_run_id_propagation_umbrella.md)).
 
