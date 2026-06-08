@@ -113,7 +113,7 @@ const (
 	// it into todos. CodeValdWork consumes this to create the child tasks,
 	// write subtask_of edges, and transition the parent to TaskStatusSplit.
 	// Payload: [TaskPlanSplitPayload]. (FEAT-20260604-001)
-	TopicTaskPlanSplit = "task.plan.split"
+	TopicTaskPlanSplit = "ai.task.split"
 )
 
 // AllTopics is the full list of topics this service publishes.
