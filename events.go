@@ -130,7 +130,7 @@ const (
 // Schema-derived lifecycle topics are generated automatically from
 // [DefaultWorkSchema]; business-semantic extras are appended below.
 func AllTopics() []string {
-	derived := types.TopicsFromSchema("work", DefaultWorkSchema())
+	derived := types.TopicsFromSchema("", DefaultWorkSchema())
 	return append(derived,
 		TopicTaskCompleted,
 		TopicTaskFailed,

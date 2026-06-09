@@ -13,7 +13,7 @@ func TestCreateWorkflowRun_DefaultsAndReadback(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
 
-	run, err := mgr.CreateWorkflowRun(ctx, "ag", "qa-scenario-09", "work.next.requested", "operator-1")
+	run, err := mgr.CreateWorkflowRun(ctx, "ag", "qa-scenario-09", "next.requested", "operator-1")
 	if err != nil {
 		t.Fatalf("CreateWorkflowRun: %v", err)
 	}
@@ -26,7 +26,7 @@ func TestCreateWorkflowRun_DefaultsAndReadback(t *testing.T) {
 	if run.Status != codevaldwork.WorkflowRunStatusPending {
 		t.Errorf("status = %q want pending", run.Status)
 	}
-	if run.TriggerEvent != "work.next.requested" || run.Initiator != "operator-1" {
+	if run.TriggerEvent != "next.requested" || run.Initiator != "operator-1" {
 		t.Errorf("unexpected run: %+v", run)
 	}
 	if run.StartedAt == "" || run.CreatedAt == "" {
@@ -46,7 +46,7 @@ func TestCreateWorkflowRun_GeneratesName(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
 
-	run, err := mgr.CreateWorkflowRun(ctx, "ag", "", "work.next.requested", "")
+	run, err := mgr.CreateWorkflowRun(ctx, "ag", "", "next.requested", "")
 	if err != nil {
 		t.Fatalf("CreateWorkflowRun: %v", err)
 	}
@@ -173,7 +173,7 @@ func TestGetWorkflowRunClosure_TaskAndTodo(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(fake, nil)
 	ctx := context.Background()
 
-	run, err := mgr.CreateWorkflowRun(ctx, "ag", "", "work.next.requested", "")
+	run, err := mgr.CreateWorkflowRun(ctx, "ag", "", "next.requested", "")
 	if err != nil {
 		t.Fatalf("CreateWorkflowRun: %v", err)
 	}

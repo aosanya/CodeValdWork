@@ -507,7 +507,7 @@ message CreateWorkflowRunRequest {
   // When empty the server generates one.
   string name          = 2;
   // trigger_event names the event that started the run (e.g.
-  // "work.pipeline.requested"). Free-form; persisted as-is.
+  // "pipeline.requested"). Free-form; persisted as-is.
   string trigger_event = 3;
   // initiator is an opaque caller identifier (operator email, service
   // name, etc.) — may be empty.

@@ -16,7 +16,7 @@ func TestSetFailureBudget_RoundTrip(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
 
-	run, err := mgr.CreateWorkflowRun(ctx, "ag", "", "work.pipeline.requested", "operator")
+	run, err := mgr.CreateWorkflowRun(ctx, "ag", "", "pipeline.requested", "operator")
 	if err != nil {
 		t.Fatalf("CreateWorkflowRun: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestSetFailureBudget_NonRootRejected(t *testing.T) {
 	if _, err := mgr.SetFailureBudget(ctx, "ag", root.ID, 5); err != nil {
 		t.Fatalf("SetFailureBudget root: %v", err)
 	}
-	child, err := mgr.CreateRecoveryWorkflowRun(ctx, "ag", "child-run", "work.pipeline.requested", "cross", root.ID, root.ID)
+	child, err := mgr.CreateRecoveryWorkflowRun(ctx, "ag", "child-run", "pipeline.requested", "cross", root.ID, root.ID)
 	if err != nil {
 		t.Fatalf("CreateRecoveryWorkflowRun: %v", err)
 	}
@@ -158,7 +158,7 @@ func TestCreateRecoveryWorkflowRun_ChainsParentage(t *testing.T) {
 	ctx := context.Background()
 
 	root, _ := mgr.CreateWorkflowRun(ctx, "ag", "root", "", "")
-	child, err := mgr.CreateRecoveryWorkflowRun(ctx, "ag", "recovery", "work.pipeline.requested", "cross", root.ID, root.ID)
+	child, err := mgr.CreateRecoveryWorkflowRun(ctx, "ag", "recovery", "pipeline.requested", "cross", root.ID, root.ID)
 	if err != nil {
 		t.Fatalf("CreateRecoveryWorkflowRun: %v", err)
 	}

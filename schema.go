@@ -460,7 +460,7 @@ func DefaultWorkSchema() types.Schema {
 					// completed, failed, rolled_back.
 					{Name: "status", Type: types.PropertyTypeString},
 					// trigger_event names the event that started the run
-					// (e.g. "work.next.requested").
+					// (e.g. "next.requested").
 					{Name: "trigger_event", Type: types.PropertyTypeString},
 					// initiator is an opaque caller identifier (operator email,
 					// service name, etc.). May be empty.
