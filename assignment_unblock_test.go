@@ -162,7 +162,7 @@ func TestUnblockDependents_Idempotent(t *testing.T) {
 		t.Errorf("B.Status = %s, want pending after redelivery", got.Status)
 	}
 	for _, ev := range pub.events {
-		if ev == "work.task.assigned|ag" || ev == "work.task.status.changed|ag" {
+		if ev == "task.assigned|ag" || ev == "task.status.changed|ag" {
 			t.Errorf("second call republished %s — handler is not idempotent", ev)
 		}
 	}

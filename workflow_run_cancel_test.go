@@ -114,7 +114,7 @@ func TestCancelWorkflowRun_CascadesTaskCancelledForNonTerminalTasks(t *testing.T
 		}
 	}
 	if cancelledCount != 1 {
-		t.Errorf("work.task.cancelled fired %d times, want 1", cancelledCount)
+		t.Errorf("task.cancelled fired %d times, want 1", cancelledCount)
 	}
 }
 

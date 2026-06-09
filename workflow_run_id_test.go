@@ -15,7 +15,7 @@ func TestCreateTask_WithWorkflowRunID_PersistsAndLinks(t *testing.T) {
 	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
 	ctx := context.Background()
 
-	run, err := mgr.CreateWorkflowRun(ctx, "ag", "wfr-test", "work.next.requested", "tester")
+	run, err := mgr.CreateWorkflowRun(ctx, "ag", "wfr-test", "next.requested", "tester")
 	if err != nil {
 		t.Fatalf("CreateWorkflowRun: %v", err)
 	}

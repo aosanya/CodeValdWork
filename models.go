@@ -589,7 +589,7 @@ type WorkflowRun struct {
 	Status WorkflowRunStatus `json:"status"`
 
 	// TriggerEvent names the event that started the run
-	// (e.g. "work.next.requested"). Empty when not known.
+	// (e.g. "next.requested"). Empty when not known.
 	TriggerEvent string `json:"trigger_event,omitempty"`
 
 	// Initiator is an opaque caller identifier. Empty when not set.

@@ -56,7 +56,7 @@ func TestCreateTask_PublishesEvent(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if len(pub.events) != 1 || pub.events[0] != "work.task.created|agency-1" {
+	if len(pub.events) != 1 || pub.events[0] != "task.created|agency-1" {
 		t.Errorf("expected work.task.created event, got %v", pub.events)
 	}
 }
@@ -152,10 +152,10 @@ func TestUpdateTask_ValidTransition_InProgressToCompleted(t *testing.T) {
 	// completed hook fires AFTER the matching status.changed event so
 	// subscribers see the transition before the terminal signal.
 	want := []string{
-		"work.task.created|a",
-		"work.task.status.changed|a",
-		"work.task.status.changed|a",
-		"work.task.completed|a",
+		"task.created|a",
+		"task.status.changed|a",
+		"task.status.changed|a",
+		"task.completed|a",
 	}
 	if len(pub.events) != len(want) {
 		t.Fatalf("event count: got %d (%v), want %d (%v)", len(pub.events), pub.events, len(want), want)

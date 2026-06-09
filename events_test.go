@@ -333,7 +333,7 @@ func TestAllTopics_StableSurface(t *testing.T) {
 	got := codevaldwork.AllTopics()
 
 	// Schema-derived topics must all be present.
-	derived := types.TopicsFromSchema("work", codevaldwork.DefaultWorkSchema())
+	derived := types.TopicsFromSchema("", codevaldwork.DefaultWorkSchema())
 	gotSet := make(map[string]bool, len(got))
 	for _, topic := range got {
 		gotSet[topic] = true

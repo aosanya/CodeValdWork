@@ -230,7 +230,7 @@ func TestAssignTask_PublishesEvent(t *testing.T) {
 
 	var found bool
 	for _, ev := range pub.events {
-		if ev == "work.task.assigned|ag" {
+		if ev == "task.assigned|ag" {
 			found = true
 		}
 	}

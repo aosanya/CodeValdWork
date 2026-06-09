@@ -223,12 +223,12 @@ func TestCreateRelationship_PublishesEvent(t *testing.T) {
 
 	var found bool
 	for _, ev := range pub.events {
-		if ev == "work.relationship.created|ag" {
+		if ev == "relationship.created|ag" {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("want work.relationship.created event, got %v", pub.events)
+		t.Errorf("want relationship.created event, got %v", pub.events)
 	}
 }
 

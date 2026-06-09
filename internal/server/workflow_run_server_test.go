@@ -21,7 +21,7 @@ func TestCreateWorkflowRun_RPC_RoundTrip(t *testing.T) {
 	res, err := srv.CreateWorkflowRun(ctx, &pb.CreateWorkflowRunRequest{
 		AgencyId:     "ag",
 		Name:         "",
-		TriggerEvent: "work.pipeline.requested",
+		TriggerEvent: "pipeline.requested",
 		Initiator:    "qa-runner",
 	})
 	if err != nil {
