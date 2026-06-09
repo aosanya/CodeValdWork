@@ -4,6 +4,7 @@ Bugs marked Fixed are removed from `bugs.md` and recorded here with their resolu
 
 | Bug ID | Title | Severity | Fixed Date | Commit / Branch | Detail |
 |--------|-------|----------|------------|-----------------|--------|
+| BUG-20260609-001 | Drop `work.` domain prefix from published topic names (system-wide rename — SharedLib + Work + Implementations + Cross + AI + Functions + Agency) | High | 2026-06-09 | main (7d676fa) | [bug-details/BUG-20260609-001](bug-details/BUG-20260609-001_drop_work_domain_prefix.md) |
 | BUG-20260603-007 | `maybeCompleteParentTask` counts superseded todos from previous decompositions — direction-driven retry can never complete | High | 2026-06-03 | main | [bug-details/BUG-20260603-007](bug-details/BUG-20260603-007_maybe-complete-parent-task-counts-superseded-todos.md) |
 | BUG-20260603-006 | TaskStatus state machine blocks `failed → in_progress`, breaking direction-driven retry | High | 2026-06-03 | main | [bug-details/BUG-20260603-006](bug-details/BUG-20260603-006_task-state-machine-blocks-direction-retry.md) |
 | BUG-20260603-001 | WorkflowRun status never advances past PENDING (handler existed but Work wasn't subscribed to `work.pipeline.started`; fixed by routing config default through `events.go ConsumedTopics()`) | Medium | 2026-06-03 | main | [bug-details/BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md) |

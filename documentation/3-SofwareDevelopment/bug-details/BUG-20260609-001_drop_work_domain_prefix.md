@@ -1,6 +1,6 @@
 # BUG-20260609-001 — Drop `work.` domain prefix from published topic names (system-wide rename)
 
-**Status:** 📋 Open
+**Status:** ✅ Fixed (2026-06-09) — landed via `feature/Dev-WORK-BUG20260609001_drop-work-domain-prefix` across CodeValdSharedLib + CodeValdWork + CodeValdImplementations + CodeValdCross + CodeValdAI + CodeValdFunctions + CodeValdAgency. Dual-emit shim was skipped (platform never deployed); single cohesive cut. Companion CodeValdAI BUG-20260609-001 still open.
 **Severity:** High — re-keys the entire CodeValdWork → consumers dispatch graph. Until this lands the new [`flows_planning.json`](../../../../CodeValdImplementations/Agencies/utility-app-builder/flows_planning.json) and scenario-12 QA cannot match real events, and the system-wide Domain-event-ownership rule is being reversed without code changes
 **Owner:** CodeValdWork (primary — most publishers and the highest event volume); coordinated paired item [CodeValdAI/BUG-20260609-001](../../../../CodeValdAI/documentation/3-SofwareDevelopment/bug-details/BUG-20260609-001_drop_ai_domain_prefix.md) for `ai.*`; trigger-topic updates land in [CodeValdImplementations/Agencies/utility-app-builder/agency.json](../../../../CodeValdImplementations/Agencies/utility-app-builder/agency.json); SharedLib eventreceiver topic construction is upstream
 **Estimated effort:** ~1.5 days (audit + rename + agency.json sweep + auto-memory retirement; held back by needing a single coordinated change with CodeValdAI to avoid a half-renamed event graph in production)
