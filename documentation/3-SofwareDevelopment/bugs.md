@@ -29,9 +29,21 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 
 | Bug ID | Title | Severity | Status | Depends On |
 |--------|-------|----------|--------|------------|
+| [BUG-20260609-001](bug-details/BUG-20260609-001_drop_work_domain_prefix.md) | Drop `work.` domain prefix from published topic names (system-wide rename; paired with CodeValdAI) | High | 📋 Open | SharedLib dual-emit shim; paired CodeValdAI BUG-20260609-001 |
 | ~~[BUG-20260603-005](bug-details/BUG-20260603-005_task-todos-api-ignores-workflow-run-id-filter.md)~~ | ~~`GET /work/{agency}/task-todos` ignores `workflow_run_id` query param — returns empty list~~ | Medium | ✅ Fixed (2026-06-03) | — |
 | [BUG-20260603-004](bug-details/BUG-20260603-004_project-name-routing-case-sensitive.md) | Project-name URL routing is case-sensitive; display-name casing returns 404 | Medium | 📋 Open | — |
 | ~~[BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md)~~ | ~~WorkflowRun status never advances past PENDING~~ | Medium | ✅ Fixed (2026-06-03) | — |
+
+---
+
+### BUG-20260609-001 — Drop `work.` domain prefix from published topic names (system-wide rename)
+
+**Severity:** High — re-keys CodeValdWork → consumers dispatch graph; until this lands the new `flows_planning.json` and scenario-12 QA cannot match real events
+**Status:** 📋 Open
+
+CodeValdWork publishes on `work.task.assigned`, `work.task.todo`, `work.todo.dispatched`, `work.task.completed`, `work.task.needs-direction`, `work.run.timeout`, etc. The new naming convention drops the domain prefix: `task.assigned`, `task.todo-persisted`, `todo.dispatched`, … Phased rename across SharedLib eventreceiver (dual-emit shim), CodeValdWork publishers, and agency.json `trigger_topic` values. Paired with [CodeValdAI/BUG-20260609-001](../../../CodeValdAI/documentation/3-SofwareDevelopment/bug-details/BUG-20260609-001_drop_ai_domain_prefix.md) for the `ai.*` family. Retires the [`feedback_domain_event_rule`](~/.claude/projects/-workspaces-CodeVald-AIProject-CodeValdAgency/memory/feedback_domain_event_rule.md) auto-memory.
+
+See [bug-details/BUG-20260609-001](bug-details/BUG-20260609-001_drop_work_domain_prefix.md) for the full phased plan, rename table, and risks.
 
 ---
 
