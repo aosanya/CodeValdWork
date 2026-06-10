@@ -162,6 +162,61 @@ func TestDeleteWorkflowRunArtifacts_ResetsTasksToPendingAndEmitsEvents(t *testin
 	}
 }
 
+// BUG-20260610-001 regression — ensure todos created for a run are deleted on rollback.
+func TestDeleteWorkflowRunArtifacts_DeletesTaskTodosForRun(t *testing.T) {
+	ctx := context.Background()
+	mgr, _ := newManagerWithPublisher(t)
+	const agencyID = "ag"
+
+	run, err := mgr.CreateWorkflowRun(ctx, agencyID, "", "", "")
+	if err != nil {
+		t.Fatalf("CreateWorkflowRun: %v", err)
+	}
+	task, err := mgr.CreateTask(ctx, agencyID, codevaldwork.Task{Title: "parent", WorkflowRunID: run.ID})
+	if err != nil {
+		t.Fatalf("CreateTask: %v", err)
+	}
+
+	// Seed: two todos for THIS run, one for a different run.
+	mineA, err := mgr.CreateTaskTodo(ctx, agencyID, codevaldwork.TaskTodo{
+		Title: "mine-a", Instructions: "do a", ParentTaskID: task.ID,
+		Ordinality: 1, WorkflowRunID: run.ID,
+	})
+	if err != nil {
+		t.Fatalf("CreateTaskTodo mine-a: %v", err)
+	}
+	mineB, err := mgr.CreateTaskTodo(ctx, agencyID, codevaldwork.TaskTodo{
+		Title: "mine-b", Instructions: "do b", ParentTaskID: task.ID,
+		Ordinality: 2, WorkflowRunID: run.ID,
+	})
+	if err != nil {
+		t.Fatalf("CreateTaskTodo mine-b: %v", err)
+	}
+	other, err := mgr.CreateTaskTodo(ctx, agencyID, codevaldwork.TaskTodo{
+		Title: "other-run", Instructions: "do z", ParentTaskID: task.ID,
+		Ordinality: 1, WorkflowRunID: "different-run-id",
+	})
+	if err != nil {
+		t.Fatalf("CreateTaskTodo other: %v", err)
+	}
+
+	if err := mgr.DeleteWorkflowRunArtifacts(ctx, agencyID, run.ID); err != nil {
+		t.Fatalf("DeleteWorkflowRunArtifacts: %v", err)
+	}
+
+	// mineA / mineB must be gone.
+	if _, err := mgr.GetTaskTodo(ctx, agencyID, mineA.ID); !errors.Is(err, codevaldwork.ErrTaskTodoNotFound) {
+		t.Errorf("expected mineA deleted (ErrTaskTodoNotFound); got err=%v", err)
+	}
+	if _, err := mgr.GetTaskTodo(ctx, agencyID, mineB.ID); !errors.Is(err, codevaldwork.ErrTaskTodoNotFound) {
+		t.Errorf("expected mineB deleted (ErrTaskTodoNotFound); got err=%v", err)
+	}
+	// The other-run todo must still exist.
+	if _, err := mgr.GetTaskTodo(ctx, agencyID, other.ID); err != nil {
+		t.Errorf("expected other-run todo to remain; got err=%v", err)
+	}
+}
+
 func TestDeleteWorkflowRunArtifacts_NoArtifacts_IsNoOp(t *testing.T) {
 	ctx := context.Background()
 	mgr, _ := newManagerWithPublisher(t)

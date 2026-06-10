@@ -29,7 +29,7 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 
 | Bug ID | Title | Severity | Status | Depends On |
 |--------|-------|----------|--------|------------|
-| [BUG-20260610-002](bug-details/BUG-20260610-002_applytaskstatus-hardcoded-transitions.md) | `applyAITaskStatus` hardcodes transitions; the active CodeValdAgency publication's event_flows + work plans are not enforced at runtime; legacy work plans from prior imports still fire | High | 📋 Open | CodeValdAgency RPC to look up active flow step; PromoteDraft to retire legacy plans |
+| [BUG-20260610-002](bug-details/BUG-20260610-002_applytaskstatus-hardcoded-transitions.md) | `applyAITaskStatus` hardcodes transitions; the active CodeValdAgency publication's event_flows + work plans are not enforced at runtime; legacy work plans from prior imports still fire | High | 🚀 In Progress | CodeValdAgency RPC to look up active flow step; PromoteDraft to retire legacy plans |
 | ~~[BUG-20260610-001](bug-details/BUG-20260610-001_rollback-leaks-todos-and-edges.md)~~ | ~~`RollbackWorkflowRun` leaks TaskTodos and dangling `work_relationships` edges~~ | N/A | ❌ Invalid (2026-06-10) — verification check bug, not a code bug; rollback works correctly | — |
 | ~~[BUG-20260609-001](bug-details/BUG-20260609-001_drop_work_domain_prefix.md)~~ | ~~Drop `work.` domain prefix from published topic names (system-wide rename; paired with CodeValdAI)~~ | High | ✅ Fixed (2026-06-09) | — |
 | ~~[BUG-20260603-005](bug-details/BUG-20260603-005_task-todos-api-ignores-workflow-run-id-filter.md)~~ | ~~`GET /work/{agency}/task-todos` ignores `workflow_run_id` query param — returns empty list~~ | Medium | ✅ Fixed (2026-06-03) | — |
@@ -41,7 +41,7 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 ### BUG-20260610-002 — Active CodeValdAgency publication is not enforced at runtime; legacy work plans still fire; Work bypasses event_flows entirely
 
 **Severity:** High — silent flow violation. Planner / non-developer AgentRuns flip the parent Task to COMPLETED without doing the work; downstream gates fire on a lie. Legacy plans from prior imports continue triggering handlers the active publication doesn't declare.
-**Status:** 📋 Open
+**Status:** 🚀 In Progress
 **Detail:** [bug-details/BUG-20260610-002](bug-details/BUG-20260610-002_applytaskstatus-hardcoded-transitions.md)
 
 Once an agency.json is imported and promoted, the persisted CodeValdAgency state — `event_flows` entities + `work plans` under the active `AgencyPublication` — IS the runtime source of truth. The on-disk flow file is only input to the import. Today, `internal/server/event_dispatcher.go:235-244` unconditionally maps `task.started/completed/failed → IN_PROGRESS/COMPLETED/FAILED` on the parent Task, consulting nothing about the active publication's declared transitions. Live repro 2026-06-10T11:33–35Z: `MVP-SF-001` planner AgentRun completed → parent Task flipped to COMPLETED with 0 todos created. Compounding: `PromoteDraft` doesn't retire prior-publication work plans, so legacy handlers continue firing even when the active publication wouldn't declare them.
