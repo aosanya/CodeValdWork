@@ -1,6 +1,6 @@
 # BUG-20260610-002 — `applyAITaskStatus` hardcodes Task transitions; CodeValdAgency event_flows + work plans are not enforced at runtime; legacy handlers still fire
 
-**Status:** 📋 Open
+**Status:** ✅ Fixed (2026-06-10) — Agency commits `af53521` (per-step entity projection at import + promote), `12cb51e` (retire legacy work plans on re-import), `d7bd2e2` (`LookupFlowStep` + `ListEventFlowSteps` RPCs + HTTP routes). Work commit `79f25dc` (widen completion-deferral gate to any has_todo edge; clear stale `completed_at` on rollback). The Work-side change uses a local-state heuristic (presence of any todo signals decompose mode) until CodeValdAI publishes `handler_code` in task.* payloads so Work can call `LookupFlowStep` synchronously. Five new tests cover both regressions.
 **Severity:** High — silent flow violation. Planner / non-developer AgentRuns satisfy the parent Task without doing the actual work; downstream gates (review, completion cascade, dependent unblock) fire on a lie. Legacy work plans from earlier imports continue triggering even when the active publication doesn't declare them.
 **Owner:** CodeValdWork (primary); CodeValdAgency (cross-service — owns the imported flow data and must expose it for runtime enforcement)
 **Estimated effort:** ~2–3 days. Phase 1 narrow fix in Work; Phase 2 cross-service: Agency exposes a "step lookup by handler + topic + active publication" RPC; Phase 3: prune / disable work plans not present in the active publication.
