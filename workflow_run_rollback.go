@@ -107,15 +107,24 @@ func (m *taskManager) DeleteWorkflowRunArtifacts(ctx context.Context, agencyID, 
 
 	// Reset Tasks: status → pending, clear workflow_run_id + completed_at, remove started_task edge.
 	// All other task fields and edges (member_of, has_tag, blocks, depends_on) are preserved.
+	//
+	// BUG-20260610-002 Phase 3 — pass the reset properties directly to UpdateEntity
+	// rather than re-serialising via taskToProperties. The latter omits
+	// `completed_at` when its Go value is empty (see task_impl_converters.go),
+	// so an in-place `taskToProperties(task)` after `task.CompletedAt = ""`
+	// silently kept the stale completed_at in storage; the next legitimate
+	// completion event then surfaced a stale timestamp (e.g. a 2026-06-03
+	// CompletedAt on a 2026-06-10 run).
 	now := time.Now().UTC().Format(time.RFC3339)
 	for _, task := range tasks {
 		m.removeStartedTaskEdge(ctx, agencyID, task.ID)
-		task.Status = TaskStatusPending
-		task.WorkflowRunID = ""
-		task.CompletedAt = ""
-		task.UpdatedAt = now
 		if _, err := m.dm.UpdateEntity(ctx, agencyID, task.ID, entitygraph.UpdateEntityRequest{
-			Properties: taskToProperties(task),
+			Properties: map[string]any{
+				"status":          string(TaskStatusPending),
+				"workflow_run_id": "",
+				"completed_at":    "",
+				"updated_at":      now,
+			},
 		}); err != nil {
 			slog.ErrorContext(ctx, "DeleteWorkflowRunArtifacts: reset task", "task_id", task.ID, "err", err)
 		}

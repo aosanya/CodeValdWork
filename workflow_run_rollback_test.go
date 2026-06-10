@@ -162,6 +162,67 @@ func TestDeleteWorkflowRunArtifacts_ResetsTasksToPendingAndEmitsEvents(t *testin
 	}
 }
 
+// BUG-20260610-002 Phase 3 regression — rollback must clear `completed_at` on
+// every reset Task. Before the fix, taskToProperties' "only write completed_at
+// when non-empty" guard silently kept the stale timestamp in storage; the next
+// legitimate completion event then surfaced a stale date (e.g. a 2026-06-03
+// CompletedAt on a 2026-06-10 run).
+func TestDeleteWorkflowRunArtifacts_ClearsStaleCompletedAt(t *testing.T) {
+	ctx := context.Background()
+	mgr, _ := newManagerWithPublisher(t)
+	const agencyID = "ag"
+
+	run, err := mgr.CreateWorkflowRun(ctx, agencyID, "", "", "")
+	if err != nil {
+		t.Fatalf("CreateWorkflowRun: %v", err)
+	}
+	task, err := mgr.CreateTask(ctx, agencyID, codevaldwork.Task{
+		Title:         "Task that completed once and is now being rolled back",
+		WorkflowRunID: run.ID,
+	})
+	if err != nil {
+		t.Fatalf("CreateTask: %v", err)
+	}
+	if err := mgr.LinkTaskToRun(ctx, agencyID, run.ID, task.ID); err != nil {
+		t.Fatalf("LinkTaskToRun: %v", err)
+	}
+
+	// Drive the task to COMPLETED so completed_at gets populated by the
+	// state-machine path (UpdateTask sets it on terminal transitions).
+	task.Status = codevaldwork.TaskStatusInProgress
+	if task, err = mgr.UpdateTask(ctx, agencyID, task); err != nil {
+		t.Fatalf("UpdateTask → in_progress: %v", err)
+	}
+	task.Status = codevaldwork.TaskStatusCompleted
+	if task, err = mgr.UpdateTask(ctx, agencyID, task); err != nil {
+		t.Fatalf("UpdateTask → completed: %v", err)
+	}
+	if task.CompletedAt == "" {
+		t.Fatalf("setup: expected completed_at to be populated after completion; got empty")
+	}
+	staleCompletedAt := task.CompletedAt
+
+	// Now roll back. The task should reset to pending AND completed_at MUST be cleared.
+	if err := mgr.DeleteWorkflowRunArtifacts(ctx, agencyID, run.ID); err != nil {
+		t.Fatalf("DeleteWorkflowRunArtifacts: %v", err)
+	}
+
+	after, err := mgr.GetTask(ctx, agencyID, task.ID)
+	if err != nil {
+		t.Fatalf("GetTask after rollback: %v", err)
+	}
+	if after.Status != codevaldwork.TaskStatusPending {
+		t.Errorf("post-rollback status = %s, want pending", after.Status)
+	}
+	if after.CompletedAt != "" {
+		t.Errorf("rollback must clear completed_at; got %q (was %q before rollback)",
+			after.CompletedAt, staleCompletedAt)
+	}
+	if after.WorkflowRunID != "" {
+		t.Errorf("rollback must clear workflow_run_id; got %q", after.WorkflowRunID)
+	}
+}
+
 // BUG-20260610-001 regression — ensure todos created for a run are deleted on rollback.
 func TestDeleteWorkflowRunArtifacts_DeletesTaskTodosForRun(t *testing.T) {
 	ctx := context.Background()

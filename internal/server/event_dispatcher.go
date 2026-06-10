@@ -254,12 +254,21 @@ func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic strin
 		return
 	}
 
-	// When the run produced sub-todos, do not mark the parent task completed yet.
-	// work.task.completed will be published by maybeCompleteParentTask once all
-	// todos reach a terminal state.
-	if topic == topicTaskCompleted && p.HasSubtasks {
-		log.Printf("codevaldwork: TaskEventDispatcher: task %s has subtasks — deferring completion", p.TaskID)
-		return
+	// Defer parent-Task transitions on AI-emitted task.completed / task.failed
+	// when the parent has any TaskTodos at all (BUG-20260610-002). The parent's
+	// lifecycle in decompose mode is driven by maybeCompleteParentTask's
+	// aggregation over todos — NOT by an AgentRun's own completion. Today's
+	// payloads don't carry the originating handler (planner vs developer vs
+	// final-assembly), so the count-of-todos heuristic stands in until
+	// CodeValdAI starts publishing handler_code and Work can consult
+	// CodeValdAgency.LookupFlowStep directly. p.HasSubtasks (split path) is
+	// kept as a fast-path for that flow.
+	if topic == topicTaskCompleted || topic == topicTaskFailed {
+		if p.HasSubtasks || d.taskHasTodos(ctx, p.TaskID) {
+			log.Printf("codevaldwork: TaskEventDispatcher: task %s has decomposed todos — deferring %s, awaiting maybeCompleteParentTask",
+				p.TaskID, topic)
+			return
+		}
 	}
 
 	// Retry ladder (FEAT-20260603-003): on failure, try automatic retries before
@@ -632,6 +641,27 @@ func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topi
 		d.blockDependentTodos(ctx, updated.ParentTaskID, updated.Ordinality)
 		d.maybeCompleteParentTask(ctx, updated.ParentTaskID)
 	}
+}
+
+// taskHasTodos reports whether the Task identified by taskID owns at least
+// one has_todo edge. Used by applyAITaskStatus to gate parent-Task
+// transitions (BUG-20260610-002): if any todo exists, the parent is in
+// decompose mode and maybeCompleteParentTask owns the completion signal,
+// not the AgentRun's own task.completed event.
+//
+// Errors are logged and treated as "no todos" so a transient storage hiccup
+// doesn't permanently stall the parent. This is conservative: the worst case
+// is an extra UpdateTask call that maybeCompleteParentTask would have made
+// anyway; the regression-causing case (planner AgentRun flipping the parent
+// to COMPLETED) is prevented when the lookup succeeds, which is the path
+// taken under normal operation.
+func (d *TaskEventDispatcher) taskHasTodos(ctx context.Context, taskID string) bool {
+	edges, err := d.mgr.TraverseRelationships(ctx, d.agencyID, taskID, codevaldwork.RelLabelHasTodo, codevaldwork.DirectionOutbound)
+	if err != nil {
+		log.Printf("codevaldwork: taskHasTodos: TraverseRelationships task=%s: %v (treating as no-todos)", taskID, err)
+		return false
+	}
+	return len(edges) > 0
 }
 
 // maybeCompleteParentTask marks a Task completed or failed once all child todos
