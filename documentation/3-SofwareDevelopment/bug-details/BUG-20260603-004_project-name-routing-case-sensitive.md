@@ -1,6 +1,6 @@
 # BUG-20260603-004 — Project-name URL routing is case-sensitive; display name casing returns 404
 
-**Status:** 📋 Open
+**Status:** ✅ Fixed (2026-06-10, main `c749787`) — `GetProjectByName` now normalizes the lookup key through `toSlug`, so display-name casing (`SharedFarms`) and the stored slug (`sharedfarms`) resolve to the same project. Implemented at the manager layer in `project.go`, covered by `TestGetProjectByName_CaseInsensitive`, `TestGetProjectByName_NormalizesSpaces`, and `TestGetProject_ProjectName_CaseInsensitive`.
 **Severity:** Medium — any caller that uses the project display name (`SharedFarms`) instead of the stored slug (`sharedfarms`) gets 404; CodeValdWorkFrontend renders "Failed to load project." when the QA doc URL uses display-name casing
 **Owner:** CodeValdWork (backend lookup; fix here covers all callers)
 **Estimated effort:** ~0.5 day (one-line normalize + integration test update)
