@@ -16,7 +16,7 @@ type taskPlanSplitPayload struct {
 	Children      []codevaldwork.TaskPlanSplitChildSpec `json:"children"`
 }
 
-// handleTaskPlanSplit processes a ai.task.split event:
+// handleTaskPlanSplit processes a task.request-split event:
 //  1. Creates each child Task entity with parent_task_id set.
 //  2. Writes a subtask_of edge from each child → parent.
 //  3. Writes blocks edges between children that have DependsOn entries.

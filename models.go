@@ -293,7 +293,7 @@ const (
 	TodoStatusBlocked TodoStatus = "blocked"
 
 	// TodoStatusDispatched means a CodeValdAI agent has started an AgentRun
-	// for this todo (ai.task.in_progress received).
+	// for this todo (task.started received).
 	TodoStatusDispatched TodoStatus = "dispatched"
 
 	// TodoStatusCompleted is a terminal state — the agent finished successfully.
@@ -309,7 +309,7 @@ const (
 )
 
 // TaskTodo is a decomposed sub-task produced when CodeValdWork receives an
-// ai.task.todo event from CodeValdAI. Each TodoItem in the payload becomes
+// todo.created event from CodeValdAI. Each TodoItem in the payload becomes
 // one TaskTodo entity linked to its parent Task via a has_todo edge.
 //
 // When a TaskTodo is created CodeValdWork publishes work.task.todo so that

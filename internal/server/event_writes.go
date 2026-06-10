@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-// writeGateTimeout caps how long an ai.task.completed payload may be held
+// writeGateTimeout caps how long an task.completed payload may be held
 // while waiting for its emitted git.file.write paths to come back as
 // git.file.written events. When it fires the deferred callback runs anyway
 // and a warning is logged so the pipeline cannot stall on a lost confirmation.
 const writeGateTimeout = 30 * time.Second
 
-// writeTracker correlates ai.task.completed payloads (which carry the list of
+// writeTracker correlates task.completed payloads (which carry the list of
 // emitted write paths) with the git.file.written events CodeValdGit publishes
 // after each successful commit. It exists to close the BUG-09-020 race in
 // which CodeValdWork could publish work.todo.completed before CodeValdGit had
@@ -26,7 +26,7 @@ const writeGateTimeout = 30 * time.Second
 //   - OnFileWritten records that one (runID, path) has been confirmed.
 //
 // A pre-arrival buffer covers the (uncommon) case where a git.file.written
-// event reaches the dispatcher before its ai.task.completed event.
+// event reaches the dispatcher before its task.completed event.
 type writeTracker struct {
 	timeout time.Duration
 
@@ -70,7 +70,7 @@ func (t *writeTracker) WaitForWrites(runID string, paths []string, onDone func()
 
 	t.mu.Lock()
 	if existing, ok := t.waits[runID]; ok {
-		// A second ai.task.completed for the same run is unexpected. Fire the
+		// A second task.completed for the same run is unexpected. Fire the
 		// first wait's callback so it isn't stranded, then overwrite.
 		log.Printf("codevaldwork: writeTracker: duplicate WaitForWrites for run=%s — releasing prior wait", runID)
 		t.fireLocked(runID, existing, "duplicate")
@@ -169,7 +169,7 @@ type gitFileWrittenPayload struct {
 }
 
 // handleFileWritten consumes a git.file.written event and notifies the
-// writeTracker so any matching ai.task.completed gate can advance.
+// writeTracker so any matching task.completed gate can advance.
 func (d *TaskEventDispatcher) handleFileWritten(_ context.Context, payloadStr string) {
 	if d.writes == nil {
 		return

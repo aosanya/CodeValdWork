@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	topicTaskStarted   = "ai.task.started"
-	topicTaskCompleted = "ai.task.completed"
-	topicTaskFailed    = "ai.task.failed"
-	topicTodoCreated   = "ai.todo.created"
+	topicTaskStarted   = "task.started"
+	topicTaskCompleted = "task.completed"
+	topicTaskFailed    = "task.failed"
+	topicTodoCreated   = "todo.created"
 	topicTaskUpdate    = codevaldwork.TopicTaskUpdate
 	// topicFileWritten is consumed from CodeValdGit to close the BUG-09-020
 	// flush-race gate on work.todo.completed. String literal (not imported)
@@ -39,7 +39,7 @@ const (
 	defaultMaxRecoveryRuns = 3
 )
 
-// aiTaskPayload is the common shape of ai.task.started/completed/failed payloads.
+// aiTaskPayload is the common shape of task.started/completed/failed payloads from CodeValdAI.
 type aiTaskPayload struct {
 	TaskID        string   `json:"TaskID"`
 	RunID         string   `json:"RunID"`
@@ -49,7 +49,7 @@ type aiTaskPayload struct {
 	WorkflowRunID string   `json:"workflow_run_id,omitempty"`
 }
 
-// aiTodoCreatedPayload mirrors the CodeValdAI TodoCreatedPayload — the ai.todo.created event body.
+// aiTodoCreatedPayload mirrors the CodeValdAI TodoCreatedPayload — the todo.created event body.
 type aiTodoCreatedPayload struct {
 	ParentTaskID  string       `json:"parent_task_id"`
 	RunID         string       `json:"run_id"`
@@ -72,13 +72,13 @@ type aiTodoItem struct {
 	Precalls string `json:"precalls,omitempty"`
 }
 
-// TaskEventDispatcher bridges ai.task.* events into work task / todo status transitions
-// and materialises ai.task.todo decompositions into TaskTodo entities.
+// TaskEventDispatcher bridges task.* events from CodeValdAI into work task / todo status transitions
+// and materialises todo.created decompositions into TaskTodo entities.
 type TaskEventDispatcher struct {
 	mgr       codevaldwork.TaskManager
 	agencyID  string
 	pub       eventbus.Publisher // optional; nil = skip work.task.failed bridging
-	writes    *writeTracker      // gates ai.task.completed on git.file.written (BUG-09-020 Phase 2)
+	writes    *writeTracker      // gates task.completed on git.file.written (BUG-09-020 Phase 2)
 	runStatus *RunStatusHandler  // drives WorkflowRun status transitions
 	rev       *reviewer.Reviewer // optional; nil = skip review gate (FEAT-20260605-003)
 }
@@ -102,16 +102,23 @@ func (d *TaskEventDispatcher) WithReviewer(r *reviewer.Reviewer) {
 }
 
 // Dispatch handles an incoming event by topic.
+//
+// After BUG-20260609-001 (AI) the ai.* prefix is gone, so the dispatcher
+// sees the same topic name "task.completed" from two producers: CodeValdAI
+// (lifecycle event from an AgentRun) and CodeValdWork itself (terminal-state
+// roll-up). Both handlers run on that single case; handleAITaskStatus
+// distinguishes the two by RunID (only present in AI's payload).
 func (d *TaskEventDispatcher) Dispatch(ctx context.Context, topic, payload string) {
 	switch topic {
 	case topicTodoCreated:
 		d.handleAITodoCreated(ctx, payload)
 	case topicTaskUpdate:
 		d.handleTaskUpdate(ctx, payload)
-	case topicTaskStarted, topicTaskCompleted, topicTaskFailed:
+	case topicTaskCompleted: // = codevaldwork.TopicTaskCompleted after the rename
 		d.handleAITaskStatus(ctx, topic, payload)
-	case codevaldwork.TopicTaskCompleted:
 		d.handleWorkTaskCompleted(ctx, payload)
+	case topicTaskStarted, topicTaskFailed:
+		d.handleAITaskStatus(ctx, topic, payload)
 	case topicFileWritten:
 		d.handleFileWritten(ctx, payload)
 	case codevaldwork.TopicRunTimeout:
@@ -188,10 +195,10 @@ func (d *TaskEventDispatcher) handleWorkTaskCompleted(ctx context.Context, paylo
 	}
 }
 
-// handleAITaskStatus routes ai.task.started/completed/failed to a Task or
+// handleAITaskStatus routes task.started/completed/failed to a Task or
 // TaskTodo status update depending on which entity the TaskID refers to.
 //
-// For ai.task.completed payloads that carry EmittedWrites, the actual status
+// For task.completed payloads that carry EmittedWrites, the actual status
 // transition is deferred until every emitted path has been confirmed by a
 // matching git.file.written event (BUG-09-020 Phase 2). A timeout falls back
 // to firing anyway with a warning so the pipeline cannot stall.
@@ -201,9 +208,16 @@ func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, pay
 		log.Printf("codevaldwork: TaskEventDispatcher: bad payload for topic=%s: %v", topic, err)
 		return
 	}
+	// After the ai. prefix rename, Work itself also publishes task.completed
+	// (and task.failed) when its UpdateTask hook fires. Those emissions carry
+	// no RunID. Skip them here — handleWorkTaskCompleted handles the Work
+	// side. AI-originated payloads always carry RunID (the AgentRun ID).
+	if p.RunID == "" {
+		return
+	}
 
 	if topic == topicTaskCompleted && len(p.EmittedWrites) > 0 && p.RunID != "" && d.writes != nil {
-		log.Printf("codevaldwork: TaskEventDispatcher: gating ai.task.completed task=%s run=%s on %d emitted write(s)",
+		log.Printf("codevaldwork: TaskEventDispatcher: gating task.completed task=%s run=%s on %d emitted write(s)",
 			p.TaskID, p.RunID, len(p.EmittedWrites))
 		d.writes.WaitForWrites(p.RunID, p.EmittedWrites, func() {
 			d.applyAITaskStatus(context.Background(), topic, p)
@@ -215,7 +229,7 @@ func (d *TaskEventDispatcher) handleAITaskStatus(ctx context.Context, topic, pay
 }
 
 // applyAITaskStatus performs the actual Task/Todo status transition described
-// by an ai.task.* event. It is called either directly from handleAITaskStatus
+// by a task.* event from CodeValdAI. It is called either directly from handleAITaskStatus
 // (no writes to wait for) or by writeTracker once all emitted writes have been
 // confirmed (or the 30 s gate timeout has expired).
 func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic string, p aiTaskPayload) {
@@ -232,7 +246,7 @@ func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic strin
 	task, err := d.mgr.GetTask(ctx, d.agencyID, p.TaskID)
 	if err != nil {
 		if errors.Is(err, codevaldwork.ErrTaskNotFound) {
-			// May be a TodoID — map ai.task.* to the TodoStatus lifecycle.
+			// May be a TodoID — map task.* to the TodoStatus lifecycle.
 			d.updateTodoStatus(ctx, p.TaskID, topic)
 			return
 		}
@@ -267,32 +281,15 @@ func (d *TaskEventDispatcher) applyAITaskStatus(ctx context.Context, topic strin
 	task.Status = nextStatus
 	if _, err := d.mgr.UpdateTask(ctx, d.agencyID, task); err != nil {
 		log.Printf("codevaldwork: TaskEventDispatcher: UpdateTask %s → %s: %v", p.TaskID, nextStatus, err)
-		// Fall through: for ai.task.failed we still bridge to work.task.failed even if
-		// the status transition is blocked (e.g. task is already in a terminal state).
 	} else {
 		log.Printf("codevaldwork: TaskEventDispatcher: task %s → %s", p.TaskID, nextStatus)
 	}
 
-	// Bridge ai.task.failed → work.task.failed so CodeValdAI's task-failed-operations-handler fires.
-	// Published regardless of whether the status update succeeded — a failed run always
-	// warrants the operations-officer review even if the task was already in a terminal state.
-	if topic == topicTaskFailed {
-		runID := p.WorkflowRunID
-		if runID == "" {
-			runID = task.WorkflowRunID
-		}
-		eventbus.SafePublish(ctx, d.pub, eventbus.Event{
-			Topic:    codevaldwork.TopicTaskFailed,
-			AgencyID: d.agencyID,
-			Payload: codevaldwork.TaskFailedPayload{
-				TaskID:        p.TaskID,
-				RunID:         p.RunID,
-				Reason:        p.Reason,
-				WorkflowRunID: runID,
-			},
-		})
-		log.Printf("codevaldwork: TaskEventDispatcher: bridged work.task.failed for task=%s run=%s", p.TaskID, p.RunID)
-	}
+	// (Prior to BUG-20260609-001 this handler re-published a work.task.failed
+	// bridge so the AI task-failed-operations-handler WorkPlan would fire.
+	// After the rename `ai.task.failed` and `work.task.failed` collapsed into
+	// a single `task.failed` topic — the WorkPlan now matches CodeValdAI's
+	// original emission directly, so the bridge is redundant and is gone.)
 
 	// If this task is a child of a split-plan parent, roll up completion once
 	// all siblings reach a terminal state.
@@ -584,7 +581,7 @@ func (d *TaskEventDispatcher) FailTodoWithCascade(ctx context.Context, todoID st
 	return nil
 }
 
-// updateTodoStatus transitions a TaskTodo when an ai.task.* event arrives with a TodoID.
+// updateTodoStatus transitions a TaskTodo when a task.* event arrives with a TodoID.
 func (d *TaskEventDispatcher) updateTodoStatus(ctx context.Context, todoID, topic string) {
 	var status codevaldwork.TodoStatus
 	switch topic {
@@ -990,7 +987,7 @@ func appendDirectionHistory(history, selectedOption string) string {
 	return string(b)
 }
 
-// handleAITodoCreated consumes an ai.todo.created decomposition payload:
+// handleAITodoCreated consumes a todo.created decomposition payload:
 // creates one TaskTodo entity per item, wires graph edges, then dispatches
 // only root todos (those with empty depends_on). Todos with dependencies start
 // as blocked and are dispatched by unblockDependentTodos once their
@@ -998,10 +995,10 @@ func appendDirectionHistory(history, selectedOption string) string {
 func (d *TaskEventDispatcher) handleAITodoCreated(ctx context.Context, payloadStr string) {
 	var p aiTodoCreatedPayload
 	if err := json.Unmarshal([]byte(payloadStr), &p); err != nil || p.ParentTaskID == "" {
-		log.Printf("codevaldwork: TaskEventDispatcher: ai.todo.created: bad payload: %v", err)
+		log.Printf("codevaldwork: TaskEventDispatcher: todo.created: bad payload: %v", err)
 		return
 	}
-	log.Printf("codevaldwork: TaskEventDispatcher: ai.todo.created: parent=%s items=%d", p.ParentTaskID, len(p.Todos))
+	log.Printf("codevaldwork: TaskEventDispatcher: todo.created: parent=%s items=%d", p.ParentTaskID, len(p.Todos))
 
 	type createdTodo struct {
 		id       string

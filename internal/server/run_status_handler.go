@@ -6,7 +6,7 @@
 //	work.task.assigned          → pending      → in_progress
 //	work.task.failed            → in_progress  → failed
 //	functions.job.failed        → in_progress  → failed
-//	ai.run.failed               → in_progress  → failed
+//	run.failed                  → in_progress  → failed
 //	git.merge.failed            → in_progress  → failed
 //	<terminal_event condition>  → in_progress  → completed
 //
@@ -26,7 +26,7 @@ import (
 var failureTopics = map[string]bool{
 	codevaldwork.TopicTaskFailed: true,
 	"functions.job.failed":       true,
-	"ai.run.failed":              true,
+	"run.failed":                 true,
 	"git.merge.failed":           true,
 }
 

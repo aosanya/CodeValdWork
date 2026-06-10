@@ -39,7 +39,7 @@ const (
 	TopicRelationshipCreated = eventbus.DomainWork + "relationship.created"
 
 	// TopicTodoDispatched fires when a [TaskTodo] entity is created — once per
-	// todo item produced by an ai.todo.created decomposition payload. CodeValdAI
+	// todo item produced by a todo.created decomposition payload. CodeValdAI
 	// agents subscribe to this topic via work plans and execute each todo.
 	// Payload: [TodoDispatchedPayload].
 	TopicTodoDispatched = eventbus.DomainWork + "todo.dispatched"
@@ -113,7 +113,7 @@ const (
 	// it into todos. CodeValdWork consumes this to create the child tasks,
 	// write subtask_of edges, and transition the parent to TaskStatusSplit.
 	// Payload: [TaskPlanSplitPayload]. (FEAT-20260604-001)
-	TopicTaskPlanSplit = "ai.task.split"
+	TopicTaskPlanSplit = "task.request-split"
 
 	// TopicReviewPassed fires when the reviewer evaluates all AcceptanceCriteria
 	// for a completed task and every criterion has result == "passed".
@@ -238,11 +238,11 @@ type RelationshipCreatedPayload struct {
 }
 
 // TodoDispatchedPayload is the [Event.Payload] for [TopicTodoDispatched].
-// Published once per TaskTodo entity created from an ai.todo.created decomposition.
+// Published once per TaskTodo entity created from a todo.created decomposition.
 //
 // Field identity contract (important for consumers):
 //   - TodoID        is the identity of the todo itself. CodeValdAI sets the
-//     AgentRun.TaskID to this value so that ai.task.completed/failed events
+//     AgentRun.TaskID to this value so that task.completed/failed events
 //     route back to the todo (via updateTodoStatus), not to the parent task.
 //   - TaskID        equals ParentTaskID and exists only for HydrateEventContext
 //     which needs the parent task ID under the key "TaskID" to fetch task
@@ -496,18 +496,18 @@ func ConsumedTopics() []string {
 		TopicTaskAssigned, // self-subscription: pending→in_progress run transition
 		TopicTaskFailed,   // self-subscription: in_progress→failed run transition
 		// AI bridge topics (consumed by TaskEventDispatcher):
-		"ai.task.started",
-		"ai.task.completed",
-		"ai.task.failed",
-		"ai.todo.created",
+		"task.started",
+		"task.completed",
+		"task.failed",
+		"todo.created",
 		// External failure topics for run → failed transitions:
 		"functions.job.failed",
-		"ai.run.failed",
+		"run.failed",
 		"git.merge.failed",
 		// External completion topics for terminal_event matching:
 		"functions.job.completed",
 		"git.merge.completed",
-		"ai.run.completed",
+		"run.completed",
 		// Git file-written gate (BUG-09-020 Phase 2):
 		"git.file.written",
 		// Watchdog timeout topics (FEAT-20260602-006):

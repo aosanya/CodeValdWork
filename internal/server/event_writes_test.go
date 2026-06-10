@@ -55,7 +55,7 @@ func TestWriteTracker_FiresOnTimeout(t *testing.T) {
 
 // TestWriteTracker_PreArrivalBuffer covers the (rare) case in which a
 // git.file.written event reaches the dispatcher before its matching
-// ai.task.completed event. The buffered confirmation must satisfy the wait
+// task.completed event. The buffered confirmation must satisfy the wait
 // without requiring a duplicate event.
 func TestWriteTracker_PreArrivalBuffer(t *testing.T) {
 	t.Parallel()

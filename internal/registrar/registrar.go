@@ -226,7 +226,7 @@ func taskRoutes() []types.RouteInfo {
 			// PATCH /work/{agencyId}/todos/{todoId}/status
 			// Marks a todo as failed and runs blockDependentTodos +
 			// maybeCompleteParentTask — the same cascade CodeValdWork
-			// executes when it receives ai.task.failed from CodeValdAI.
+			// executes when it receives task.failed from CodeValdAI.
 			// Used for operational overrides and QA testing.
 			Method:     "PATCH",
 			Pattern:    "/work/{agencyId}/todos/{todoId}/status",
