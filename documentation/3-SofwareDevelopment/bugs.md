@@ -29,10 +29,35 @@ Bugs in scope for CodeValdWork. Mirrors the `mvp.md` / `mvp_done.md` / `mvp-deta
 
 | Bug ID | Title | Severity | Status | Depends On |
 |--------|-------|----------|--------|------------|
+| [BUG-20260610-002](bug-details/BUG-20260610-002_applytaskstatus-hardcoded-transitions.md) | `applyAITaskStatus` hardcodes transitions; the active CodeValdAgency publication's event_flows + work plans are not enforced at runtime; legacy work plans from prior imports still fire | High | 📋 Open | CodeValdAgency RPC to look up active flow step; PromoteDraft to retire legacy plans |
+| ~~[BUG-20260610-001](bug-details/BUG-20260610-001_rollback-leaks-todos-and-edges.md)~~ | ~~`RollbackWorkflowRun` leaks TaskTodos and dangling `work_relationships` edges~~ | N/A | ❌ Invalid (2026-06-10) — verification check bug, not a code bug; rollback works correctly | — |
 | ~~[BUG-20260609-001](bug-details/BUG-20260609-001_drop_work_domain_prefix.md)~~ | ~~Drop `work.` domain prefix from published topic names (system-wide rename; paired with CodeValdAI)~~ | High | ✅ Fixed (2026-06-09) | — |
 | ~~[BUG-20260603-005](bug-details/BUG-20260603-005_task-todos-api-ignores-workflow-run-id-filter.md)~~ | ~~`GET /work/{agency}/task-todos` ignores `workflow_run_id` query param — returns empty list~~ | Medium | ✅ Fixed (2026-06-03) | — |
 | ~~[BUG-20260603-004](bug-details/BUG-20260603-004_project-name-routing-case-sensitive.md)~~ | ~~Project-name URL routing is case-sensitive; display-name casing returns 404~~ | Medium | ✅ Fixed (2026-06-10) | — |
 | ~~[BUG-20260603-001](bug-details/BUG-20260603-001_workflow-run-status-never-advances.md)~~ | ~~WorkflowRun status never advances past PENDING~~ | Medium | ✅ Fixed (2026-06-03) | — |
+
+---
+
+### BUG-20260610-002 — Active CodeValdAgency publication is not enforced at runtime; legacy work plans still fire; Work bypasses event_flows entirely
+
+**Severity:** High — silent flow violation. Planner / non-developer AgentRuns flip the parent Task to COMPLETED without doing the work; downstream gates fire on a lie. Legacy plans from prior imports continue triggering handlers the active publication doesn't declare.
+**Status:** 📋 Open
+**Detail:** [bug-details/BUG-20260610-002](bug-details/BUG-20260610-002_applytaskstatus-hardcoded-transitions.md)
+
+Once an agency.json is imported and promoted, the persisted CodeValdAgency state — `event_flows` entities + `work plans` under the active `AgencyPublication` — IS the runtime source of truth. The on-disk flow file is only input to the import. Today, `internal/server/event_dispatcher.go:235-244` unconditionally maps `task.started/completed/failed → IN_PROGRESS/COMPLETED/FAILED` on the parent Task, consulting nothing about the active publication's declared transitions. Live repro 2026-06-10T11:33–35Z: `MVP-SF-001` planner AgentRun completed → parent Task flipped to COMPLETED with 0 todos created. Compounding: `PromoteDraft` doesn't retire prior-publication work plans, so legacy handlers continue firing even when the active publication wouldn't declare them.
+
+Fix path covers: (1) verify the import round-trips every declared transition; (2) `PromoteDraft` retires legacy work plans; (3) Agency exposes a `LookupFlowStep` RPC; (4) Work uses it before applying any AI-emitted transition. Secondary corruption: rollback / reset does not clear `properties.completed_at`, so the next legitimate completion event surfaces a stale 2026-06-03 timestamp.
+
+---
+
+### BUG-20260610-001 — `RollbackWorkflowRun` leaks TaskTodos and dangling relationship edges
+
+**Severity:** N/A
+**Status:** ❌ Invalid (2026-06-10) — verification check bug in `/dev-rollback-workflow`, not a code bug
+
+Live reproduction against the current binary confirmed: TaskTodos are correctly soft-deleted (`deleted=true`); Tasks are correctly reset to `pending` (not deleted), so their structural edges are correctly preserved. The original "leak" report came from two verification queries that did not honour the rollback contract (didn't filter `doc.deleted`, assumed tasks were deleted). The skill's Checks 3 + 4 have been rewritten and a unit test added.
+
+See [bug-details/BUG-20260610-001](bug-details/BUG-20260610-001_rollback-leaks-todos-and-edges.md) for the full post-mortem.
 
 ---
 
