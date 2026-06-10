@@ -64,6 +64,28 @@ func TestGetProject_NotFound(t *testing.T) {
 	}
 }
 
+// BUG-20260603-004: project-name URL routing was case-sensitive. After the
+// fix the gRPC handler must resolve display-name casing (e.g. "SharedFarms")
+// to the stored lowercase slug ("sharedfarms").
+func TestGetProject_ProjectName_CaseInsensitive(t *testing.T) {
+	srv := newTestServer()
+	created := createProtoProject(t, srv, "ag", "SharedFarms")
+
+	for _, name := range []string{"SharedFarms", "sharedfarms", "SHAREDFARMS"} {
+		res, err := srv.GetProject(context.Background(), &pb.GetProjectRequest{
+			AgencyId:    "ag",
+			ProjectName: name,
+		})
+		if err != nil {
+			t.Errorf("GetProject %q: %v", name, err)
+			continue
+		}
+		if res.Project.Id != created.Id {
+			t.Errorf("lookup %q resolved to id %q, want %q", name, res.Project.Id, created.Id)
+		}
+	}
+}
+
 func TestUpdateProject_PatchesAndReturnsUpdated(t *testing.T) {
 	srv := newTestServer()
 	p := createProtoProject(t, srv, "ag", "Old")
