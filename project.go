@@ -66,7 +66,12 @@ func (m *taskManager) GetProject(ctx context.Context, agencyID, projectID string
 }
 
 // GetProjectByName retrieves a Project by its slug (project_name property).
+// The caller-supplied projectName is normalized through [toSlug] so that
+// display-name casing (e.g. "SharedFarms") resolves to the stored lowercase
+// slug ("sharedfarms"). This keeps lookup symmetric with [CreateProject],
+// which slugifies via the same helper.
 func (m *taskManager) GetProjectByName(ctx context.Context, agencyID, projectName string) (Project, error) {
+	slug := toSlug(projectName)
 	entities, err := m.dm.ListEntities(ctx, entitygraph.EntityFilter{
 		AgencyID: agencyID,
 		TypeID:   projectTypeID,
@@ -76,7 +81,7 @@ func (m *taskManager) GetProjectByName(ctx context.Context, agencyID, projectNam
 	}
 	for _, e := range entities {
 		p := projectFromEntity(e)
-		if p.ProjectName == projectName {
+		if p.ProjectName == slug {
 			return p, nil
 		}
 	}

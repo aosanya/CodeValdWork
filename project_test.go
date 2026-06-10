@@ -47,6 +47,47 @@ func TestGetProject_NotFound(t *testing.T) {
 	}
 }
 
+// ── GetProjectByName ─────────────────────────────────────────────────────────
+
+// BUG-20260603-004: GetProjectByName must resolve display-name casing to the
+// lowercase slug it stored at CreateProject time. Without normalization, a
+// path like /projects/SharedFarms returns 404 even though the project exists.
+func TestGetProjectByName_CaseInsensitive(t *testing.T) {
+	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
+	ctx := context.Background()
+	if _, err := mgr.CreateProject(ctx, "ag", codevaldwork.Project{Name: "SharedFarms"}); err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	for _, name := range []string{"SharedFarms", "sharedfarms", "SHAREDFARMS", "sharedFARMS"} {
+		got, err := mgr.GetProjectByName(ctx, "ag", name)
+		if err != nil {
+			t.Errorf("lookup %q: %v", name, err)
+			continue
+		}
+		if got.ProjectName != "sharedfarms" {
+			t.Errorf("lookup %q resolved to slug %q, want %q", name, got.ProjectName, "sharedfarms")
+		}
+	}
+}
+
+// Display names that contain spaces become underscore slugs at create time
+// (see toSlug). The lookup must normalize the same way so a caller passing
+// the display name with its original spaces still resolves the project.
+func TestGetProjectByName_NormalizesSpaces(t *testing.T) {
+	mgr, _ := codevaldwork.NewTaskManager(newFakeDataManager(), nil)
+	ctx := context.Background()
+	if _, err := mgr.CreateProject(ctx, "ag", codevaldwork.Project{Name: "Shared Farms"}); err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	got, err := mgr.GetProjectByName(ctx, "ag", "Shared Farms")
+	if err != nil {
+		t.Fatalf("GetProjectByName: %v", err)
+	}
+	if got.ProjectName != "shared_farms" {
+		t.Errorf("got slug %q, want %q", got.ProjectName, "shared_farms")
+	}
+}
+
 // ── UpdateProject ────────────────────────────────────────────────────────────
 
 func TestUpdateProject_PatchesFields(t *testing.T) {
